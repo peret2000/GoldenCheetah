@@ -15,7 +15,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
 #include <QtGui>
 #include <QGraphicsPathItem>
 #include "MeterWidget.h"
@@ -25,6 +24,8 @@
 #include "LocationInterpolation.h"
 #include <QWebEngineScriptCollection>
 #include <QWebEngineProfile>
+//#include <QMessageBox>
+#pragma optimize("",off)
 
 MeterWidget::MeterWidget(QString Name, QWidget *parent, QString Source) : QWidget(parent), m_Name(Name), m_container(parent), m_Source(Source)
 {
@@ -115,7 +116,7 @@ QSize MeterWidget::minimumSize() const
     return QSize(m_Width, m_Height);
 }
 
-void MeterWidget::startPlayback(Context* context)
+void MeterWidget::startPlayback(Context*)
 {
 
 }
@@ -385,10 +386,18 @@ void ElevationMeterWidget::lazySetup(void)
     double maxX = floor(ergFile->Duration);
     double minY = floor(ergFile->minY);
     double maxY = floor(ergFile->maxY);
+
+
+
     if (m_savedWidth != m_Width || m_savedHeight != m_Height || m_savedMinY != minY || m_savedMaxY != maxY) {
 
         m_savedMinY = minY;
         m_savedMaxY = maxY;
+
+        minElevation = minY;
+        maxElevation = maxY;
+        minElevationOnPlot = 20000.;
+        maxElevationOnPlot = -20000.;
 
         if (m_Width != 0 && (maxY - minY) / 0.05 < m_Height * 0.80 * (maxX - minX) / m_Width)
             maxY = minY + m_Height * 0.80 * (maxX - minX) / m_Width * 0.05;
@@ -416,6 +425,10 @@ void ElevationMeterWidget::lazySetup(void)
             m_elevationPolygon << QPoint(pixelX, pixelY);
 
             lastPixelX = pixelX;
+
+            if (pixelY < minElevationOnPlot) minElevationOnPlot = pixelY;
+            if (pixelY > maxElevationOnPlot) maxElevationOnPlot = pixelY;
+
         }
 
         // Complete a final segment from elevation profile to bottom right of display rect.
@@ -427,6 +440,9 @@ void ElevationMeterWidget::lazySetup(void)
 
         m_savedWidth = m_Width;
         m_savedHeight = m_Height;
+
+        minElevation = (GlobalContext::context()->useMetricUnits) ? minElevation : minElevation * FEET_PER_METER;
+        maxElevation = (GlobalContext::context()->useMetricUnits) ? maxElevation : maxElevation * FEET_PER_METER;
     }
 }
 
@@ -507,6 +523,16 @@ void ElevationMeterWidget::paintEvent(QPaintEvent* paintevent)
         distanceDrawX -= 45;
 
     painter.drawText(distanceDrawX, distanceDrawY, distanceString);
+
+    // Show elevation MIN and MAX in the plot
+    QString minElevationString = QString::number(minElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
+    QString maxElevationString = QString::number(maxElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
+    int drawX = 10;
+    if (cyclistX < m_Width * 0.5)
+        drawX = m_Width - 50;
+    painter.drawText(drawX, maxElevationOnPlot - 10, minElevationString);
+    painter.drawText(drawX, minElevationOnPlot + 15, maxElevationString);
+    painter.drawLine(drawX - 5, minElevationOnPlot, drawX - 5, maxElevationOnPlot);
 }
 
 LiveMapWidget::LiveMapWidget(QString Name, QWidget* parent, QString Source, Context* context) : MeterWidget(Name, parent, Source), context(context)
@@ -738,3 +764,190 @@ void WebClass::jscallme(const QString &datafromjs)
     }
     
 }
+
+
+ElevationZoomedMeterWidget::ElevationZoomedMeterWidget(QString Name, QWidget* parent, QString Source, Context* context) : MeterWidget(Name, parent, Source), context(context),
+gradientValue(0.)
+{
+    forceSquareRatio = false;
+}
+
+//void ElevationZoomedMeterWidget::stopPlayback()
+//{
+//
+//}
+
+void ElevationZoomedMeterWidget::startPlayback(Context* context) {
+
+    // Nothing to compute unless there is a valid erg file.
+    if (!context)
+        return;
+
+    ErgFile* ergFile = context->currentErgFile();
+    if (!ergFile || !ergFile->isValid())
+        return;
+
+    windowWidthMeters = 250; // We are ploting ### meters
+    windowHeightMeters = 80; // fixed height shown in graph
+    totalRideDistance = floor(ergFile->Duration);
+    xScale = -1;
+    yScale = -1;
+    translateX = 0;
+    translateY = 0;
+    qSize = windowWidthMeters;
+    savedErgFile = ergFile;
+    plotQ.clear();
+
+    m_ergFileAdapter.setErgFile(ergFile);
+}
+
+void ElevationZoomedMeterWidget::updateRidePointsQ(int tDist) {
+
+    double windowEdge = plotQ.empty() ? 0 : plotQ.last().x();
+
+    // if update is before last element in q then we must reset queue.
+    double queryPoint = windowEdge;
+    if (plotQ.empty() || (tDist < windowEdge)) {
+        m_ergFileAdapter.resetQueryState();
+        plotQ.clear();
+        queryPoint = tDist - windowWidthMeters;
+    }
+
+    int qStep = (int)(windowWidthMeters / qSize);
+
+    queryPoint += qStep;
+    while (queryPoint < tDist) {
+        int lap;
+        geolocation geoloc;
+        double slope;
+        double tempQP = std::max<double>(0, std::min<double>(totalRideDistance, queryPoint));
+        if (m_ergFileAdapter.locationAt(tempQP, lap, geoloc, slope)) {
+            if (plotQ.size() == qSize) plotQ.dequeue();
+            plotQ.enqueue(QPointF(queryPoint, geoloc.Alt()));
+            queryPoint += qStep;
+            continue;
+        }
+
+        break;
+    }
+}
+
+
+void ElevationZoomedMeterWidget::scalePointsToPlot() {
+
+    double pixelX = -1;
+    double pixelY = -1;
+    m_zoomedElevationPolygon.clear();
+    foreach(QPointF p, plotQ) {
+        pixelX = ((p.x() - minX) * xScale);
+        pixelY = (m_Height - ((p.y() - minY) * yScale));
+        m_zoomedElevationPolygon.push_back(QPointF(pixelX, pixelY));
+    }
+    //Point (0,0) of the graph for the poly left edge
+    m_zoomedElevationPolygon.push_front(QPointF((plotQ.front().x() - minX) * xScale, m_Height));
+    // Last point of the graph for the poly right edge
+    m_zoomedElevationPolygon.push_back(QPointF((plotQ.last().x() - minX) * xScale, m_Height));
+    // Translate poly based on the x value of the first point to keep it visable
+    if (m_zoomedElevationPolygon.front().x() > 0) {
+        translateX = m_zoomedElevationPolygon.front().x() * -1;
+    }
+}
+
+void ElevationZoomedMeterWidget::calcScaleMultipliers() {
+    // Scaling Multiples.
+    xScale = m_Width / (maxX - minX);
+    yScale = m_Height / windowHeightMeters;
+}
+
+void ElevationZoomedMeterWidget::calcMinAndMax()
+{
+    if (plotQ.empty()) {
+        minX = maxX = minY = maxY = 0;
+        return;
+    }
+
+    minX = plotQ.first().x();
+    maxX = plotQ.last().x();
+    minY = plotQ[qSize / 2].y() - (windowHeightMeters / 2);
+    maxY = minY + windowHeightMeters;
+}
+
+void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
+{
+    MeterWidget::paintEvent(paintevent);
+
+    if (!context || !context->currentErgFile() || context->currentErgFile()->Points.size() <= 1)
+        return;
+
+    m_MainBrush = QBrush(m_MainColor);
+    m_BackgroundBrush = QBrush(m_BackgroundColor);
+    m_OutlinePen = QPen(m_OutlineColor);
+    m_OutlinePen.setWidth(1);
+    m_OutlinePen.setStyle(Qt::SolidLine);
+    currDist = this->Value * 1000.0;
+
+    // Add more points to the queue
+    int targetDist = currDist + (windowWidthMeters / 2);
+    updateRidePointsQ(targetDist);
+    calcMinAndMax();
+    calcScaleMultipliers();
+    scalePointsToPlot();
+
+    // Cyclist position 
+    cyclistX = (currDist - minX) * xScale;
+
+    //painter
+    QPainter painter(this);
+    painter.setClipRegion(videoContainerRegion);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.translate(translateX, translateY);
+    painter.setPen(m_OutlinePen);
+    painter.setBrush(m_BackgroundBrush);
+    painter.drawPolygon(m_zoomedElevationPolygon);
+    m_OutlinePen = QPen(m_MainColor);
+    m_OutlinePen.setWidth(1);
+    m_OutlinePen.setStyle(Qt::SolidLine);
+    painter.setPen(m_OutlinePen);
+    painter.drawLine(cyclistX, 0.0, cyclistX, (double)m_Height);
+    
+    //Create Bubble painter to show the grade and change color
+    QPainter bubblePainter(this);
+    bubblePainter.setClipRegion(videoContainerRegion);
+    bubblePainter.setRenderHint(QPainter::Antialiasing);
+
+    // Set bubble painter pen and brush
+    QPen bubblePen;
+    bubblePen.setColor(Qt::black);
+    bubblePen.setWidth(3);
+    bubblePen.setStyle(Qt::SolidLine);
+    bubblePainter.setPen(bubblePen);
+
+    //Set bubble color based on % grade
+    QColor bubbleColor = QColor(255, 0, 0, 255);
+    if (this->gradientValue <= 0.) bubbleColor = Qt::green;
+    else if (this->gradientValue > 0. && this->gradientValue <= 3.) bubbleColor = Qt::yellow;
+    else if (this->gradientValue > 3. && this->gradientValue <= 10.) bubbleColor = QColor(255, 140, 0, 255);
+    else if (this->gradientValue > 10.) bubbleColor = Qt::red;
+    bubblePainter.setBrush(bubbleColor);
+
+    // Draw bubble
+    bubbleSize = (double)m_Height * 0.010f;
+    double cyclistY = 0.0;
+    cyclistY = (double)m_Height;
+
+    double cyclistCircleSize = (double)m_Height * 0.50f;
+    double bubbleXOffset = .50;
+    bubblePainter.drawEllipse(QPointF((cyclistX * bubbleXOffset), cyclistY - (cyclistCircleSize / 2.0)), (qreal)(cyclistCircleSize / 2.0), (qreal)(cyclistCircleSize / 2.0));
+
+    // Display grade as #.#%
+    QString gradientString = ((-1.0 < this->gradientValue && this->gradientValue < 0.0) ? QString("-") : QString("")) + QString::number((int)this->gradientValue) +
+        QString(".") + QString::number(abs((int)(this->gradientValue * 10.0) % 10)) + QString("%");
+
+    // Display gradient text int the bubble
+    double gradientDrawX = (cyclistX * bubbleXOffset) - 20.;
+    double gradientDrawY = m_Height * 0.8;
+
+    bubblePainter.drawText(gradientDrawX, gradientDrawY, gradientString);
+}
+
+
