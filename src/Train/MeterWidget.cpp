@@ -387,8 +387,6 @@ void ElevationMeterWidget::lazySetup(void)
     double minY = floor(ergFile->minY);
     double maxY = floor(ergFile->maxY);
 
-    rideDUration = floor(ergFile->Duration);
-
     if (m_savedWidth != m_Width || m_savedHeight != m_Height || m_savedMinY != minY || m_savedMaxY != maxY) {
 
         m_savedMinY = minY;
@@ -398,6 +396,7 @@ void ElevationMeterWidget::lazySetup(void)
         maxElevation = maxY;
         minElevationOnPlot = 20000.;
         maxElevationOnPlot = -20000.;
+        rideDUration = floor(ergFile->Duration);
 
         if (m_Width != 0 && (maxY - minY) / 0.05 < m_Height * 0.80 * (maxX - minX) / m_Width)
             maxY = minY + m_Height * 0.80 * (maxX - minX) / m_Width * 0.05;
@@ -443,7 +442,7 @@ void ElevationMeterWidget::lazySetup(void)
 
         minElevation = (GlobalContext::context()->useMetricUnits) ? minElevation : minElevation * FEET_PER_METER;
         maxElevation = (GlobalContext::context()->useMetricUnits) ? maxElevation : maxElevation * FEET_PER_METER;
-        rideDUration = (GlobalContext::context()->useMetricUnits) ? rideDUration : rideDUration * MILES_PER_KM;
+        rideDUration = (GlobalContext::context()->useMetricUnits) ? rideDUration : (rideDUration / 1000) * MILES_PER_KM;
     }
 }
 
@@ -544,7 +543,7 @@ void ElevationMeterWidget::paintEvent(QPaintEvent* paintevent)
     painter.drawLine(drawX - 5, minElevationOnPlot, drawX - 5, maxElevationOnPlot);
 
     altPen.setColor(Qt::green);
-    QString rideDUrationString = QString::number(rideDUration / 1000, 'f', 1) + ((GlobalContext::context()->useMetricUnits) ? tr("Km") : tr("Mi"));
+    QString rideDUrationString = QString::number(rideDUration, 'f', 1) + ((GlobalContext::context()->useMetricUnits) ? tr("Km") : tr("Mi"));
     painter.drawText(m_Width - 50, m_Height - 5, rideDUrationString);
 
     // Reset pen
@@ -939,11 +938,47 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     bubblePainter.setPen(bubblePen);
 
     //Set bubble color based on % grade
-    QColor bubbleColor = QColor(255, 0, 0, 255);
-    if (this->gradientValue <= 0.) bubbleColor = Qt::green;
-    else if (this->gradientValue > 0. && this->gradientValue <= 3.) bubbleColor = Qt::yellow;
-    else if (this->gradientValue > 3. && this->gradientValue <= 10.) bubbleColor = QColor(255, 140, 0, 255);
-    else if (this->gradientValue > 10.) bubbleColor = Qt::red;
+    // colors:
+    // -40..0: green
+    //   0..3: yellow
+    //   3..10: 255,140,0,255 -- Orange
+    //  10..40: red
+    QColor start, end;
+    double spanStart, spanEnd;
+    double gradient = std::min<double>(40, std::max<double>(-40, this->gradientValue));
+    if (gradient < 0) { // negative grade
+        spanStart = -40;
+        spanEnd = 0;
+        start = Qt::black;
+        end = Qt::green;
+    }
+    else if (gradient < 3) { // 0 to 3
+        spanStart = 0;
+        spanEnd = 3;
+        start = Qt::green;
+        end = Qt::yellow;
+    }
+    else if (gradient < 10) { // 3 to 10
+        spanStart = 3;
+        spanEnd = 10;
+        start = Qt::yellow;
+        end = QColor(255, 140, 0, 255);
+    }
+    else { // 10 to 40
+        spanStart = 10;
+        spanEnd = 40;
+        start = QColor(255, 140, 0, 255);
+        end = Qt::red;
+    }
+
+    double unit = (gradient - spanStart) / (spanEnd - spanStart);
+    int sh, ss, sv;
+    start.getHsv(&sh, &ss, &sv);
+    int eh, es, ev;
+    end.getHsv(&eh, &es, &ev);
+    QColor bubbleColor = QColor::fromHsv(sh + unit * (eh - sh),  // lerp
+        ss + unit * (es - ss),  // it
+        sv + unit * (ev - sv)); // real good
     bubblePainter.setBrush(bubbleColor);
 
     // Draw bubble
@@ -951,9 +986,23 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     double cyclistY = 0.0;
     cyclistY = (double)m_Height;
 
-    double cyclistCircleSize = (double)m_Height * 0.50f;
     double bubbleXOffset = .50;
-    bubblePainter.drawEllipse(QPointF((cyclistX * bubbleXOffset), cyclistY - (cyclistCircleSize / 2.0)), (qreal)(cyclistCircleSize / 2.0), (qreal)(cyclistCircleSize / 2.0));
+    double cyclistCircleRadius = (double)m_Height / 4;
+    // Find bubble size that intersects altitude line and rider.
+    for (int idx = (m_zoomedElevationPolygon.size() + 1) / 2;
+        idx < m_zoomedElevationPolygon.size();
+        idx++) {
+        double searchDist = m_zoomedElevationPolygon[idx].x() - cyclistX;
+        double radius = (m_Height - m_zoomedElevationPolygon[idx].y()) / 2.;
+
+        // we wish a circle where radius is ~= distance.
+        if (searchDist >= radius) {
+            cyclistCircleRadius = radius;
+            break;
+        }
+    }
+    double bubbleX = cyclistX + cyclistCircleRadius;
+    bubblePainter.drawEllipse(QPointF(bubbleX, cyclistY - cyclistCircleRadius), (qreal)cyclistCircleRadius, (qreal)cyclistCircleRadius);
 
     // Display grade as #.#%
     QString gradientString = ((-1.0 < this->gradientValue && this->gradientValue < 0.0) ? QString("-") : QString("")) + QString::number((int)this->gradientValue) +
@@ -963,7 +1012,6 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     double gradientDrawX = (cyclistX * bubbleXOffset) - 20.;
     double gradientDrawY = m_Height * 0.8;
 
-    bubblePainter.drawText(gradientDrawX, gradientDrawY, gradientString);
+    bubblePainter.drawText(bubbleX - 15 , (cyclistY - (cyclistCircleRadius - 5)), gradientString);
 }
-
 
