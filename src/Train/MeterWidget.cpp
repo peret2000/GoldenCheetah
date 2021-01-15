@@ -387,7 +387,7 @@ void ElevationMeterWidget::lazySetup(void)
     double minY = floor(ergFile->minY);
     double maxY = floor(ergFile->maxY);
 
-
+    rideDUration = floor(ergFile->Duration);
 
     if (m_savedWidth != m_Width || m_savedHeight != m_Height || m_savedMinY != minY || m_savedMaxY != maxY) {
 
@@ -443,6 +443,7 @@ void ElevationMeterWidget::lazySetup(void)
 
         minElevation = (GlobalContext::context()->useMetricUnits) ? minElevation : minElevation * FEET_PER_METER;
         maxElevation = (GlobalContext::context()->useMetricUnits) ? maxElevation : maxElevation * FEET_PER_METER;
+        rideDUration = (GlobalContext::context()->useMetricUnits) ? rideDUration : rideDUration * MILES_PER_KM;
     }
 }
 
@@ -524,15 +525,30 @@ void ElevationMeterWidget::paintEvent(QPaintEvent* paintevent)
 
     painter.drawText(distanceDrawX, distanceDrawY, distanceString);
 
-    // Show elevation MIN and MAX in the plot
+    // Pen for altitude data
+    QPen altPen;
+    altPen.setColor(Qt::yellow);
+    altPen.setWidth(2);
+    altPen.setStyle(Qt::SolidLine);
+    painter.setPen(altPen);
+
+    // Show elevation MIN and MAX
     QString minElevationString = QString::number(minElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
     QString maxElevationString = QString::number(maxElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
+ 
     int drawX = 10;
     if (cyclistX < m_Width * 0.5)
         drawX = m_Width - 50;
     painter.drawText(drawX, maxElevationOnPlot - 10, minElevationString);
     painter.drawText(drawX, minElevationOnPlot + 15, maxElevationString);
     painter.drawLine(drawX - 5, minElevationOnPlot, drawX - 5, maxElevationOnPlot);
+
+    altPen.setColor(Qt::green);
+    QString rideDUrationString = QString::number(rideDUration / 1000, 'f', 1) + ((GlobalContext::context()->useMetricUnits) ? tr("Km") : tr("Mi"));
+    painter.drawText(m_Width - 50, m_Height - 5, rideDUrationString);
+
+    // Reset pen
+    painter.setPen(m_OutlinePen);
 }
 
 LiveMapWidget::LiveMapWidget(QString Name, QWidget* parent, QString Source, Context* context) : MeterWidget(Name, parent, Source), context(context)
