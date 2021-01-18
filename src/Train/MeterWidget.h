@@ -130,8 +130,6 @@ class ElevationMeterWidget : public MeterWidget
 
   protected:
     virtual void paintEvent(QPaintEvent* paintevent);
-    double minElevation, maxElevation, rideDUration;
-    int minElevationOnPlot, maxElevationOnPlot;
     void lazySetup(void);
 
   public:

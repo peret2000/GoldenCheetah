@@ -24,7 +24,7 @@
 #include "LocationInterpolation.h"
 #include <QWebEngineScriptCollection>
 #include <QWebEngineProfile>
-//#include <QMessageBox>
+#include <array>
 #pragma optimize("",off)
 
 MeterWidget::MeterWidget(QString Name, QWidget *parent, QString Source) : QWidget(parent), m_Name(Name), m_container(parent), m_Source(Source)
@@ -392,12 +392,6 @@ void ElevationMeterWidget::lazySetup(void)
         m_savedMinY = minY;
         m_savedMaxY = maxY;
 
-        minElevation = minY;
-        maxElevation = maxY;
-        minElevationOnPlot = 20000.;
-        maxElevationOnPlot = -20000.;
-        rideDUration = floor(ergFile->Duration);
-
         if (m_Width != 0 && (maxY - minY) / 0.05 < m_Height * 0.80 * (maxX - minX) / m_Width)
             maxY = minY + m_Height * 0.80 * (maxX - minX) / m_Width * 0.05;
         minY -= (maxY - minY) * 0.20f; // add 20% as bottom headroom (slope gradient will be shown there in a bubble)
@@ -424,10 +418,6 @@ void ElevationMeterWidget::lazySetup(void)
             m_elevationPolygon << QPoint(pixelX, pixelY);
 
             lastPixelX = pixelX;
-
-            if (pixelY < minElevationOnPlot) minElevationOnPlot = pixelY;
-            if (pixelY > maxElevationOnPlot) maxElevationOnPlot = pixelY;
-
         }
 
         // Complete a final segment from elevation profile to bottom right of display rect.
@@ -439,10 +429,6 @@ void ElevationMeterWidget::lazySetup(void)
 
         m_savedWidth = m_Width;
         m_savedHeight = m_Height;
-
-        minElevation = (GlobalContext::context()->useMetricUnits) ? minElevation : minElevation * FEET_PER_METER;
-        maxElevation = (GlobalContext::context()->useMetricUnits) ? maxElevation : maxElevation * FEET_PER_METER;
-        rideDUration = (GlobalContext::context()->useMetricUnits) ? rideDUration : (rideDUration / 1000) * MILES_PER_KM;
     }
 }
 
@@ -523,31 +509,6 @@ void ElevationMeterWidget::paintEvent(QPaintEvent* paintevent)
         distanceDrawX -= 45;
 
     painter.drawText(distanceDrawX, distanceDrawY, distanceString);
-
-    // Pen for altitude data
-    QPen altPen;
-    altPen.setColor(Qt::yellow);
-    altPen.setWidth(2);
-    altPen.setStyle(Qt::SolidLine);
-    painter.setPen(altPen);
-
-    // Show elevation MIN and MAX
-    QString minElevationString = QString::number(minElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
-    QString maxElevationString = QString::number(maxElevation, 'f', 0) + ((GlobalContext::context()->useMetricUnits) ? tr("m") : tr("f"));
- 
-    int drawX = 10;
-    if (cyclistX < m_Width * 0.5)
-        drawX = m_Width - 50;
-    painter.drawText(drawX, maxElevationOnPlot - 10, minElevationString);
-    painter.drawText(drawX, minElevationOnPlot + 15, maxElevationString);
-    painter.drawLine(drawX - 5, minElevationOnPlot, drawX - 5, maxElevationOnPlot);
-
-    altPen.setColor(Qt::green);
-    QString rideDUrationString = QString::number(rideDUration, 'f', 1) + ((GlobalContext::context()->useMetricUnits) ? tr("Km") : tr("Mi"));
-    painter.drawText(m_Width - 50, m_Height - 5, rideDUrationString);
-
-    // Reset pen
-    painter.setPen(m_OutlinePen);
 }
 
 LiveMapWidget::LiveMapWidget(QString Name, QWidget* parent, QString Source, Context* context) : MeterWidget(Name, parent, Source), context(context)
@@ -887,6 +848,64 @@ void ElevationZoomedMeterWidget::calcMinAndMax()
     maxY = minY + windowHeightMeters;
 }
 
+struct RangeColorCriteria {
+    double m_point;
+    QColor m_color;
+
+    RangeColorCriteria(double p, QColor c) : m_point(p), m_color(c) {}
+};
+
+//Set bubble color based on % grade
+typedef std::array<RangeColorCriteria, 5> GradientToColorMapArray;
+
+static const GradientToColorMapArray s_gradientToColorMap = {
+    RangeColorCriteria(-40., Qt::black),
+    RangeColorCriteria(0.,   Qt::white),
+    RangeColorCriteria(3.,   Qt::yellow),
+    RangeColorCriteria(10.,  QColor(255,140,0,255)),
+    RangeColorCriteria(40.,  Qt::red)
+};
+
+template <size_t T_size> class RangeColorMapper {
+    typedef std::array<RangeColorCriteria, T_size> T_ArrayType;
+    T_ArrayType m_colorMap;
+public:
+    template <typename ...T>
+    RangeColorMapper(T&&...t) : m_colorMap{ {std::forward<T>(t)...} } {}
+
+    QColor toColor(double m) const {
+        RangeColorCriteria start = m_colorMap[0];
+        if (m < start.m_point) return start.m_color;
+
+        for (int i = 1; i < m_colorMap.size(); i++) {
+            const RangeColorCriteria& end = m_colorMap[i];
+            if (m < end.m_point) {
+                double unit = (m - start.m_point) / (end.m_point - start.m_point);
+                int sh, ss, sv;
+                start.m_color.getHsv(&sh, &ss, &sv);
+                int eh, es, ev;
+                end.m_color.getHsv(&eh, &es, &ev);
+                return QColor::fromHsv(sh + unit * (eh - sh),  // lerp
+                    ss + unit * (es - ss),                      // it
+                    sv + unit * (ev - sv));                     // real good
+
+            }
+            start = end;
+        }
+        return start.m_color;
+    }
+};
+
+static const RangeColorMapper<5> s_gradientToColorMapper =
+{
+    RangeColorCriteria(-40., Qt::black),
+    RangeColorCriteria(0.,   Qt::white),
+    RangeColorCriteria(3.,   Qt::yellow),
+    RangeColorCriteria(10.,  QColor(255, 140, 0, 255)), // orange
+    RangeColorCriteria(40.,  Qt::red)
+};
+
+
 void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
 {
     MeterWidget::paintEvent(paintevent);
@@ -937,48 +956,8 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     bubblePen.setStyle(Qt::SolidLine);
     bubblePainter.setPen(bubblePen);
 
-    //Set bubble color based on % grade
-    // colors:
-    // -40..0: green
-    //   0..3: yellow
-    //   3..10: 255,140,0,255 -- Orange
-    //  10..40: red
-    QColor start, end;
-    double spanStart, spanEnd;
     double gradient = std::min<double>(40, std::max<double>(-40, this->gradientValue));
-    if (gradient < 0) { // negative grade
-        spanStart = -40;
-        spanEnd = 0;
-        start = Qt::black;
-        end = Qt::green;
-    }
-    else if (gradient < 3) { // 0 to 3
-        spanStart = 0;
-        spanEnd = 3;
-        start = Qt::green;
-        end = Qt::yellow;
-    }
-    else if (gradient < 10) { // 3 to 10
-        spanStart = 3;
-        spanEnd = 10;
-        start = Qt::yellow;
-        end = QColor(255, 140, 0, 255);
-    }
-    else { // 10 to 40
-        spanStart = 10;
-        spanEnd = 40;
-        start = QColor(255, 140, 0, 255);
-        end = Qt::red;
-    }
-
-    double unit = (gradient - spanStart) / (spanEnd - spanStart);
-    int sh, ss, sv;
-    start.getHsv(&sh, &ss, &sv);
-    int eh, es, ev;
-    end.getHsv(&eh, &es, &ev);
-    QColor bubbleColor = QColor::fromHsv(sh + unit * (eh - sh),  // lerp
-        ss + unit * (es - ss),  // it
-        sv + unit * (ev - sv)); // real good
+    QColor bubbleColor = s_gradientToColorMapper.toColor(gradient);
     bubblePainter.setBrush(bubbleColor);
 
     // Draw bubble
@@ -986,7 +965,6 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     double cyclistY = 0.0;
     cyclistY = (double)m_Height;
 
-    double bubbleXOffset = .50;
     double cyclistCircleRadius = (double)m_Height / 4;
     // Find bubble size that intersects altitude line and rider.
     for (int idx = (m_zoomedElevationPolygon.size() + 1) / 2;
@@ -1008,10 +986,7 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     QString gradientString = ((-1.0 < this->gradientValue && this->gradientValue < 0.0) ? QString("-") : QString("")) + QString::number((int)this->gradientValue) +
         QString(".") + QString::number(abs((int)(this->gradientValue * 10.0) % 10)) + QString("%");
 
-    // Display gradient text int the bubble
-    double gradientDrawX = (cyclistX * bubbleXOffset) - 20.;
-    double gradientDrawY = m_Height * 0.8;
-
+    // Display gradient text in the bubble
     bubblePainter.drawText(bubbleX - 15 , (cyclistY - (cyclistCircleRadius - 5)), gradientString);
 }
 
