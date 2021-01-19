@@ -763,8 +763,8 @@ void ElevationZoomedMeterWidget::startPlayback(Context* context) {
     if (!ergFile || !ergFile->isValid())
         return;
 
-    windowWidthMeters = 250; // We are ploting ### meters
-    windowHeightMeters = 80; // fixed height shown in graph
+    windowWidthMeters = 300; // We are ploting ### meters
+    windowHeightMeters = 96; // fixed height shown in graph
     totalRideDistance = floor(ergFile->Duration);
     xScale = -1;
     yScale = -1;
@@ -808,7 +808,6 @@ void ElevationZoomedMeterWidget::updateRidePointsQ(int tDist) {
     }
 }
 
-
 void ElevationZoomedMeterWidget::scalePointsToPlot() {
 
     double pixelX = -1;
@@ -844,66 +843,140 @@ void ElevationZoomedMeterWidget::calcMinAndMax()
 
     minX = plotQ.first().x();
     maxX = plotQ.last().x();
-    minY = plotQ[qSize / 2].y() - (windowHeightMeters / 2);
+    minY = plotQ[qSize / 3].y() - (windowHeightMeters / 2);
     maxY = minY + windowHeightMeters;
 }
+
+
+//Set bubble color based on % grade
+
+
+////struct RangeColorCriteria {
+////    double m_point;
+////    QColor m_color;
+////
+////    RangeColorCriteria(double p, QColor c) : m_point(p), m_color(c) {}
+////};
+
+////template <size_t T_size> class RangeColorMapper {
+////    typedef std::array<RangeColorCriteria, T_size> T_ArrayType;
+////    T_ArrayType m_colorMap;
+////public:
+////    template <typename ...T>
+////    RangeColorMapper(T&&...t) : m_colorMap{ {std::forward<T>(t)...} } {}
+////
+////    QColor toColor(double m) const {
+////        RangeColorCriteria start = m_colorMap[0];
+////        if (m < start.m_point) return start.m_color;
+////
+////        for (int i = 1; i < m_colorMap.size(); i++) {
+////            const RangeColorCriteria& end = m_colorMap[i];
+////            if (m < end.m_point) {
+////                double unit = (m - start.m_point) / (end.m_point - start.m_point);
+////                int sh, ss, sv;
+////                start.m_color.getHsv(&sh, &ss, &sv);
+////                int eh, es, ev;
+////                end.m_color.getHsv(&eh, &es, &ev);
+////                return QColor::fromHsv(sh + unit * (eh - sh),  // lerp
+////                    ss + unit * (es - ss),                      // it
+////                    sv + unit * (ev - sv));                     // real good
+////
+////            }
+////            start = end;
+////        }
+////        return start.m_color;
+////    }
+////};
+////
+////static const RangeColorMapper<4> s_gradientToColorMapper =
+////{
+////    //RangeColorCriteria(-40., Qt::black),
+////    //RangeColorCriteria(0.,   Qt::white),
+////    //RangeColorCriteria(3.,   Qt::yellow),
+////    //RangeColorCriteria(10.,  QColor(255, 140, 0, 255)), // orange
+////    //RangeColorCriteria(40.,  Qt::red)
+////    RangeColorCriteria(-40., Qt::black),
+////    RangeColorCriteria(0.,   Qt::white),
+////    RangeColorCriteria(10.,  Qt::red),
+////    RangeColorCriteria(40.,  Qt::black)
+////
+////};
+
+
+// With cxx17 the class compiles to readonly memory and no template parameters are needed.
+// Someday...
+#if defined(CXX17)
+#define CONSTEXPR      constexpr
+#define CONSTEXPR_FUNC constexpr
+#else constexpr
+#define CONSTEXPR      static const
+#define CONSTEXPR_FUNC
+#endif
 
 struct RangeColorCriteria {
     double m_point;
     QColor m_color;
 
-    RangeColorCriteria(double p, QColor c) : m_point(p), m_color(c) {}
+    CONSTEXPR_FUNC RangeColorCriteria(double p, QColor c) : m_point(p), m_color(c) {}
 };
 
-//Set bubble color based on % grade
-typedef std::array<RangeColorCriteria, 5> GradientToColorMapArray;
-
-static const GradientToColorMapArray s_gradientToColorMap = {
-    RangeColorCriteria(-40., Qt::black),
-    RangeColorCriteria(0.,   Qt::white),
-    RangeColorCriteria(3.,   Qt::yellow),
-    RangeColorCriteria(10.,  QColor(255,140,0,255)),
-    RangeColorCriteria(40.,  Qt::red)
-};
-
-template <size_t T_size> class RangeColorMapper {
-    typedef std::array<RangeColorCriteria, T_size> T_ArrayType;
-    T_ArrayType m_colorMap;
-public:
-    template <typename ...T>
-    RangeColorMapper(T&&...t) : m_colorMap{ {std::forward<T>(t)...} } {}
+template <typename T, size_t T_size> struct RangeColorMapper {
+    std::array<T, T_size> m_colorMap;
 
     QColor toColor(double m) const {
-        RangeColorCriteria start = m_colorMap[0];
-        if (m < start.m_point) return start.m_color;
+        if (m <= m_colorMap[0].m_point) return m_colorMap[0].m_color;
 
-        for (int i = 1; i < m_colorMap.size(); i++) {
-            const RangeColorCriteria& end = m_colorMap[i];
-            if (m < end.m_point) {
+        for (size_t i = 1; i < T_size; i++) {
+            if (m < m_colorMap[i].m_point) {
+                const RangeColorCriteria& start = m_colorMap[i - 1];
+                const RangeColorCriteria& end = m_colorMap[i];
+
                 double unit = (m - start.m_point) / (end.m_point - start.m_point);
+
                 int sh, ss, sv;
                 start.m_color.getHsv(&sh, &ss, &sv);
+
                 int eh, es, ev;
                 end.m_color.getHsv(&eh, &es, &ev);
-                return QColor::fromHsv(sh + unit * (eh - sh),  // lerp
-                    ss + unit * (es - ss),                      // it
-                    sv + unit * (ev - sv));                     // real good
 
+                return QColor::fromHsv(sh + unit * (eh - sh),  // lerp
+                    ss + unit * (es - ss),  // it
+                    sv + unit * (ev - sv)); // real good
             }
-            start = end;
         }
-        return start.m_color;
+
+        return m_colorMap[T_size - 1].m_color;
     }
 };
 
-static const RangeColorMapper<5> s_gradientToColorMapper =
-{
+#ifdef CXX17
+// Template deduction guide for RangeColorMapper
+template <typename First, typename... Rest> struct EnforceSame {
+    static_assert(std::conjunction_v<std::is_same<First, Rest>...>);
+    using type = First;
+};
+template <typename First, typename... Rest> RangeColorMapper(First, Rest...)
+->RangeColorMapper2<typename EnforceSame<First, Rest...>::type, 1 + sizeof...(Rest)>;
+#endif
+
+CONSTEXPR RangeColorMapper<RangeColorCriteria, 5> s_gradientToColorMapper{
+    //RangeColorCriteria(-40., Qt::black),
+    //RangeColorCriteria(0.,   Qt::white),
+    //RangeColorCriteria(10.,  Qt::red),
+    //RangeColorCriteria(40.,  Qt::black)
     RangeColorCriteria(-40., Qt::black),
     RangeColorCriteria(0.,   Qt::white),
     RangeColorCriteria(3.,   Qt::yellow),
     RangeColorCriteria(10.,  QColor(255, 140, 0, 255)), // orange
     RangeColorCriteria(40.,  Qt::red)
 };
+
+
+
+
+
+
+
 
 
 void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
@@ -921,7 +994,7 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     currDist = this->Value * 1000.0;
 
     // Add more points to the queue
-    int targetDist = currDist + (windowWidthMeters / 2);
+    int targetDist = currDist + (windowWidthMeters *2  / 3);
     updateRidePointsQ(targetDist);
     calcMinAndMax();
     calcScaleMultipliers();
