@@ -461,6 +461,7 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             {
                 elevationZoomedMeterWidget->setContext(context);
                 elevationZoomedMeterWidget->gradientValue = rtd.getSlope();
+                elevationZoomedMeterWidget->Speed = rtd.getSpeed();  // kmh
             }
         }
 

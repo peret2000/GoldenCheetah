@@ -25,7 +25,7 @@
 #include <QWebEngineScriptCollection>
 #include <QWebEngineProfile>
 #include <array>
-#pragma optimize("",off)
+// #pragma optimize("",off)
 
 MeterWidget::MeterWidget(QString Name, QWidget *parent, QString Source) : QWidget(parent), m_Name(Name), m_container(parent), m_Source(Source)
 {
@@ -764,7 +764,7 @@ void ElevationZoomedMeterWidget::startPlayback(Context* context) {
         return;
 
     windowWidthMeters = 300; // We are ploting ### meters
-    windowHeightMeters = 96; // fixed height shown in graph
+    windowHeightMeters = 20; // fixed height shown in graph
     totalRideDistance = floor(ergFile->Duration);
     xScale = -1;
     yScale = -1;
@@ -962,13 +962,14 @@ template <typename First, typename... Rest> RangeColorMapper(First, Rest...)
 CONSTEXPR RangeColorMapper<RangeColorCriteria, 5> s_gradientToColorMapper{
     //RangeColorCriteria(-40., Qt::black),
     //RangeColorCriteria(0.,   Qt::white),
-    //RangeColorCriteria(10.,  Qt::red),
-    //RangeColorCriteria(40.,  Qt::black)
-    RangeColorCriteria(-40., Qt::black),
+    //RangeColorCriteria(3.,   Qt::yellow),
+    //RangeColorCriteria(10.,  QColor(255, 140, 0, 255)), // orange
+    //RangeColorCriteria(40.,  Qt::red)
+    RangeColorCriteria(-10., Qt::black),
     RangeColorCriteria(0.,   Qt::white),
-    RangeColorCriteria(3.,   Qt::yellow),
-    RangeColorCriteria(10.,  QColor(255, 140, 0, 255)), // orange
-    RangeColorCriteria(40.,  Qt::red)
+    RangeColorCriteria(1.,   Qt::yellow),
+    RangeColorCriteria(3.,  QColor(255, 140, 0, 255)), // orange
+    RangeColorCriteria(4.,  Qt::red)
 };
 
 
@@ -1029,9 +1030,6 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
     bubblePen.setStyle(Qt::SolidLine);
     bubblePainter.setPen(bubblePen);
 
-    double gradient = std::min<double>(40, std::max<double>(-40, this->gradientValue));
-    QColor bubbleColor = s_gradientToColorMapper.toColor(gradient);
-    bubblePainter.setBrush(bubbleColor);
 
     // Draw bubble
     bubbleSize = (double)m_Height * 0.010f;
@@ -1044,7 +1042,7 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
         idx < m_zoomedElevationPolygon.size();
         idx++) {
         double searchDist = m_zoomedElevationPolygon[idx].x() - cyclistX;
-        double radius = (m_Height - m_zoomedElevationPolygon[idx].y()) / 2.;
+        double radius = (m_Height - m_zoomedElevationPolygon[idx].y()) / 3.;
 
         // we wish a circle where radius is ~= distance.
         if (searchDist >= radius) {
@@ -1052,14 +1050,38 @@ void ElevationZoomedMeterWidget::paintEvent(QPaintEvent* paintevent)
             break;
         }
     }
-    double bubbleX = cyclistX + cyclistCircleRadius;
-    bubblePainter.drawEllipse(QPointF(bubbleX, cyclistY - cyclistCircleRadius), (qreal)cyclistCircleRadius, (qreal)cyclistCircleRadius);
 
-    // Display grade as #.#%
-    QString gradientString = ((-1.0 < this->gradientValue && this->gradientValue < 0.0) ? QString("-") : QString("")) + QString::number((int)this->gradientValue) +
-        QString(".") + QString::number(abs((int)(this->gradientValue * 10.0) % 10)) + QString("%");
+    {
+        // Average slope in 10 seconds (taking into account current speed)
 
-    // Display gradient text in the bubble
-    bubblePainter.drawText(bubbleX - 15 , (cyclistY - (cyclistCircleRadius - 5)), gradientString);
+        int lap;
+        geolocation geoloc;
+        double diffSlope;
+        double gradient;
+        //m_ergFileAdapter.locationAt(currDist + 100, lap, geoloc, gradient);
+        double dist10seconds = this->Speed / 3.6 * 10.0;
+        m_ergFileAdapter.locationAt(currDist + dist10seconds, lap, geoloc, gradient);
+        double alt2 = geoloc.Alt();
+        m_ergFileAdapter.locationAt(currDist, lap, geoloc, gradient);
+        double alt = geoloc.Alt();
+        double averSlope = (alt2 - alt) / dist10seconds * 100.0;
+
+        //diffSlope = gradient - this->gradientValue;
+        diffSlope = averSlope - this->gradientValue;
+
+
+        QColor bubbleColor = s_gradientToColorMapper.toColor(diffSlope);
+        bubblePainter.setBrush(bubbleColor);
+        double bubbleX = cyclistX + cyclistCircleRadius;
+        bubblePainter.drawEllipse(QPointF(bubbleX, cyclistY - cyclistCircleRadius), (qreal)cyclistCircleRadius, (qreal)cyclistCircleRadius);
+
+
+        QString diffSlopeString = (diffSlope < 0.0 ? QString("-") : QString("+")) + QString::number(abs((int)diffSlope)) +
+            QString(".") + QString::number(abs((int)(diffSlope * 10.0)) % 10) + QString("%");
+
+
+        // Display diff gradient text in the bubble
+        bubblePainter.drawText(bubbleX - 15 , (cyclistY - (cyclistCircleRadius - 5)), diffSlopeString);
+    }
 }
 
