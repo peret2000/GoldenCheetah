@@ -263,6 +263,7 @@ class TrainSidebar : public GcWindow
         double displayDistance, displayWorkoutDistance;
         double displayLapDistance, displayLapDistanceRemaining;
         double displayLatitude, displayLongitude, displayAltitude; // geolocation
+        double displayDeltaSlope;
         long load;
         double slope;
         int displayWorkoutLap;     // which Lap in the workout are we at?
