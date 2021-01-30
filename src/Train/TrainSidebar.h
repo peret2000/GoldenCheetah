@@ -268,6 +268,7 @@ class TrainSidebar : public GcWindow
         double displayDistance, displayWorkoutDistance;
         double displayLapDistance, displayLapDistanceRemaining;
         double displayLatitude, displayLongitude, displayAltitude; // geolocation
+        double displayDeltaSlope;
         double displayCoreTemp, displaySkinTemp, displayHeatStrain;
         long load;
         double slope;
