@@ -47,7 +47,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining, Bearing };
+                      DistanceRemaining, Bearing, DeltaSlope };
 
     typedef enum dataseries DataSeries;
 
@@ -78,6 +78,7 @@ public:
     void setDistance(double);
     void setRouteDistance(double);
     void setDistanceRemaining(double);
+    void setDeltaSlope(double);
     void setBikeScore(long);
     void setJoules(long);
     void setXPower(long);
@@ -136,6 +137,7 @@ public:
     double getDistance() const;
     double getRouteDistance() const;
     double getDistanceRemaining() const;
+    double getDeltaSlope() const;
     long getLap() const;
     double getLapDistance() const;
     double getLapDistanceRemaining() const;
@@ -183,6 +185,7 @@ private:
     double distance;
     double routeDistance;
     double distanceRemaining;
+    double deltaSlope;
     double lapDistance;
     double lapDistanceRemaining;
     double virtualSpeed;
