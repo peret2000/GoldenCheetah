@@ -2079,6 +2079,24 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
 
                 }
 
+                {
+                    // Average slope in 10 seconds (taking into account current speed)
+
+                    int lap;
+                    geolocation geoloc;
+                    double diffSlope;
+                    double gradient;
+                    double dist10seconds = rtData.getSpeed() / 3.6 * 10.0;
+                    ergFileQueryAdapter.locationAt(displayWorkoutDistance * 1000. + dist10seconds, lap, geoloc, gradient);
+                    double alt2 = geoloc.Alt();
+                    double alt = displayAltitude;
+                    double deltaSlope = (alt2 - alt) / dist10seconds * 100.0;
+
+                    //diffSlope = gradient - this->gradientValue;
+                    displayDeltaSlope = deltaSlope - rtData.getSlope();
+                    rtData.setDeltaSlope(displayDeltaSlope);
+                }
+
                 // time
                 total_msecs = session_elapsed_msec + session_time.elapsed();
                 lap_msecs = lap_elapsed_msec + lap_time.elapsed();
