@@ -46,6 +46,7 @@ RealtimeData::RealtimeData()
     heatStrain = heatLoad = 0.0;
     latitude = longitude = altitude = 0.0;
     rf = rmv = vo2 = vco2 = tv = feo2 = 0.0;
+    deltaSlope = 0.0;
     routeDistance = distanceRemaining = VAMValue = 0.0;
     trainerStatusAvailable = false;
     trainerReady = true;
@@ -181,6 +182,11 @@ void RealtimeData::setRouteDistance(double x)
 void RealtimeData::setDistanceRemaining(double x)
 {
     this->distanceRemaining = x;
+}
+
+void RealtimeData::setDeltaSlope(double x)
+{
+    this->deltaSlope = x;
 }
 
 void RealtimeData::setVAM(double x)
@@ -388,6 +394,10 @@ double RealtimeData::getRouteDistance() const
 double RealtimeData::getDistanceRemaining() const
 {
     return distanceRemaining;
+}
+double RealtimeData::getDeltaSlope() const
+{
+    return deltaSlope;
 }
 double RealtimeData::getVAM() const
 {
@@ -598,6 +608,9 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case DistanceRemaining: return distanceRemaining;
+        break;
+
+    case DeltaSlope: return deltaSlope;
         break;
 
     case VAM: return VAMValue;
@@ -854,6 +867,7 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << HeatStrain;
         seriesList << HeatLoad;
         seriesList << Bearing;
+        seriesList << DeltaSlope;
         seriesList << VAM;
     }
     return seriesList;
@@ -919,6 +933,9 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
 
     case DistanceRemaining: return tr("Distance Remaining");
+        break;
+
+    case DeltaSlope: return tr("Delta Slope");
         break;
 
     case VAM: return tr("VAM");
