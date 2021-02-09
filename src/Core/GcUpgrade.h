@@ -114,7 +114,9 @@
 
 // the next two will with each build/release
 #define VERSION_LATEST 4003
+#ifndef VERSION_STRING
 #define VERSION_STRING "V3.6-DEV2101"
+#endif
 
 // default config for this release cycle
 #define VERSION_CONFIG_PREFIX "http://www.goldencheetah.org/defaults/3.5"
