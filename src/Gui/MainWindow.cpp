@@ -454,8 +454,8 @@ MainWindow::MainWindow(const QDir &home)
     // ATHLETE (FILE) MENU
     QMenu *fileMenu = menuBar()->addMenu(tr("&Athlete"));
 
-    //openTabMenu = fileMenu->addMenu(tr("Open...")); use athlete view
-    //connect(openTabMenu, SIGNAL(aboutToShow()), this, SLOT(setOpenTabMenu()));
+    openTabMenu = fileMenu->addMenu(tr("Open..."));
+    connect(openTabMenu, SIGNAL(aboutToShow()), this, SLOT(setOpenTabMenu()));
 
     tabMapper = new QSignalMapper(this); // maps each option
     connect(tabMapper, SIGNAL(mapped(const QString &)), this, SLOT(openTab(const QString &)));
@@ -465,6 +465,12 @@ MainWindow::MainWindow(const QDir &home)
     connect(backupAthleteMenu, SIGNAL(aboutToShow()), this, SLOT(setBackupAthleteMenu()));
     backupMapper = new QSignalMapper(this); // maps each option
     connect(backupMapper, SIGNAL(mapped(const QString &)), this, SLOT(backupAthlete(const QString &)));
+
+    fileMenu->addSeparator();
+    deleteAthleteMenu = fileMenu->addMenu(tr("Delete..."));
+    connect(deleteAthleteMenu, SIGNAL(aboutToShow()), this, SLOT(setDeleteAthleteMenu()));
+    deleteMapper = new QSignalMapper(this); // maps each option
+    connect(deleteMapper, SIGNAL(mapped(const QString &)), this, SLOT(deleteAthlete(const QString &)));
 
     fileMenu->addSeparator();
     fileMenu->addAction(tr("Save all modified activities"), this, SLOT(saveAllUnsavedRides()));
@@ -1690,7 +1696,10 @@ MainWindow::newCyclistTab()
     QDir newHome = currentTab->context->athlete->home->root();
     newHome.cdUp();
     QString name = ChooseCyclistDialog::newCyclistDialog(newHome, this);
-    if (!name.isEmpty()) openTab(name);
+    if (!name.isEmpty()) {
+        emit newAthlete(name);
+        openTab(name);
+    }
 }
 
 void
@@ -1942,6 +1951,54 @@ MainWindow::backupAthlete(QString name)
     AthleteBackup *backup = new AthleteBackup(QDir(gcroot+"/"+name));
     backup->backupImmediate();
     delete backup;
+}
+
+void
+MainWindow::setDeleteAthleteMenu()
+{
+    // wipe existing
+    deleteAthleteMenu->clear();
+
+    // get a list of all cyclists
+    QStringListIterator i(QDir(gcroot).entryList(QDir::Dirs | QDir::NoDotAndDotDot));
+    while (i.hasNext()) {
+
+        QString name = i.next();
+        SKIP_QTWE_CACHE  // skip Folder Names created by QTWebEngine on Windows
+        // new action
+        QAction *action = new QAction(QString("%1").arg(name), this);
+
+        // get the config directory
+        AthleteDirectoryStructure subDirs(name);
+        // icon / mugshot ?
+        QString icon = QString("%1/%2/%3/avatar.png").arg(gcroot).arg(name).arg(subDirs.config().dirName());
+        if (QFile(icon).exists()) action->setIcon(QIcon(icon));
+
+        // only allow selection of cyclists which are not already open
+        foreach (MainWindow *x, mainwindows) {
+            QMapIterator<QString, Tab*> t(x->tabs);
+            while (t.hasNext()) {
+                t.next();
+                if (t.key() == name)
+                    action->setEnabled(false);
+            }
+        }
+
+        // add to menu
+        deleteAthleteMenu->addAction(action);
+        connect(action, SIGNAL(triggered()), deleteMapper, SLOT(map()));
+        deleteMapper->setMapping(action, name);
+    }
+}
+
+void
+MainWindow::deleteAthlete(QString name)
+{
+    QDir home(gcroot);
+    if(ChooseCyclistDialog::deleteAthlete(home, name, this)) {
+        // notify deletion
+        emit deletedAthlete(name);
+    }
 }
 
 void
