@@ -1,8 +1,7 @@
 branches:
   only:
-  - master
-  - /^[vV]\d+\.\d+(\.\d+)?(-\S*)?$/
-
+  - prueba
+  
 language: cpp
 
 cache:
@@ -45,13 +44,13 @@ jobs:
     compiler: gcc
 
 before_install:
-- travis/$TRAVIS_OS_NAME/before_install.sh
+- travis/$TRAVIS_OS_NAME/before_install.sh 2>&1
 
 before_script:
-- travis/$TRAVIS_OS_NAME/before_script.sh
+- travis/$TRAVIS_OS_NAME/before_script.sh 2>&1
 
 script:
-- travis/$TRAVIS_OS_NAME/script.sh
+- travis/$TRAVIS_OS_NAME/script.sh 2>&1
 
 before_cache:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew cleanup; fi
