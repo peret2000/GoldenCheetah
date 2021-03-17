@@ -501,7 +501,8 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         break;
 
     case RealtimeData::Slope:
-        valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
+    case RealtimeData::DeltaSlope:
+        valueLabel->setText(QString("%1%").arg(value, 0, 'f', 1));
         break;
 
     case RealtimeData::Latitude:
@@ -627,6 +628,7 @@ void DialWindow::seriesChanged()
         break;
 
     case RealtimeData::Slope:  
+    case RealtimeData::DeltaSlope:
         foreground = GColor(CSLOPE);
         break;
             
