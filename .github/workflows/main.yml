@@ -1,0 +1,48 @@
+name: CI
+
+# Controls when the action will run. 
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Author'
+        required: true
+        default: 'peret2000'
+    branches: [ working ]
+  pull_request:
+    branches: [ working ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-16.04
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Create D2XX directory
+        run: mkdir D2XX
+      - name: before_install.sh
+        run: travis/linux/before_install.sh
+      - name: before_script.sh
+        run: travis/linux/before_script.sh
+      - name: script.sh
+        run: travis/linux/script.sh
+      - name: Log version
+        run:
+              export PATH=/opt/qt514/bin:$PATH
+              export LD_LIBRARY_PATH=/opt/qt514/lib/x86_64-linux-gnu:/opt/qt514/lib:$LD_LIBRARY_PATH
+              src/GoldenCheetah --version 2>GCversionLinux.txt
+              git log -1 >> GCversionLinux.txt
+      - name: Upload binary to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: GoldenCheetah binary
+          path:
+                src/GoldenCheetah
+                GCversionLinux.txt
+          retention-days: 5
+          if-no-files-found: 'warn'
