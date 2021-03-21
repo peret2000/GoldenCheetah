@@ -34,6 +34,8 @@ jobs:
           GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
       - name: before_script.sh
         run: travis/linux/before_script.sh
+      - name: Añade GC_VERSION a src/gcconfig.pri
+        run: echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git log -1|sed -n 's/^commit *//p' | cut -c -7`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
       - name: script.sh
         run: travis/linux/script.sh
       - name: Log version
