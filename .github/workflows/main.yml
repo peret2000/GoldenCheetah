@@ -29,6 +29,9 @@ jobs:
         run: mkdir D2XX
       - name: before_install.sh
         run: travis/linux/before_install.sh
+      - name: Strava client secret env. variable
+        env:
+          GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
       - name: before_script.sh
         run: travis/linux/before_script.sh
       - name: script.sh
