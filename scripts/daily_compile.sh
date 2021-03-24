@@ -31,6 +31,8 @@ git merge --no-edit goldencheetah/master
 echo before_script.sh: `date` >> $LOGFILE
 
 
+# Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
+
 travis/linux/before_script.sh
 
 sed -i '/GC_VERSION/ d' src/gcconfig.pri
