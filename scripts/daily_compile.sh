@@ -10,22 +10,24 @@ echo ------------------------- >> $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 echo git fetch, merge, etc >> $LOGFILE
 
-#git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah_Debug
+###git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah_Debug
 
 cd GoldenCheetah_Debug
 
-#git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git
+###git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git
 
 git fetch --all
 
 git checkuot MiVersion
 git merge
+# Por si existe ya la rama, primero se elimina
+git branch -D NightlyBuild
 git checkout -b NightlyBuild
 git merge --no-edit goldencheetah/master
 
 
-#mkdir -p D2XX
-#travis/linux/before_install.sh
+###mkdir -p D2XX
+###travis/linux/before_install.sh
 
 
 echo before_script.sh: `date` >> $LOGFILE
