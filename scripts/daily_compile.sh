@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SCRIPT_DIR=`dirname $0`
+export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 export LOGFILE=$SCRIPT_DIR/log.txt
 
