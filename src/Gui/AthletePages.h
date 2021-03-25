@@ -274,6 +274,7 @@ class CPPage : public QWidget
 
         QDateEdit *dateEdit;
         QDoubleSpinBox *cpEdit;
+        QDoubleSpinBox *aetEdit;
         QDoubleSpinBox *ftpEdit;
         QDoubleSpinBox *wEdit;
         QDoubleSpinBox *pmaxEdit;
@@ -377,6 +378,7 @@ class LTPage : public QWidget
 
         QDateEdit *dateEdit;
         QDoubleSpinBox *ltEdit;
+        QDoubleSpinBox *aetEdit;
         QDoubleSpinBox *restHrEdit;
         QDoubleSpinBox *maxHrEdit;
 
@@ -479,6 +481,7 @@ class CVPage : public QWidget
 
         QDateEdit *dateEdit;
         QTimeEdit *cvEdit;
+        QTimeEdit *aetEdit;
 
         PaceZones* paceZones;
         PaceSchemePage *schemePage;

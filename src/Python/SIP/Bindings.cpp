@@ -174,16 +174,17 @@ PyObject* Bindings::athlete() const
 // one entry per sport per date for hr/power/pace
 class gcZoneConfig {
     public:
-    gcZoneConfig(QString sport) : sport(sport), date(QDate(01,01,01)), cp(0), wprime(0), pmax(0), ftp(0),lthr(0),rhr(0),hrmax(0),cv(0) {}
+    gcZoneConfig(QString sport) : sport(sport), date(QDate(01,01,01)), cp(0), wprime(0), pmax(0), aetp(0), ftp(0),lthr(0),aethr(0),rhr(0),hrmax(0),cv(0),aetv(0) {}
     bool operator<(gcZoneConfig rhs) const { return date < rhs.date; }
     QString sport;
     QDate date;
     QList<int> zoneslow;
-    int cp, wprime, pmax,ftp,lthr,rhr,hrmax,cv;
+    int cp, wprime, pmax,aetp,ftp,lthr,aethr,rhr,hrmax;
+    double cv,aetv;
 };
 
 // Return a dataframe with:
-// date, sport, cp, w', pmax, ftp, lthr, rhr, hrmax, cv, zoneslow, zonescolor
+// date, sport, cp, w', pmax, aetp, ftp, lthr, aethr, rhr, hrmax, cv, aetv, zoneslow, zonescolor
 PyObject*
 Bindings::athleteZones(PyObject* date, QString sport) const
 {
@@ -216,6 +217,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 bike.cp = context->athlete->zones(false)->getCP(range);
                 bike.wprime = context->athlete->zones(false)->getWprime(range);
                 bike.pmax = context->athlete->zones(false)->getPmax(range);
+                bike.aetp = context->athlete->zones(false)->getAeT(range);
                 bike.ftp = context->athlete->zones(false)->getFTP(range);
                 bike.zoneslow = context->athlete->zones(false)->getZoneLows(range);
             }
@@ -232,6 +234,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 run.cp = context->athlete->zones(true)->getCP(range);
                 run.wprime = context->athlete->zones(true)->getWprime(range);
                 run.pmax = context->athlete->zones(true)->getPmax(range);
+                run.aetp = context->athlete->zones(true)->getAeT(range);
                 run.ftp = context->athlete->zones(true)->getFTP(range);
                 run.zoneslow = context->athlete->zones(true)->getZoneLows(range);
             }
@@ -245,6 +248,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
 
                 bike.date =  forDate;
                 bike.lthr =  context->athlete->hrZones(false)->getLT(range);
+                bike.aethr =  context->athlete->hrZones(false)->getAeT(range);
                 bike.rhr =  context->athlete->hrZones(false)->getRestHr(range);
                 bike.hrmax =  context->athlete->hrZones(false)->getMaxHr(range);
             }
@@ -258,6 +262,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
 
                 run.date =  forDate;
                 run.lthr =  context->athlete->hrZones(true)->getLT(range);
+                run.aethr =  context->athlete->hrZones(true)->getAeT(range);
                 run.rhr =  context->athlete->hrZones(true)->getRestHr(range);
                 run.hrmax =  context->athlete->hrZones(true)->getMaxHr(range);
             }
@@ -271,6 +276,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
 
                 run.date =  forDate;
                 run.cv =  context->athlete->paceZones(false)->getCV(range);
+                run.aetv =  context->athlete->paceZones(false)->getAeT(range);
             }
         }
 
@@ -282,6 +288,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
 
                 swim.date =  forDate;
                 swim.cv =  context->athlete->paceZones(true)->getCV(range);
+                swim.aetv =  context->athlete->paceZones(true)->getAeT(range);
             }
         }
 
@@ -303,6 +310,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 c.cp = context->athlete->zones(false)->getCP(range);
                 c.wprime = context->athlete->zones(false)->getWprime(range);
                 c.pmax = context->athlete->zones(false)->getPmax(range);
+                c.aetp = context->athlete->zones(false)->getAeT(range);
                 c.ftp = context->athlete->zones(false)->getFTP(range);
                 c.zoneslow = context->athlete->zones(false)->getZoneLows(range);
 
@@ -323,6 +331,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 c.cp = context->athlete->zones(true)->getCP(range);
                 c.wprime = context->athlete->zones(true)->getWprime(range);
                 c.pmax = context->athlete->zones(true)->getPmax(range);
+                c.aetp = context->athlete->zones(true)->getAeT(range);
                 c.ftp = context->athlete->zones(true)->getFTP(range);
                 c.zoneslow = context->athlete->zones(true)->getZoneLows(range);
 
@@ -338,6 +347,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 gcZoneConfig c("bike");
                 c.date =  context->athlete->hrZones(false)->getStartDate(range);
                 c.lthr =  context->athlete->hrZones(false)->getLT(range);
+                c.aethr =  context->athlete->hrZones(false)->getAeT(range);
                 c.rhr =  context->athlete->hrZones(false)->getRestHr(range);
                 c.hrmax =  context->athlete->hrZones(false)->getMaxHr(range);
 
@@ -353,6 +363,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 gcZoneConfig c("run");
                 c.date =  context->athlete->hrZones(true)->getStartDate(range);
                 c.lthr =  context->athlete->hrZones(true)->getLT(range);
+                c.aethr =  context->athlete->hrZones(true)->getAeT(range);
                 c.rhr =  context->athlete->hrZones(true)->getRestHr(range);
                 c.hrmax =  context->athlete->hrZones(true)->getMaxHr(range);
 
@@ -368,6 +379,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 gcZoneConfig c("run");
                 c.date =  context->athlete->paceZones(false)->getStartDate(range);
                 c.cv =  context->athlete->paceZones(false)->getCV(range);
+                c.aetv =  context->athlete->paceZones(false)->getAeT(range);
 
                 config << c;
             }
@@ -381,6 +393,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 gcZoneConfig c("swim");
                 c.date =  context->athlete->paceZones(true)->getStartDate(range);
                 c.cv =  context->athlete->paceZones(true)->getCV(range);
+                c.aetv =  context->athlete->paceZones(true)->getAeT(range);
 
                 config << c;
             }
@@ -416,8 +429,10 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 if (x.cp) lastBike.cp = x.cp;
                 if (x.wprime) lastBike.wprime = x.wprime;
                 if (x.pmax) lastBike.pmax = x.pmax;
+                if (x.aetp) lastBike.aetp = x.aetp;
                 if (x.ftp) lastBike.ftp = x.ftp;
                 if (x.lthr) lastBike.lthr = x.lthr;
+                if (x.aethr) lastBike.aethr = x.aethr;
                 if (x.rhr) lastBike.rhr = x.rhr;
                 if (x.hrmax) lastBike.hrmax = x.hrmax;
                 if (x.zoneslow.length()) lastBike.zoneslow = x.zoneslow;
@@ -440,11 +455,14 @@ Bindings::athleteZones(PyObject* date, QString sport) const
                 if (x.cp) lastRun.cp = x.cp;
                 if (x.wprime) lastRun.wprime = x.wprime;
                 if (x.pmax) lastRun.pmax = x.pmax;
+                if (x.aetp) lastRun.aetp = x.aetp;
                 if (x.ftp) lastRun.ftp = x.ftp;
                 if (x.lthr) lastRun.lthr = x.lthr;
+                if (x.aethr) lastRun.aethr = x.aethr;
                 if (x.rhr) lastRun.rhr = x.rhr;
                 if (x.hrmax) lastRun.hrmax = x.hrmax;
                 if (x.cv) lastRun.cv = x.cv;
+                if (x.aetv) lastRun.cv = x.aetv;
                 if (x.zoneslow.length()) lastRun.zoneslow = x.zoneslow;
             }
         }
@@ -463,6 +481,7 @@ Bindings::athleteZones(PyObject* date, QString sport) const
             if (x.date == lastSwim.date) {
                 // merge with prior
                 if (x.cv) lastSwim.cv = x.cv;
+                if (x.aetv) lastSwim.aetv = x.aetv;
             }
         }
     }
@@ -479,17 +498,20 @@ Bindings::athleteZones(PyObject* date, QString sport) const
     PyObject* dict = PyDict_New();
     if (dict == NULL) return dict;
 
-    // 12 lists
+    // 15 lists
     PyObject* dates = PyList_New(size);
     PyObject* sports = PyList_New(size);
     PyObject* cp = PyList_New(size);
     PyObject* wprime = PyList_New(size);
     PyObject* pmax = PyList_New(size);
+    PyObject* aetp = PyList_New(size);
     PyObject* ftp = PyList_New(size);
     PyObject* lthr = PyList_New(size);
+    PyObject* aethr = PyList_New(size);
     PyObject* rhr = PyList_New(size);
     PyObject* hrmax = PyList_New(size);
     PyObject* cv = PyList_New(size);
+    PyObject* aetv = PyList_New(size);
     PyObject* zoneslow = PyList_New(size);
     PyObject* zonescolor = PyList_New(size);
 
@@ -502,11 +524,14 @@ Bindings::athleteZones(PyObject* date, QString sport) const
         PyList_SET_ITEM(cp, index, PyFloat_FromDouble(x.cp));
         PyList_SET_ITEM(wprime, index, PyFloat_FromDouble(x.wprime));
         PyList_SET_ITEM(pmax, index, PyFloat_FromDouble(x.pmax));
+        PyList_SET_ITEM(aetp, index, PyFloat_FromDouble(x.aetp));
         PyList_SET_ITEM(ftp, index, PyFloat_FromDouble(x.ftp));
         PyList_SET_ITEM(lthr, index, PyFloat_FromDouble(x.lthr));
+        PyList_SET_ITEM(aethr, index, PyFloat_FromDouble(x.aethr));
         PyList_SET_ITEM(rhr, index, PyFloat_FromDouble(x.rhr));
         PyList_SET_ITEM(hrmax, index, PyFloat_FromDouble(x.hrmax));
         PyList_SET_ITEM(cv, index, PyFloat_FromDouble(x.cv));
+        PyList_SET_ITEM(aetv, index, PyFloat_FromDouble(x.aetv));
 
         int indexlow=0;
         PyObject* lows = PyList_New(x.zoneslow.length());
@@ -527,11 +552,14 @@ Bindings::athleteZones(PyObject* date, QString sport) const
     PyDict_SetItemString(dict, "cp", cp);
     PyDict_SetItemString(dict, "wprime", wprime);
     PyDict_SetItemString(dict, "pmax", pmax);
+    PyDict_SetItemString(dict, "aetp", aetp);
     PyDict_SetItemString(dict, "ftp", ftp);
     PyDict_SetItemString(dict, "lthr", lthr);
+    PyDict_SetItemString(dict, "aethr", aethr);
     PyDict_SetItemString(dict, "rhr", rhr);
     PyDict_SetItemString(dict, "hrmax", hrmax);
     PyDict_SetItemString(dict, "cv", cv);
+    PyDict_SetItemString(dict, "aetv", aetv);
     PyDict_SetItemString(dict, "zoneslow", zoneslow);
     PyDict_SetItemString(dict, "zonescolor", zonescolor);
 
