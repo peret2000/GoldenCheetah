@@ -18,7 +18,7 @@ cd GoldenCheetah_Debug
 
 git fetch --all
 
-git checkuot MiVersion
+git checkout MiVersion
 git merge
 # Por si existe ya la rama, primero se elimina
 git branch -D NightlyBuild
