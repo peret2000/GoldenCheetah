@@ -33,7 +33,7 @@ env:
 jobs:
   include:
   - os: linux
-    dist: xenial
+    dist: bionic
     compiler: gcc
 
 before_install:
