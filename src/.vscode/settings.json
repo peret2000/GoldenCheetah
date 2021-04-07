@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "qgraphicspathitem": "cpp",
+        "qtgui": "cpp"
+    }
+}
