@@ -1,0 +1,24 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "complex": "cpp",
+            "qtglobal": "cpp",
+            "qgraphicspathitem": "cpp",
+            "qmessagebox": "cpp"
+        },
+        "files.exclude": {
+            "**/moc_*.cpp": true,"**/*.o": true
+        },
+        "files.watcherExclude": {
+            "**/moc_*.cpp": true,"**/*.o": true
+        },
+        "search.exclude": {
+            "**/moc_*.cpp": true,"**/*.o": true
+        }
+    }
+}
