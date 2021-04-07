@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: cpp build active file",
+			"command": "make",
+			"args": [
+				"-f", "${workspaceFolder}/.vscode/Makefile",
+				"src_file=${file}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"echo":true
+			},
+			"detail": "Compile current file"
+		}
+	]
+}
