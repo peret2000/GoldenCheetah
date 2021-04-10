@@ -1501,10 +1501,11 @@ void TrainSidebar::Connect()
     // if we have selected multiple devices lets
     // configure the series we collect from each one
     if (deviceTree->selectedItems().count() > 1) {
-        MultiDeviceDialog *multisetup = new MultiDeviceDialog(context, this);
-        if (multisetup->exec() == false) {
-            return;
-        }
+        // This only works for a specific set of devices!!!!!
+        bpmTelemetry = 0;
+        wattsTelemetry = 3;
+        kphTelemetry = -1;
+        rpmTelemetry = 3;
     } else if (deviceTree->selectedItems().count() == 1) {
         bpmTelemetry = wattsTelemetry = kphTelemetry = rpmTelemetry =
         deviceTree->selectedItems().first()->type();
