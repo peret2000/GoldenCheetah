@@ -15,7 +15,7 @@
             "environment":
             [
               {"name":"PATH","value":"/home/${env:USER}/Git/qt514/bin:${env:PATH}"},
-              {"name":"LD_LIBRARY_PATH","value":"/home/${env:USER}/Git/qt514/lib/x86_64-linux-gnu:/home/${env:USER}/Git/qt514/lib:/home/${env:USER}/squashfs-root/lib:${env:LD_LIBRARY_PATH}"}
+              {"name":"LD_LIBRARY_PATH","value":"/home/${env:USER}/squashfs-root/lib:${env:LD_LIBRARY_PATH}"}
             ],
             "externalConsole": false,
             "MIMode": "gdb",
