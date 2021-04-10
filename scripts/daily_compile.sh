@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Argument (optional): branch to merge with
+
+
 export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 export LOGFILE=$SCRIPT_DIR/log.txt
@@ -24,6 +27,10 @@ git merge
 git branch -D NightlyBuild
 git checkout -b NightlyBuild
 git merge --no-edit goldencheetah/master
+
+if [ "$1" ]; then
+  git merge --no-edit origin/$1
+fi
 
 
 ###mkdir -p D2XX
