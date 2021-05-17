@@ -19,6 +19,11 @@ cd GoldenCheetah_Debug
 
 ###git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git
 
+# Esto no debería ser necesario si se hace un git clone, partiendo de cero
+# Es por si el repositorio se quedó con un merge a medias, por ejemplo, por un conflicto
+# Si no había conflicto, dará un error que se puede ignorar
+git merge --abort
+
 git fetch --all
 
 git checkout MiVersion
