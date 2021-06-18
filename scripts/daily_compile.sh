@@ -40,7 +40,8 @@ fi
 
 ###mkdir -p D2XX
 ###travis/linux/before_install.sh
-
+###rm libftd2xx-x86_64-1.3.6.tgz
+###rm v0.1.1git1.tar.gz
 
 echo before_script.sh: `date` >> $LOGFILE
 
