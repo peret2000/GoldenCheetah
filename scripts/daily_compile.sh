@@ -26,6 +26,9 @@ git merge --abort
 
 git fetch --all
 
+# Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
+git checkout -- src/Resources/translations/
+
 git checkout MiVersion
 git merge
 # Por si existe ya la rama, primero se elimina
