@@ -29,11 +29,18 @@ git fetch --all
 # Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
 git checkout -- src/Resources/translations/
 
-git checkout MiVersion
+
+git checkout MyBuildAdapt
 git merge
+
 # Por si existe ya la rama, primero se elimina
 git branch -D NightlyBuild
 git checkout -b NightlyBuild
+
+git merge --no-edit origin/TrainButtons
+git merge --no-edit origin/deltaSlope
+git merge --no-edit origin/MyZEW
+
 git merge --no-edit goldencheetah/master
 
 if [ "$1" ]; then
