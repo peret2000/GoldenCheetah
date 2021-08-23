@@ -28,7 +28,7 @@ git fetch --all
 
 # Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
 git checkout -- src/Resources/translations/
-
+git checkout -- src/Core/Secrets.h
 
 git checkout MyBuildAdapt
 git merge
