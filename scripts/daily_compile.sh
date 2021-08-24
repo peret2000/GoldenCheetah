@@ -3,6 +3,12 @@
 # Argument (optional): branch to merge with
 
 
+# Check whether .bashrc has been loaded (for example, cron does not load it)
+if [[ -z "${ENV_LOADED}" ]]; then
+        source $HOME/.bashrc
+fi
+
+
 export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 export LOGFILE=$SCRIPT_DIR/log.txt
