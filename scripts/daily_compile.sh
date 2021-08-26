@@ -5,7 +5,7 @@
 
 # Check whether .bashrc has been loaded (for example, cron does not load it)
 if [[ -z "${ENV_LOADED}" ]]; then
-        source $HOME/.bashrc
+        source $HOME/.profile
 fi
 
 
