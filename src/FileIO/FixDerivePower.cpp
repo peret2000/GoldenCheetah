@@ -15,6 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <stdlib.h> //  For getenv() and strtol()
+
 
 #include "DataProcessor.h"
 #include "LTMOutliers.h"
@@ -326,7 +328,11 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
             }
         }
 
-        int smoothPoints = 3;
+        int smoothPoints = 3;   // If not specified by environment variable
+        char *envvalue = getenv("smoothPoints");
+        if (envvalue != NULL) {
+            smoothPoints = (int)strtol(envvalue, NULL, 0);
+        }
         // initialise rolling average
         double rtot = 0;
         for (int i=smoothPoints; i>0 && ride->dataPoints().count()-i >=0; i--) {
