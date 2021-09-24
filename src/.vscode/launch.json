@@ -14,8 +14,9 @@
             "cwd": "${workspaceFolder}",
             "environment":
             [
-              {"name":"PATH","value":"/home/${env:USER}/Git/qt514/bin:${env:PATH}"},
-              {"name":"LD_LIBRARY_PATH","value":"/home/${env:USER}/squashfs-root/lib:${env:LD_LIBRARY_PATH}"}
+              {"name":"PATH","value":"/home/${env:USER}/squashfs-root/usr/bin:${env:PATH}"},
+              {"name":"LD_LIBRARY_PATH","value":"/home/${env:USER}/squashfs-root/lib:${env:LD_LIBRARY_PATH}"},
+	            {"name":"PYTHONHOME","value":"/home/${env:USER}/squashfs-root/opt/python3.7"}
             ],
             "externalConsole": false,
             "MIMode": "gdb",
