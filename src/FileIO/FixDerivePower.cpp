@@ -328,7 +328,7 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
             }
         }
 
-        int smoothPoints = 3;   // If not specified by environment variable
+        int smoothPoints = 10;   // If not specified by environment variable
         char *envvalue = getenv("smoothPoints");
         if (envvalue != NULL) {
             smoothPoints = (int)strtol(envvalue, NULL, 0);
