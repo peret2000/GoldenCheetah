@@ -46,6 +46,7 @@ git checkout -b NightlyBuild
 git merge --no-edit origin/TrainButtons
 git merge --no-edit origin/deltaSlope
 git merge --no-edit origin/MyZEW
+git merge --no-edit origin/SmoothPowerEstim
 
 git merge --no-edit goldencheetah/master
 
