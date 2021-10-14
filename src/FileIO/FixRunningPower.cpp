@@ -223,6 +223,7 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
     ride->command->startLUW("Estimate Running Power");
 
     if (ride->areDataPresent()->slope || bIsTreadmill) {
+        double Vprev = 0.0;
         for (int i=0; i<ride->dataPoints().count(); i++) {
             RideFilePoint *p = ride->dataPoints()[i];
 
@@ -262,11 +263,20 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
                 // this is the really important effect when in treadmill: wind is not considered
             if (bIsTreadmill)
                 vw = 0.0;
+
+            // Smoothing the speed and acceleration: instead of using monitored speed, it is using increase in distance in 10 samples
+            double accel = p->kphd;
+            RideFilePoint *prev = ride->dataPoints()[(i-10)>0 ? i-10 : 0];
+            if (p->secs - prev->secs > 0.0) {
+                V = (p->km - prev->km) * 1000.0 / (p->secs - prev->secs);
+                accel = (V - Vprev);
+                Vprev = V;
+                }
             double Slope = atan((!bIsTreadmill ? p->slope : treadmillSlope) * .01);
             double forw = Cr * Mtotal * eff * V;
             double aero = 0.5 * rho * Cx * FA * DraftM * (vw*vw) * V;
             double grav = 9.81 * Mtotal * sin(Slope) * V;
-            double chgV = p->kphd > 1 ? 1 : p->kphd * Mtotal * V;
+            double chgV = accel > 1 ? 1 : accel * Mtotal * V;
 
             // Power = moving forward + aerodynamic + gravity + change of speed
             double watts = forw + aero + grav + chgV;
