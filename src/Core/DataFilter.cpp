@@ -37,6 +37,7 @@
 #include "lmcurve.h"
 #include "LTMTrend.h" // for LR when copying CP chart filtering mechanism
 #include "WPrime.h" // for LR when copying CP chart filtering mechanism
+#include "FastKmeans.h" // for kmeans(...)
 
 #ifdef GC_HAVE_SAMPLERATE
 // we have libsamplerate
@@ -212,10 +213,12 @@ static struct {
                    // grammar does not support (a*x>1), instead we can use a*bool(x>1). All non
                    // zero expressions will evaluate to 1.
 
-    { "annotate", 0 }, // annotate(type, parms) - add an annotation to the chart, will no doubt
-                       // extend over time to cover lots of different types, but for now
-                       // supports 'label', which has n texts and numbers which are concatenated
-                       // together to make a label; eg. annotate(label, "CP ", cpval, " watts");
+    { "annotate", 0 }, // current supported annotations:
+                       // annotate(label, string1, string2 .. stringn) - adds label at top of a chart
+                       // annotate(voronoi, centers) - associated with a series on a user chart
+                       // annotate(hline, label, style, value) - associated with a series on a user chart
+                       // annotate(vline, label, style, value) - associated with a series on a user chart (see linestyle for vals below)
+                       // annotate(lr, style, "colorname") - plot a linear regression for the series
 
     { "arguniq", 1 },  // returns an index of the uniq values in a vector, in the same way
                        // argsort returns an index, can then be used to select from samples
@@ -379,6 +382,9 @@ static struct {
     { "pdfgamma", 3 },           // pdfgamma(a,b, x) as above for the gamma distribution
     { "cdfgamma", 3 },           // cdfgamma(a,b, x) as above for the gamma distribution
 
+    { "kmeans", 0 },        // kmeans(centers|assignments, k, dim1, dim2, dim3 .. dimn) - return the centers or cluster assignment
+                            // from a k means cluser of the data with n dimensions (but commonly just 2- x and y)
+
 
     // add new ones above this line
     { "", -1 }
@@ -394,6 +400,30 @@ static QStringList pdmodels(Context *context)
     returning << ExtendedModel(context).code();
     returning << WSModel(context).code();
     return returning;
+}
+
+// whenever we use a line style
+static struct {
+    const char *name;
+    Qt::PenStyle type;
+} linestyles_[] = {
+    { "solid", Qt::SolidLine },
+    { "dash", Qt::DashLine },
+    { "dot", Qt::DotLine },
+    { "dashdot", Qt::DashDotLine },
+    { "dashdotdot", Qt::DashDotDotLine },
+    { "", Qt::NoPen },
+};
+
+static Qt::PenStyle linestyle(QString name)
+{
+    int index=0;
+    while (linestyles_[index].type != Qt::NoPen) {
+        if (name == linestyles_[index].name)
+            return linestyles_[index].type;
+        index++;
+    }
+    return Qt::NoPen; // not known
 }
 
 QStringList
@@ -521,7 +551,7 @@ DataFilter::builtins(Context *context)
 
         } else if (i == 66) {
 
-            returning << "annotate(label, ...)";
+            returning << "annotate(label|lr|hline|vline|voronoi, ...)";
 
         } else if (i == 67) {
 
@@ -797,6 +827,7 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
     int symbolstart=0;
     int brace=0;
     int brack=0;
+    int sbrack=0;
 
     for(int i=0; i<string.length(); i++) {
 
@@ -1027,6 +1058,78 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
             }
         }
 
+        // are the brackets balanced  [ ] ?
+        if (!instring && !incomment && string[i]=='[') {
+            sbrack++;
+
+            // match close/open if over cursor
+            if (i==pos-1) {
+                cursor.setPosition(i, QTextCursor::MoveAnchor);
+                cursor.selectionStart();
+                cursor.setPosition(i+1, QTextCursor::KeepAnchor);
+                cursor.selectionEnd();
+                cursor.mergeCharFormat(cyanbg);
+
+                // run forward looking for match
+                int bb=0;
+                for(int j=i; j<string.length(); j++) {
+                    if (string[j]=='[') bb++;
+                    if (string[j]==']') {
+                        bb--;
+                        if (bb == 0) {
+                            bpos = j; // matched brack here, don't change color!
+
+                            cursor.setPosition(j, QTextCursor::MoveAnchor);
+                            cursor.selectionStart();
+                            cursor.setPosition(j+1, QTextCursor::KeepAnchor);
+                            cursor.selectionEnd();
+                            cursor.mergeCharFormat(cyanbg);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!instring && !incomment && string[i]==']') {
+            sbrack--;
+
+            if (i==pos-1) {
+
+                cursor.setPosition(i, QTextCursor::MoveAnchor);
+                cursor.selectionStart();
+                cursor.setPosition(i+1, QTextCursor::KeepAnchor);
+                cursor.selectionEnd();
+                cursor.mergeCharFormat(cyanbg);
+
+                // run backward looking for match
+                int bb=0;
+                for(int j=i; j>=0; j--) {
+                    if (string[j]==']') bb++;
+                    if (string[j]=='[') {
+                        bb--;
+                        if (bb == 0) {
+                            bpos = j; // matched brack here, don't change color!
+
+                            cursor.setPosition(j, QTextCursor::MoveAnchor);
+                            cursor.selectionStart();
+                            cursor.setPosition(j+1, QTextCursor::KeepAnchor);
+                            cursor.selectionEnd();
+                            cursor.mergeCharFormat(cyanbg);
+                            break;
+                        }
+                    }
+                }
+
+            } else if (sbrack < 0 && i != bpos-1) {
+
+                cursor.setPosition(i, QTextCursor::MoveAnchor);
+                cursor.selectionStart();
+                cursor.setPosition(i+1, QTextCursor::KeepAnchor);
+                cursor.selectionEnd();
+                cursor.mergeCharFormat(redbg);
+            }
+        }
+
         // are the braces balanced  ( ) ?
         if (!instring && !incomment && string[i]=='{') {
             brace++;
@@ -1123,10 +1226,27 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
         brack = 0;
         for(int i=string.length(); i>=0; i--) {
 
-            if (string[i] == ')') brace++;
-            if (string[i] == '(') brace--;
+            if (string[i] == ')') brack++;
+            if (string[i] == '(') brack--;
 
             if (brack < 0 && string[i] == '(' && i != pos-1 && i != bpos-1) {
+                cursor.setPosition(i, QTextCursor::MoveAnchor);
+                cursor.selectionStart();
+                cursor.setPosition(i+1, QTextCursor::KeepAnchor);
+                cursor.selectionEnd();
+                cursor.mergeCharFormat(redbg);
+            }
+        }
+    }
+
+    if (sbrack > 0) {
+        sbrack = 0;
+        for(int i=string.length(); i>=0; i--) {
+
+            if (string[i] == ']') sbrack++;
+            if (string[i] == '[') sbrack--;
+
+            if (sbrack < 0 && string[i] == '[' && i != pos-1 && i != bpos-1) {
                 cursor.setPosition(i, QTextCursor::MoveAnchor);
                 cursor.selectionStart();
                 cursor.setPosition(i+1, QTextCursor::KeepAnchor);
@@ -1615,7 +1735,7 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
             QRegExp dateRangeValidSymbols("^(start|stop)$", Qt::CaseInsensitive); // date range
             QRegExp pmcValidSymbols("^(stress|lts|sts|sb|rr|date)$", Qt::CaseInsensitive);
             QRegExp smoothAlgos("^(sma|ewma)$", Qt::CaseInsensitive);
-            QRegExp annotateTypes("^(label)$", Qt::CaseInsensitive);
+            QRegExp annotateTypes("^(label|lr|hline|vline|voronoi)$", Qt::CaseInsensitive);
             QRegExp curveData("^(x|y|z|d|t)$", Qt::CaseInsensitive);
             QRegExp aggregateFunc("^(mean|sum|max|min|count)$", Qt::CaseInsensitive);
             QRegExp interpolateAlgorithms("^(linear|cubic|akima|steffen)$", Qt::CaseInsensitive);
@@ -2023,6 +2143,21 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                             }
                         }
                     }
+                } else if (leaf->function == "kmeans") {
+
+                    if (leaf->fparms.count() < 4 || leaf->fparms[0]->type != Leaf::Symbol) {
+                        leaf->inerror = true;
+                        DataFiltererrors << QString(tr("kmeans(centers|assignments, k, dim1, dim2, dimn)"));
+                    } else {
+                        QString symbol=*(leaf->fparms[0]->lvalue.n);
+                        if (symbol != "centers" && symbol != "assignments") {
+                            leaf->inerror = true;
+                            DataFiltererrors << QString(tr("kmeans(centers|assignments, k, dim1, dim2, dimn) - %s unknown")).arg(symbol);
+                        } else {
+                            for(int i=1; i<leaf->fparms.count(); i++) validateFilter(context, df, leaf->fparms[i]);
+                        }
+                    }
+
                 } else if (leaf->function == "metrics" || leaf->function == "metricstrings" ||
                            leaf->function == "aggmetrics" || leaf->function == "aggmetricstrings") {
 
@@ -2388,16 +2523,51 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                     if (leaf->fparms.count() < 2 || leaf->fparms[0]->type != Leaf::Symbol) {
 
                        leaf->inerror = true;
-                       DataFiltererrors << QString(tr("annotate(label, list of strings, numbers) need at least 2 parameters."));
+                       DataFiltererrors << QString(tr("annotate(label|hline|vline|voronoi, ...) need at least 2 parameters."));
 
                     } else {
 
                         QString type = *(leaf->fparms[0]->lvalue.n);
+
+                        // is the type of annotation supported?
                         if (!annotateTypes.exactMatch(type)) {
                             leaf->inerror = true;
                             DataFiltererrors << QString(tr("annotation type '%1' not available").arg(type));
                         } else {
-                            for(int i=1; i<leaf->fparms.count(); i++) validateFilter(context, df, leaf->fparms[i]);
+
+                            // its valid type, but what about the parameters?
+                            if (type == "voronoi" && leaf->fparms.count() != 2) { // VORONOI
+
+                                leaf->inerror = true;
+                                DataFiltererrors << QString(tr("annotate(voronoi, centers)"));
+
+                            } else if (type == "lr") { // LINEAR REGRESSION LINE
+
+                                if (leaf->fparms.count() != 3 || linestyle(*(leaf->fparms[1]->lvalue.n)) == Qt::NoPen) {
+
+                                    leaf->inerror = true;
+                                    DataFiltererrors << QString(tr("annotate(lr, solid|dash|dot|dashdot|dashdotdot, \"colorname\")"));
+
+                                }
+
+                            } else if (type == "hline" || type == "vline") { // HLINE and VLINE
+
+                                // just make sure the type of line is supported, the other parameters
+                                // can be coerced from whatever the user passed anyway
+                                if (leaf->fparms.count() != 4 || leaf->fparms[2]->type != Leaf::Symbol
+                                                                  || linestyle(*(leaf->fparms[2]->lvalue.n)) == Qt::NoPen) {
+                                    leaf->inerror = true;
+                                    DataFiltererrors << QString(tr("annotate(hline|vline, 'label', solid|dash|dot|dashdot|dashdotdot, value)"));
+                                } else {
+                                    // make sure the parms are well formed
+                                    validateFilter(context, df, leaf->fparms[1]);
+                                    validateFilter(context, df, leaf->fparms[3]);
+                                }
+
+                            } else { // Any other types, e.g LABEL
+
+                                for(int i=1; i<leaf->fparms.count(); i++) validateFilter(context, df, leaf->fparms[i]);
+                            }
                         }
                     }
 
@@ -2956,6 +3126,11 @@ Result DataFilter::evaluate(RideItem *item, RideFilePoint *p)
 
 Result DataFilter::evaluate(Specification spec, DateRange dr)
 {
+    // if there is no current ride item then there is no data
+    // so it really is ok to baulk at no current ride item here
+    // we must always have a ride since context is used
+    if (context->currentRideItem() == NULL || !treeRoot || DataFiltererrors.count()) return Result(0);
+
     Result res(0);
 
     // if we are a set of functions..
@@ -2976,11 +3151,6 @@ Result DataFilter::evaluate(Specification spec, DateRange dr)
 
 Result DataFilter::evaluate(DateRange dr, QString filter)
 {
-    // if there is no current ride item then there is no data
-    // so it really is ok to baulk at no current ride item here
-    // we must always have a ride since context is used
-    if (context->currentRideItem() == NULL || !treeRoot || DataFiltererrors.count()) return Result(0);
-
     // reset stack
     rt.stack = 0;
 
@@ -3198,7 +3368,7 @@ static int monthsTo(QDate from, QDate to)
     return months;
 }
 
-Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, RideItem *m, RideFilePoint *p, const QHash<QString,RideMetric*> *c, Specification s, DateRange d)
+Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, RideItem *m, RideFilePoint *p, const QHash<QString,RideMetric*> *c, const  Specification &s, const DateRange &d)
 {
     // if error state all bets are off
     //if (inerror) return Result(0);
@@ -3485,7 +3655,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                 // aggregate results
                 double aggregate=0;
-                switch(e->type()) {
+                switch(e ? e->type() : RideMetric::Average) {
                 case RideMetric::Total:
                 case RideMetric::RunningTotal:
                     aggregate = runningtotal;
@@ -3506,7 +3676,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                 }
 
                 // format and return
-                returning.asString() << e->toString(aggregate);
+                returning.asString() << (e ? e->toString(aggregate) : "(null)");
             }
 
             return returning;
@@ -4610,6 +4780,33 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                     returning.asString() << ride->fileName;
                 }
             }
+            return returning;
+        }
+
+        if (leaf->function == "kmeans") {
+            // kmeans(centers|assignments, k, dim1, dim2, dim3)
+
+            Result returning(0);
+
+            QString symbol = *(leaf->fparms[0]->lvalue.n);
+            bool wantcenters=false;
+            if (symbol == "centers") wantcenters=true;
+
+            // get k
+            int k = eval(df, leaf->fparms[1],x, it, m, p, c, s, d).number();
+
+            FastKmeans *kmeans = new FastKmeans();
+
+            // loop through the dimensions
+            for(int i=2; i<leaf->fparms.count(); i++)
+                kmeans->addDimension(eval(df, leaf->fparms[i],x, it, m, p, c, s, d).asNumeric());
+
+            // calculate
+            if (kmeans->run(k)) {
+                if (wantcenters) returning = kmeans->centers();
+                else returning = kmeans->assignments();
+            }
+
             return returning;
         }
 
@@ -5877,8 +6074,9 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
         // annotate
         if (leaf->function == "annotate") {
 
+            QString type = *(leaf->fparms[0]->lvalue.n);
 
-            if (*(leaf->fparms[0]->lvalue.n) == "label") {
+            if (type == "label") {
 
                 QStringList list;
 
@@ -5912,8 +6110,50 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                 }
 
                 // send the signal.
-                if (list.count())  df->owner->annotateLabel(list);
+                if (list.count())  {
+                    GenericAnnotationInfo label(GenericAnnotationInfo::Label);
+                    label.labels = list;
+                    df->owner->annotate(label);
+                }
             }
+
+            if (type == "voronoi") {
+                Result centers = eval(df,leaf->fparms[1],x, it, m, p, c, s, d);
+
+                if (centers.isVector() && centers.isNumber && centers.asNumeric().count() >=2 && centers.asNumeric().count()%2 == 0) {
+
+                    GenericAnnotationInfo voronoi(GenericAnnotationInfo::Voronoi);
+                    int n=centers.asNumeric().count()/2;
+                    for(int i=0; i<n; i++) {
+                        voronoi.vx << centers.asNumeric()[i];
+                        voronoi.vy << centers.asNumeric()[i+n];
+                    }
+
+                    // send signal
+                    df->owner->annotate(voronoi);
+                }
+            }
+
+            if (type == "hline" || type == "vline") {
+
+                GenericAnnotationInfo line(type == "vline" ? GenericAnnotationInfo::VLine : GenericAnnotationInfo::HLine);
+                line.text =  eval(df,leaf->fparms[1],x, it, m, p, c, s, d).string();
+                line.linestyle = linestyle(*(leaf->fparms[2]->lvalue.n));
+                line.value = eval(df,leaf->fparms[3],x, it, m, p, c, s, d).number();
+
+                // send signal
+                df->owner->annotate(line);
+            }
+
+            if (type == "lr") {
+                GenericAnnotationInfo lr(GenericAnnotationInfo::LR);
+                lr.linestyle = linestyle(*(leaf->fparms[1]->lvalue.n));
+                lr.color = eval(df,leaf->fparms[2],x, it, m, p, c, s, d).string();
+
+                // send signal
+                df->owner->annotate(lr);
+            }
+
         }
 
         // smooth

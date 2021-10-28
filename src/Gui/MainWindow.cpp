@@ -55,6 +55,7 @@
 #include "AboutDialog.h"
 #include "ChooseCyclistDialog.h"
 #include "ConfigDialog.h"
+#include "AthleteConfigDialog.h"
 #include "DownloadRideDialog.h"
 #include "ManualRideDialog.h"
 #include "RideImportWizard.h"
@@ -482,6 +483,7 @@ MainWindow::MainWindow(const QDir &home)
 
     fileMenu->addSeparator();
     fileMenu->addAction(tr("Save all modified activities"), this, SLOT(saveAllUnsavedRides()));
+    fileMenu->addAction(tr("Settings..."), this, SLOT(athleteSettings()));
     fileMenu->addSeparator();
     fileMenu->addAction(tr("Close Window"), this, SLOT(closeWindow()));
     //fileMenu->addAction(tr("&Close Tab"), this, SLOT(closeTab())); use athlete view
@@ -1828,6 +1830,13 @@ MainWindow::saveRide()
 }
 
 void
+MainWindow::athleteSettings()
+{
+    AthleteConfigDialog *dialog = new AthleteConfigDialog(currentAthleteTab->context->athlete->home->root(), currentAthleteTab->context);
+    dialog->exec();
+}
+
+void
 MainWindow::saveAllUnsavedRides()
 {
     // flush in-flight changes
@@ -2447,7 +2456,7 @@ MainWindow::uploadCloud(QAction *action)
         if (actionText == "University of Kent") {
             CloudService *db = CloudServiceFactory::instance().newService(action->data().toString(), currentAthleteTab->context);
             KentUniversityUploadDialog uploader(this, db, currentAthleteTab->context->ride);
-            int ret = uploader.exec();
+            uploader.exec();
         } else {
             CloudService *db = CloudServiceFactory::instance().newService(action->data().toString(), currentAthleteTab->context);
             CloudService::upload(this, currentAthleteTab->context, db, currentAthleteTab->context->ride);
