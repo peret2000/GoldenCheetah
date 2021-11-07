@@ -16,7 +16,8 @@
             [
               {"name":"PATH","value":"/home/${env:USER}/squashfs-root/usr/bin:${env:PATH}"},
               {"name":"LD_LIBRARY_PATH","value":"/home/${env:USER}/squashfs-root/lib:${env:LD_LIBRARY_PATH}"},
-	            {"name":"PYTHONHOME","value":"/home/${env:USER}/squashfs-root/opt/python3.7"}
+	            {"name":"PYTHONHOME","value":"/home/${env:USER}/squashfs-root/opt/python3.7"},
+              {"name":"TCL_LIBRARY","value":"/home/${env:USER}/squashfs-root/usr/share/tcltk/tcl8.4"}
             ],
             "externalConsole": false,
             "MIMode": "gdb",
