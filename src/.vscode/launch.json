@@ -19,6 +19,7 @@
 	            {"name":"PYTHONHOME","value":"/home/${env:USER}/squashfs-root/opt/python3.7"},
               {"name":"TCL_LIBRARY","value":"/home/${env:USER}/squashfs-root/usr/share/tcltk/tcl8.4"}
             ],
+            "visualizerFile": "${workspaceRoot}/.vscode/qt5.natvis.xml",
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
