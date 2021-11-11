@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**", "${workspaceFolder}/../../qt514/include/**", "${workspaceFolder}/../qwt/src/**"
             ],
-            "defines": ["GC_VIDEO_VLC","GC_WANT_PYTHON","GC_WANT_R",
+            "defines": ["GC_VIDEO_VLC","GC_WANT_PYTHON","GC_WANT_R"],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "gnu11",
             "cppStandard": "c++17",
