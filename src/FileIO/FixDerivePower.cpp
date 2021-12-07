@@ -218,7 +218,7 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
     double windSpeed; // wind speed
     double windHeading; //wind direction
     if (config == NULL) { // being called automatically
-        MBik = appsettings->value(NULL, GC_DPDP_BIKEWEIGHT, "9.5").toDouble();
+        MBik = ride->getTag("PesoBici", appsettings->value(NULL, GC_DPDP_BIKEWEIGHT, "9.5").toString()).toDouble();
         CrV = appsettings->value(NULL, GC_DPDP_CRR, "0.0031").toDouble();
         CdA = appsettings->value(NULL, GC_DPDP_CDA, "0.0").toDouble();
         DraftM = appsettings->value(NULL, GC_DPDP_DRAFTM, "1.0").toDouble();

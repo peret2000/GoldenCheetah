@@ -201,7 +201,7 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
     if (!ride->areDataPresent()->alt && !ride->areDataPresent()->lat && !ride->areDataPresent()->slope) {
         bIsTreadmill = true;
         //  If treadmill, we try to fetch the slope
-        treadmillSlope = ride->getTag("InclCinta","0").toInt();
+        treadmillSlope = ride->getTag("InclCinta","0").toDouble();
     }
 
     // no dice if we don't have speed (maybe we do not have alt, as it is done in the treadmill)
