@@ -48,6 +48,8 @@ git merge --no-edit origin/deltaSlope
 git merge --no-edit origin/MyZEW
 git merge --no-edit origin/SmoothPowerEstim
 
+git merge --no-edit origin/PyAutomatedProcessors
+
 git merge --no-edit goldencheetah/master
 
 if [ "$1" ]; then
