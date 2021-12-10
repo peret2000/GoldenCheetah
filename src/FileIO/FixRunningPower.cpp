@@ -190,7 +190,7 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
     }
 
     // if not a run do nothing !
-    if (!ride->isRun()) return false;
+    if (!(ride->isRun() || ride->sport()==QString("Walk") || ride->sport()==QString("Hike"))) return false;
 
     // if called automatically and power already present, do nothing !
     if (!config && ride->areDataPresent()->watts) return false;

@@ -235,7 +235,7 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
     bool CdANotSet = (CdA == 0.0);
 
     // Do nothing for swims and runs
-    if (ride->isSwim() || ride->isRun()) return false;
+    if (!ride->isBike()) return false;
 
     // if called automatically and power already present, do nothing !
     if (!config && ride->areDataPresent()->watts) return false;
@@ -267,6 +267,21 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
     ride->command->startLUW("Estimate Power");
 
     if (ride->areDataPresent()->slope) {
+
+        bool isTempXSeries = false;
+        XDataSeries *series = ride->xdata("WEATHER");
+        int tempIdx = -1;
+        if (series) {
+            for (int a=0; a<series->valuename.count(); a++) {
+                if (series->valuename.at(a) == "TEMPERATURE") {
+                    tempIdx = a;
+                    isTempXSeries = true;
+                    break;
+                }
+            }
+        }
+        int b = 0;
+
         for (int i=0; i<ride->dataPoints().count(); i++) {
             RideFilePoint *p = ride->dataPoints()[i];
 
@@ -300,7 +315,17 @@ FixDerivePower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStri
             // Estimate Power if not in data
             double cad = ride->areDataPresent()->cad ? p->cad : 85.00;
             if (cad > 0) {
-                if (ride->areDataPresent()->temp) T = p->temp;
+                // Temperature: if present in data, it is used. If not, it tries in XDataSeries. If not, the default value
+                if (ride->areDataPresent()->temp)
+                    T = p->temp;
+                else if (isTempXSeries) {
+                    for (int j=b; j<series->datapoints.count(); j++) {
+                        if (series->datapoints.at(j)->secs > p->secs)
+                            break;
+                        b=j;
+                        T = series->datapoints.at(j)->number[tempIdx];
+                    }
+                }
                 double Slope = atan(p->slope * .01);
                 double V = p->kph * 0.27777777777778; // Cyclist speed m/s
                 double CrDyn = 0.1 * cos(Slope);
