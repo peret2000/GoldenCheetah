@@ -40,9 +40,12 @@ def main():
     alt = GC.series(GC.SERIES_ALT)
 
     # Get weather information once on center of your ride
-    avg_lat = sum(lat)/len(lat)
-    avg_lon = sum(lon)/len(lon)
-    avg_alt = sum(alt)/len(alt)
+    lat2 = [x for x in lat if x!=0]
+    lon2 = [x for x in lon if x!=0]
+    alt2 = [x for x in alt if x!=0]
+    avg_lat = sum(lat2)/len(lat2)
+    avg_lon = sum(lon2)/len(lon2)
+    avg_alt = sum(alt2)/len(alt2)
 
     print("Date: " + act_date.strftime("%d/%m/%y"))
     print("Time: " + act_time.strftime("%H:%M"))
@@ -113,5 +116,13 @@ def main():
     GC.postProcess("Estimate Headwind Values")
 
 
+def manageError(e):
+    print("EEEEE :", e.__class__)
+    GC.setTag('Notes', GC.activityMetrics()['Notes'] + '\n ERROR in processing script AddWeatherSeries')
+    GC.setTag('Error', '1')
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        manageError(e)
