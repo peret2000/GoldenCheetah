@@ -15,6 +15,7 @@ zona= "Europe/Madrid"
 
 def main():
 
+    GC.setTag('Error', '0')
     activity = GC.activity()
 
     if not ('altitude' in activity and 'longitude' in activity and 'latitude' in activity):
@@ -83,9 +84,6 @@ def main():
     secs = [i for i in range(0, int(seconds_ride[-1]), 600)]
     # x axis as input of the interpolator functions
     times_ride = [(act_datetime + datetime.timedelta(seconds=secs[i])).timestamp() for i in range(len(secs))]
-
-    print('tiempos Ride: ')
-    print([times_ride[i] for i in range(0,5)])
 
 
     # Se crea la serie compatible con el processor que estima la columna headwind a partir del viento y su dirección
