@@ -24,9 +24,8 @@ def main():
     metrics = GC.activityMetrics()
 
     #if 'Virtual' in metrics['SubSport']:
-    if not metrics['PotenciaEstimada']:
+    if (not metrics['PotenciaEstimada']) or (not int(metrics['PotenciaEstimada'])):
         return
-
 
     # Try to delete temperature series, in case it exists
     GC.deleteSeries(GC.SERIES_TEMP)
