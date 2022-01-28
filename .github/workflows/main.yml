@@ -34,6 +34,8 @@ jobs:
       - name: before_script.sh
         env:
           GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          GC_CLOUD_DB_BASIC_AUTH: ${{ secrets.CLOUD_DB_BASIC_AUTH }}
+          GC_CLOUD_DB_APP_NAME: ${{ secrets.CLOUD_DB_APP_NAME }}
         run: travis/linux/before_script.sh
       - name: Añade GC_VERSION a src/gcconfig.pri
         run: echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git log -1|sed -n 's/^commit *//p' | cut -c -7`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
