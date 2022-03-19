@@ -45,6 +45,7 @@ git checkout -b NightlyBuild
 
 #git merge --no-edit origin/TrainButtons	# Ya no es necesario,  se ha implementado en 7230e2873
 git merge --no-edit origin/deltaSlope
+git merge --no-edit origin/elevationGain
 git merge --no-edit origin/MyZEW
 git merge --no-edit origin/SmoothPowerEstim
 git merge --no-edit origin/PythonScripts
