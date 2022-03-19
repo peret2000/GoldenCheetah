@@ -350,6 +350,8 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     load_msecs = total_msecs = lap_msecs = 0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
+    displayElevationGain = 0;
+    first_sample = true;
     displaySMO2 = displayTHB = displayO2HB = displayHHB = 0;
     displayLRBalance = displayLTE = displayRTE = displayLPS = displayRPS = 0;
     displayLatitude = displayLongitude = displayAltitude = 0.0;
@@ -1441,6 +1443,8 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     lap_elapsed_msec = 0;
     lap_time.restart();
     displayWorkoutDistance = displayDistance = 0;
+    displayElevationGain = 0;
+    first_sample = true;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
     displayAltitude = 0;
@@ -1810,6 +1814,26 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     //diffSlope = gradient - this->gradientValue;
                     displayDeltaSlope = deltaSlope - rtData.getSlope();
                     rtData.setDeltaSlope(displayDeltaSlope);
+                }
+
+                {
+                    double alt = displayAltitude;
+                    // hysteresis can be configured, we default to 3.0
+                    double hysteresis = appsettings->value(NULL, GC_ELEVATION_HYSTERESIS).toDouble();
+                    if (hysteresis <= 0.1) hysteresis = 3.00;
+
+                    if (!first_sample) {
+                        if (alt > prevElevation + hysteresis) {
+                            displayElevationGain += alt - prevElevation;
+                            prevElevation = alt;
+                        } else if (alt < prevElevation - hysteresis) {
+                            prevElevation = alt;
+                        }
+                    } else {
+                        first_sample = false;
+                        prevElevation = alt;
+                    }
+                    rtData.setElevationGain(displayElevationGain);
                 }
 
                 // time

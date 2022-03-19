@@ -511,6 +511,7 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         break;
 
     case RealtimeData::Altitude:
+    case RealtimeData::ElevationGain:
         valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
         break;
 
