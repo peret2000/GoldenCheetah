@@ -49,6 +49,7 @@ git merge --no-edit origin/elevationGain
 git merge --no-edit origin/MyZEW
 git merge --no-edit origin/SmoothPowerEstim
 git merge --no-edit origin/PythonScripts
+git merge --no-edit origin/Strava
 
 git merge --no-edit origin/PyAutomatedProcessors
 
