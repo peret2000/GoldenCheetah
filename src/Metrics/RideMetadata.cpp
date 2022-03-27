@@ -1124,6 +1124,12 @@ FormField::setLinkedDefault(QString text)
 void
 RideMetadata::setLinkedDefaults(RideFile* ride)
 {
+    // En el código original, se modifican los campos SÓLO si no tienen ningún valor puesto ya. Además,
+    // el bucle se repetía mientras se cambiase algún campo. Se deja el código original para referencia
+    // Se ha modificado para que los campos se modifiquen aunque ya tengan un valor (de esta manera, se
+    // puede poner un valr por defecto y en otra línea especificar otro valor para un caso concreto
+
+    /* Código original
     bool changed;
 
     do {
@@ -1136,6 +1142,11 @@ RideMetadata::setLinkedDefaults(RideFile* ride)
                     changed = true;
                 }
     } while (changed);
+    */
+
+    foreach (DefaultDefinition adefault, getDefaults())
+        if (ride->getTag(adefault.field, "") == adefault.value)
+            ride->setTag(adefault.linkedField, adefault.linkedValue);
 }
 
 void
