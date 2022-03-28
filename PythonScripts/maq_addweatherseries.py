@@ -114,8 +114,8 @@ def main():
 
 
 def manageError(e):
-    print("EEEEE :", e.__class__)
-    GC.setTag('Notes', GC.activityMetrics()['Notes'] + '\n ERROR in processing script AddWeatherSeries')
+    print("Error :", e.__str__())
+    GC.setTag('Notes', GC.activityMetrics()['Notes'] + '\n ERROR in processing script AddWeatherSeries: ' + e.__str__())
     GC.setTag('Error', '1')
 
 if __name__ == "__main__":
