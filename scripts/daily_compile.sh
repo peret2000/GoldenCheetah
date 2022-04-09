@@ -1,3 +1,5 @@
+
+
 #!/bin/bash
 
 # Argument (optional): branch to merge with
@@ -35,6 +37,7 @@ git fetch --all
 # Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
 git checkout -- src/Resources/translations/
 git checkout -- src/Core/Secrets.h
+git checkout -- travis/linux/script.sh
 
 git checkout MyBuildAdapt
 git merge
@@ -44,19 +47,20 @@ git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
 #git merge --no-edit origin/TrainButtons	# Ya no es necesario,  se ha implementado en 7230e2873
-git merge --no-edit origin/deltaSlope
-git merge --no-edit origin/elevationGain
-git merge --no-edit origin/MyZEW
-git merge --no-edit origin/SmoothPowerEstim
-git merge --no-edit origin/PythonScripts
-git merge --no-edit origin/Strava
+git merge --no-edit origin/deltaSlope		&& echo "merge deltaSlope OK" >> $LOGFILE || echo "merge deltaSlope FAILED" >> $LOGFILE
+git merge --no-edit origin/elevationGain	&& echo "merge elevationGain OK" >> $LOGFILE  || echo "merge elevationGain FAILED" >> $LOGFILE
+git merge --no-edit origin/MyZEW		&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
+git merge --no-edit origin/SmoothPowerEstim	&& echo "merge SmoothPowerEstim OK" >> $LOGFILE  || echo "merge SmoothPowerEstim FAILED" >> $LOGFILE
+git merge --no-edit origin/PythonScripts	&& echo "merge PythonScripts OK" >> $LOGFILE  || echo "merge PythonScripts FAILED" >> $LOGFILE
+git merge --no-edit origin/Strava		&& echo "merge Strava OK" >> $LOGFILE  || echo "merge Strava FAILED" >> $LOGFILE
 
-git merge --no-edit origin/PyAutomatedProcessors
+git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProcessors OK" >> $LOGFILE  || echo "merge PyAutomatedProcessors FAILED" >> $LOGFILE
 
-git merge --no-edit goldencheetah/master
+git merge --no-edit goldencheetah/master 	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
+
 
 if [ "$1" ]; then
-  git merge --no-edit origin/$1
+  git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
 fi
 
 
@@ -70,7 +74,7 @@ echo before_script.sh: `date` >> $LOGFILE
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
-travis/linux/before_script.sh
+travis/linux/before_script.sh			&& echo "before_script OK" >> $LOGFILE || echo "before_script FAILED" >> $LOGFILE
 
 sed -i '/GC_VERSION/ d' src/gcconfig.pri
 echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Debug\\ `git log -1  goldencheetah/master | sed -n 's/^commit *//p' | cut -c -7`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
@@ -86,6 +90,6 @@ echo script.sh: `date` >> $LOGFILE
 
 sed -i 's/-j4/-j1/' travis/linux/script.sh
 
-travis/linux/script.sh
+travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED" >> $LOGFILE
 
 echo Termina: `date` >> $LOGFILE
