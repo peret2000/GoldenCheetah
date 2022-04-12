@@ -1,5 +1,3 @@
-
-
 #!/bin/bash
 
 # Argument (optional): branch to merge with
