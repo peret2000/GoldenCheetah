@@ -90,4 +90,14 @@ sed -i 's/-j4/-j1/' travis/linux/script.sh
 
 travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED" >> $LOGFILE
 
+
+# Generate the AppImage
+export PATH=/opt/qt514/bin:$PATH
+rm -rf squashfs-root
+rm ./GoldenCheetah-*
+#travis/linux/deploy.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
+travis/linux/deploy.sh
+./GoldenCheetah-* --appimage-extract
+rm ./GoldenCheetah-*
+
 echo Termina: `date` >> $LOGFILE
