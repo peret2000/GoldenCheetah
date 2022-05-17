@@ -92,12 +92,14 @@ travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED
 
 
 # Generate the AppImage
-export PATH=/opt/qt514/bin:$PATH
-rm -rf squashfs-root
-rm ./GoldenCheetah-*
-#travis/linux/deploy.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
-travis/linux/deploy.sh
-./GoldenCheetah-* --appimage-extract
-rm ./GoldenCheetah-*
+
+echo after_success.sh: `date` >> $LOGFILE
+
+sed -i '/free.keep.sh/ d' travis/linux/after_success.sh
+
+travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
+
+
+src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
 echo Termina: `date` >> $LOGFILE
