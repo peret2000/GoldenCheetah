@@ -36,6 +36,7 @@ git fetch --all
 git checkout -- src/Resources/translations/
 git checkout -- src/Core/Secrets.h
 git checkout -- travis/linux/script.sh
+git checkout -- travis/linux/after_success.sh
 
 git checkout MyBuildAdapt
 git merge
@@ -95,7 +96,7 @@ travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED
 
 echo after_success.sh: `date` >> $LOGFILE
 
-sed -i '/free.keep.sh/ d' travis/linux/after_success.sh
+sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
 
 travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
 
