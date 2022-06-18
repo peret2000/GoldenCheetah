@@ -98,6 +98,9 @@ echo after_success.sh: `date` >> $LOGFILE
 
 sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
 
+[[ -d appdir ]] && rm -rf appdir
+[[ -d squashfs-root ]] && rm -rf squashfs-root
+
 [[ -f src/GoldenCheetah_v3.6-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.6-DEV_x64.AppImage
 travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
 
