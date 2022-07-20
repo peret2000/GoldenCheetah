@@ -57,6 +57,8 @@ git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProce
 
 git merge --no-edit goldencheetah/master 	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
 
+git merge --no-edit origin/CambiosTemporales	&& echo "merge CambiosTemporales OK" >> $LOGFILE  || echo "merge CambiosTemporales FAILED" >> $LOGFILE
+
 
 if [ "$1" ]; then
   git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
