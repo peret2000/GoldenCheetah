@@ -1084,12 +1084,13 @@ RideImportWizard::abortClicked()
             if (errors.count() > 0)
                 ride->setTag("Import errors", errors.join("\n"));
 
-            // process linked defaults
-            GlobalContext::context()->rideMetadata->setLinkedDefaults(ride);
-
             // run the processor first... import
             tableWidget->item(i,STATUS_COLUMN)->setText(tr("Processing..."));
             DataProcessorFactory::instance().autoProcess(ride, "Auto", "Import");
+
+            // process linked defaults
+            GlobalContext::context()->rideMetadata->setLinkedDefaults(ride);
+
             ride->recalculateDerivedSeries();
 
             tableWidget->item(i,STATUS_COLUMN)->setText(tr("Saving file..."));
