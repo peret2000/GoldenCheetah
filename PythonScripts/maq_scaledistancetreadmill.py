@@ -9,12 +9,12 @@ def main():
 
 	distance = GC.series(GC.SERIES_KM)
 
-	if (GC.getTag('Distance') == distance[-1]):
+	if (float(GC.getTag('Distance')) == distance[-1]):
 		return
 
 	speed = GC.series(GC.SERIES_KPH)
 
-	ratio = GC.getTag('Distance') / distance[-1]
+	ratio = float(GC.getTag('Distance')) / distance[-1]
 	np_dist = np.array(distance)
 	np_speed = np.array(speed)
 	np_dist = np_dist * ratio
