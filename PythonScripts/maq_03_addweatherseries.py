@@ -28,8 +28,8 @@ def main():
     # Try to delete temperature series, in case it exists
     GC.deleteSeries(GC.SERIES_TEMP)
 
-    act_date = GC.getTag("date")
-    act_time = GC.getTag("time")
+    act_date = GC.activityMetrics()['date']	# Not working: GC.getTag("date")
+    act_time = GC.activityMetrics()['time']	# Not working: GC.getTag("time")
 
     # Standard activity data to get lat/long
     seconds_ride = list(GC.series(GC.SERIES_SECS))
