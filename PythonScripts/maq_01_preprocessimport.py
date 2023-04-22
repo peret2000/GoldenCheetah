@@ -33,14 +33,20 @@ def main():
 		GC.setTag('Sport', sport)
 		GC.setTag('SubSport', subsport)
 
-	# General: PotenciaEstimada=0, salvo en los siguientes casos:
-	# Sport='Run', o SubSport='Ride', o Sport='Hike', o Sport='Walk', pero no Dispositivo='Kinomap' o 'Kinomap Run'
 
-	potenciaestimada='0'
-	GC.setTag('PotenciaEstimada', potenciaestimada)
-	if ((sport=='Run' or subsport=='Ride' or sport=='Hike' or sport=='Walk') and not (device=='Kinomap' or device=='Kinomap Run')):
-		potenciaestimada='1'
-		GC.setTag('PotenciaEstimada', potenciaestimada)
+	# General: PotenciaEstimada=0, salvo en los siguientes casos:
+	# Que ya esté a 1 (no se puede saber si es estimada o no, así que se respeta ese valor)
+	# Sport='Run', o SubSport='Ride', o Sport='Hike', o Sport='Walk', pero no Dispositivo='Kinomap' o 'Kinomap Run', y no tiene potencia calculada
+
+	potestimada = 0
+	try:
+		potestimada = int(GC.getTag("PotenciaEstimada"))
+	except:
+		pass
+
+	if potestimada == 0 and not ('power' in activity):
+		if ((sport=='Run' or subsport=='Ride' or sport=='Hike' or sport=='Walk') and not (device=='Kinomap' or device=='Kinomap Run')):
+			GC.setTag('PotenciaEstimada', '1')
 
 
 def manageError(e):
