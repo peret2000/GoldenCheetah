@@ -322,7 +322,7 @@ void TrainBottom::statusChanged(int status)
         backLap->setEnabled(false);
         m_lapButton->setEnabled(false);
         fwdLap->setEnabled(false);
-        cal->setEnabled(false);
+        cal->setEnabled(true);
         loadUp->setEnabled(false);
         loadDown->setEnabled(false);
         intensitySlider->setEnabled(false);
