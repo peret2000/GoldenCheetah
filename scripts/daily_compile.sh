@@ -45,7 +45,7 @@ git merge
 git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
-#git merge --no-edit origin/TrainButtons	# Ya no es necesario,  se ha implementado en 7230e2873
+git merge --no-edit origin/TrainButtons
 git merge --no-edit origin/deltaSlope		&& echo "merge deltaSlope OK" >> $LOGFILE || echo "merge deltaSlope FAILED" >> $LOGFILE
 git merge --no-edit origin/elevationGain	&& echo "merge elevationGain OK" >> $LOGFILE  || echo "merge elevationGain FAILED" >> $LOGFILE
 git merge --no-edit origin/MyZEW		&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
