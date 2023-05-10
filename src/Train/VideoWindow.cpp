@@ -655,6 +655,12 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             p_meterWidget->Text = time_to_string(trunc(p_meterWidget->Value)).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = QString(".") + QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + p_meterWidget->AltTextSuffix;
         }
+        else if (p_meterWidget->Source() == QString("DistanceRemaining"))
+        {
+            p_meterWidget->Value = rtd.getDistanceRemaining() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Text = QString("-") + QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = QString(".") + QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + (metric ? tr(" km") : tr(" mi")) + p_meterWidget->AltTextSuffix;
+        }
         else if (p_meterWidget->Source() == QString("TrainerStatus"))
         {
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
