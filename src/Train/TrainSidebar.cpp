@@ -2113,10 +2113,8 @@ void TrainSidebar::Calibrate()
     // Check we're running (and not paused) before attempting
     // calibration, buttons should be disabled to prevent this,
     // but could be triggered by remote control..
-    if ((status & RT_RUNNING) && ((status&RT_PAUSED) == 0)) {
-        toggleCalibration();
-        updateCalibration();
-    }
+    toggleCalibration();
+    updateCalibration();
 }
 
 void TrainSidebar::toggleCalibration()
