@@ -173,6 +173,7 @@ public:
     double getHeatLoad() const;
 
     double getWatts() const;
+    double getAvgWatts() const;
     double getAltWatts() const;
     double getAltDistance() const;
     double getHr() const;
@@ -193,6 +194,7 @@ public:
     double getDistanceRemaining() const;
     double getDeltaSlope() const;
     double getElevationGain() const;
+    long getJoules() const;
     double getVAM() const;
     double getXPower() const;
     double getBikeScore() const;
@@ -286,6 +288,8 @@ private:
     double VAMValue;
     double lapDistance;
     double lapDistanceRemaining;
+    double avgWatts;
+    long joules;
     double virtualSpeed;
     double wbal;
     double joules;

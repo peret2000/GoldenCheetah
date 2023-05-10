@@ -46,7 +46,7 @@ RealtimeData::RealtimeData()
     heatStrain = heatLoad = 0.0;
     latitude = longitude = altitude = 0.0;
     rf = rmv = vo2 = vco2 = tv = feo2 = 0.0;
-    deltaSlope = elevationGain = 0.0;
+    deltaSlope = elevationGain = joules = 0.0;
     routeDistance = distanceRemaining = VAMValue = 0.0;
     trainerStatusAvailable = false;
     trainerReady = true;
@@ -66,6 +66,14 @@ void RealtimeData::setName(char *name)
 void RealtimeData::setAltWatts(double watts)
 {
     this->altWatts = (int)watts;
+}
+void RealtimeData::setAvgWatts(double avgWatts)
+{
+    this->avgWatts= avgWatts;
+}
+void RealtimeData::setJoules(long joules)
+{
+    this->joules= joules;
 }
 void RealtimeData::setWatts(double watts)
 {
@@ -308,6 +316,10 @@ double RealtimeData::getWatts() const
 {
     return watts;
 }
+double RealtimeData::getAvgWatts() const
+{
+    return avgWatts;
+}
 double RealtimeData::getHr() const
 {
     return hr;
@@ -407,6 +419,10 @@ double RealtimeData::getDeltaSlope() const
 double RealtimeData::getElevationGain() const
 {
     return elevationGain;
+}
+long RealtimeData::getJoules() const
+{
+    return joules;
 }
 double RealtimeData::getVAM() const
 {
@@ -634,7 +650,13 @@ double RealtimeData::value(DataSeries series) const
     case LapDistanceRemaining: return lapDistanceRemaining;
         break;
 
+    case Joules: return joules;
+        break;
+
     case AltWatts: return altWatts;
+        break;
+
+    case AvgWatts: return avgWatts;
         break;
 
     case Watts: return watts;
@@ -827,15 +849,15 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << Cadence;
         seriesList << HeartRate;
         seriesList << Load;
+        seriesList << XPower;
         seriesList << BikeScore;
+        seriesList << RI;
+        seriesList << Joules;
         seriesList << SkibaVI;
         seriesList << BikeStress;
-        seriesList << XPower;
         seriesList << IsoPower;
-        seriesList << RI;
         seriesList << IF;
         seriesList << VI;
-        seriesList << Joules;
         seriesList << Wbal;
         seriesList << SmO2;
         seriesList << tHb;
