@@ -96,7 +96,6 @@ public:
     void setDeltaSlope(double);
     void setElevationGain(double);
     void setBikeScore(long);
-    void setJoules(long);
     void setXPower(long);
     void setLap(long);
     void setLapDistance(double distance);
@@ -124,6 +123,8 @@ public:
     void setLongitude(double);
     void setAltitude(double);
     void setBearing(double);
+    void setJoules(long);
+    void setAvgWatts(double);
     void setCoreTemp(double,double);
 
     const char *getName() const;
@@ -153,6 +154,7 @@ public:
     double getHeatStrain() const;
 
     double getWatts() const;
+    double getAvgWatts() const;
     double getAltWatts() const;
     double getAltDistance() const;
     double getHr() const;
@@ -172,6 +174,7 @@ public:
     double getDistanceRemaining() const;
     double getDeltaSlope() const;
     double getElevationGain() const;
+    long getJoules() const;
     long getLap() const;
     double getLapDistance() const;
     double getLapDistanceRemaining() const;
@@ -245,6 +248,8 @@ private:
     double elevationGain;
     double lapDistance;
     double lapDistanceRemaining;
+    double avgWatts;
+    long joules;
     double virtualSpeed;
     double wbal;
     double hhb, o2hb;
