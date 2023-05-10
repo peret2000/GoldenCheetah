@@ -403,6 +403,7 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     lodcount = 0;
     wbalr = wbal = 0;
     load_msecs = total_msecs = lap_msecs = 0;
+    displayJoules = displayAvgWatts = 0.0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
     displayElevationGain = 0;
@@ -1686,6 +1687,7 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     displayWorkoutDistance = displayDistance = 0;
     displayElevationGain = 0;
     first_sample = true;
+    displayJoules = displayAvgWatts = 0.0;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
     displayAltitude = 0;
@@ -2137,6 +2139,14 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 else ergTimeRemaining = 0;
 
                 double lapPosition = status & RT_MODE_ERGO ? load_msecs : displayWorkoutDistance * 1000;
+
+                double watts = rtData.value(RealtimeData::Watts);
+                displayJoules += watts;
+                pwrcount++;
+                displayAvgWatts += watts;
+                rtData.setJoules(displayJoules / 5000); // 5 times per second (???), then converted to kilojoules
+                rtData.setAvgWatts(displayAvgWatts / pwrcount);
+
 
                 // alert when approaching end of lap
                 if (lapAudioEnabled && lapAudioThisLap) {
