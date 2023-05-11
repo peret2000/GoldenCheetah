@@ -673,6 +673,12 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
         }
+        else if (p_meterWidget->Source() == QString("Elevation Gain"))
+        {
+            p_meterWidget->Value = rtd.getElevationGain();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = (metric ? tr(" km") : tr(" mi")) + p_meterWidget->AltTextSuffix;
+        }
         else if (p_meterWidget->Source() == QString("TrainerStatus"))
         {
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
