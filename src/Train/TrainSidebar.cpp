@@ -403,7 +403,7 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     lodcount = 0;
     wbalr = wbal = 0;
     load_msecs = total_msecs = lap_msecs = 0;
-    displayJoules = displayAvgWatts = 0.0;
+    displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
     displayElevationGain = 0;
@@ -1687,7 +1687,7 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     displayWorkoutDistance = displayDistance = 0;
     displayElevationGain = 0;
     first_sample = true;
-    displayJoules = displayAvgWatts = 0.0;
+    displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
     displayAltitude = 0;
@@ -2103,6 +2103,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     rtData.setDeltaSlope(displayDeltaSlope);
                 }
 
+                    // Elevation Gain
                 {
                     double alt = displayAltitude;
                     // hysteresis can be configured, we default to 3.0
@@ -2138,7 +2139,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 if (ergFile) ergTimeRemaining = ergFileQueryAdapter.currentTime() - load_msecs;
                 else ergTimeRemaining = 0;
 
-                double lapPosition = status & RT_MODE_ERGO ? load_msecs : displayWorkoutDistance * 1000;
+                // Average Watts and Energy
 
                 double watts = rtData.value(RealtimeData::Watts);
                 displayJoules += watts;
@@ -2147,6 +2148,13 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 rtData.setJoules(displayJoules / 5000); // 5 times per second (???), then converted to kilojoules
                 rtData.setAvgWatts(displayAvgWatts / pwrcount);
 
+                // Average Speed
+
+                displayAvgSpeed += rtData.getSpeed();
+                spdcount++;
+                rtData.setAvgSpeed(displayAvgSpeed / spdcount);
+
+                double lapPosition = status & RT_MODE_ERGO ? load_msecs : displayWorkoutDistance * 1000;
 
                 // alert when approaching end of lap
                 if (lapAudioEnabled && lapAudioThisLap) {

@@ -261,7 +261,7 @@ class TrainSidebar : public GcWindow
         // updated with a RealtimeData object either from
         // update() - from a push device (quarqd ANT+)
         // Device->getRealtimeData() - from a pull device (Computrainer)
-        double displayPower, displayHeartRate, displayCadence, displaySpeed;
+        double displayPower, displayHeartRate, displayCadence, displaySpeed, displayAvgSpeed;
         double displayJoules;
         double displayAvgWatts;
         double displayLRBalance, displayLTE, displayRTE, displayLPS, displayRPS;

@@ -281,11 +281,11 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         valueLabel->setText(QString("%1").arg(round(value)));
         break;
 
-    case RealtimeData::AvgSpeed:
     case RealtimeData::AvgSpeedLap:
         sum += rtData.value(RealtimeData::Speed);
         count++;
         value = sum / count;
+    case RealtimeData::AvgSpeed:    // AvgSpeed is aleady get computed by RealtimeData
         if (!GlobalContext::context()->useMetricUnits) value *= MILES_PER_KM;
         valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
         break;
@@ -713,6 +713,7 @@ void DialWindow::seriesChanged()
            break;
 
     case RealtimeData::Altitude:
+    case RealtimeData::ElevationGain:
            foreground = GColor(CALTITUDE);
            break;
     }

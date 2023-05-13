@@ -25,8 +25,8 @@
 RealtimeData::RealtimeData()
 {
     name[0] = '\0';
-    hr= watts= altWatts= speed= wheelRpm= load= slope= torque= 0.0;
-    cadence = distance = altDistance = virtualSpeed = wbal = 0.0;
+    hr= watts= avgWatts = altWatts= speed= wheelRpm= load= slope= torque= 0.0;
+    cadence = distance = altDistance = virtualSpeed = avgSpeed = wbal = 0.0;
     lap = msecs = lapMsecs = lapMsecsRemaining = ergMsecsRemaining = 0;
     thb = smo2 = o2hb = hhb = 0.0;
     lrbalance = RideFile::NA;
@@ -94,6 +94,10 @@ void RealtimeData::setWbal(double wbal)
 void RealtimeData::setVirtualSpeed(double speed)
 {
     this->virtualSpeed = speed;
+}
+void RealtimeData::setAvgSpeed(double speed)
+{
+    this->avgSpeed = speed;
 }
 void RealtimeData::setWheelRpm(double wheelRpm, bool fMarkWheelRpmTime)
 {
@@ -235,6 +239,10 @@ double RealtimeData::getWbal() const
 double RealtimeData::getVirtualSpeed() const
 {
     return virtualSpeed;
+}
+double RealtimeData::getAvgSpeed() const
+{
+    return avgSpeed;
 }
 double RealtimeData::getWheelRpm() const
 {
@@ -491,6 +499,9 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case VirtualSpeed: return virtualSpeed;
+        break;
+
+    case AvgSpeed: return avgSpeed;
         break;
 
     case Cadence: return cadence;
