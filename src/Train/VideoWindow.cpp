@@ -673,11 +673,17 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
         }
+        else if (p_meterWidget->Source() == QString("Average Speed"))
+        {
+            p_meterWidget->Value = rtd.getAvgSpeed() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Text = QString::number((int)p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = QString(".") +QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + (metric ? tr(" kph") : tr(" mph")) + p_meterWidget->AltTextSuffix;
+        }
         else if (p_meterWidget->Source() == QString("Elevation Gain"))
         {
             p_meterWidget->Value = rtd.getElevationGain();
             p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
-            p_meterWidget->AltText = (metric ? tr(" km") : tr(" mi")) + p_meterWidget->AltTextSuffix;
+            p_meterWidget->AltText = (metric ? tr(" m") : tr(" mi")) + p_meterWidget->AltTextSuffix;
         }
         else if (p_meterWidget->Source() == QString("TrainerStatus"))
         {
