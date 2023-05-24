@@ -98,6 +98,8 @@ travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED
 echo after_success.sh: `date` >> $LOGFILE
 
 sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
+sed -i 's/sudo //' travis/linux/after_success.sh
+
 
 [[ -d src/appdir ]] && rm -rf src/appdir
 [[ -d squashfs-root ]] && rm -rf squashfs-root
