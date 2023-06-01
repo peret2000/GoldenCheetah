@@ -264,6 +264,7 @@ class TrainSidebar : public GcWindow
         double displayPower, displayHeartRate, displayCadence, displaySpeed, displayAvgSpeed;
         double displayJoules;
         double displayAvgWatts;
+        double wheelsize;
         double displayLRBalance, displayLTE, displayRTE, displayLPS, displayRPS;
         double displaySMO2, displayTHB, displayO2HB, displayHHB;
         double displayDistance, displayWorkoutDistance;
