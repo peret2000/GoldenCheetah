@@ -47,7 +47,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining, Bearing, DeltaSlope , ElevationGain};
+                      DistanceRemaining, Bearing, DeltaSlope , ElevationGain, Gear};
 
     typedef enum dataseries DataSeries;
 
@@ -98,6 +98,7 @@ public:
     void setBearing(double);
     void setJoules(long);
     void setAvgWatts(double);
+    void setGear(double);
 
     const char *getName() const;
 
@@ -124,6 +125,7 @@ public:
 
     double getWatts() const;
     double getAvgWatts() const;
+    double getGear() const;
     double getAltWatts() const;
     double getAltDistance() const;
     double getHr() const;
@@ -197,6 +199,7 @@ private:
     double lapDistance;
     double lapDistanceRemaining;
     double avgWatts;
+    double gear;
     long joules;
     double virtualSpeed;
     double avgSpeed;
