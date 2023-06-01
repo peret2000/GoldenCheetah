@@ -404,6 +404,7 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     wbalr = wbal = 0;
     load_msecs = total_msecs = lap_msecs = 0;
     displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    wheelsize = 0.0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
     displayElevationGain = 0;
@@ -1688,6 +1689,7 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     displayElevationGain = 0;
     first_sample = true;
     displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    wheelsize = 0.0;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
     displayAltitude = 0;
@@ -2175,6 +2177,21 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                         QSoundEffect effect;
                         effect.setSource(QUrl::fromLocalFile(":audio/lap.wav"));
                         effect.play();
+                    }
+                }
+
+                // Gear
+                {
+                    double watts = rtData.value(RealtimeData::Watts);
+                    double cadence = rtData.getCadence();
+                    if (wheelsize == 0.0)   // Not computed yet
+                        wheelsize = appsettings->cvalue(context->athlete->cyclist, GC_WHEELSIZE, 2100).toDouble() / 1000.0;
+
+                    if (watts >0.0 && cadence > 0.0 && wheelsize != 0.0) {
+                        rtData.setGear(1000.0 * rtData.getSpeed() / (cadence * 60.0 * wheelsize));
+                    }
+                    else {
+                        rtData.setGear(0.0);
                     }
                 }
 

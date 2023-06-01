@@ -25,7 +25,7 @@
 RealtimeData::RealtimeData()
 {
     name[0] = '\0';
-    hr= watts= avgWatts = altWatts= speed= wheelRpm= load= slope= torque= 0.0;
+    hr= watts= avgWatts = altWatts= speed= wheelRpm= load= slope= torque= gear= 0.0;
     cadence = distance = altDistance = virtualSpeed = avgSpeed = wbal = 0.0;
     lap = msecs = lapMsecs = lapMsecsRemaining = ergMsecsRemaining = 0;
     thb = smo2 = o2hb = hhb = 0.0;
@@ -61,6 +61,10 @@ void RealtimeData::setAltWatts(double watts)
 void RealtimeData::setAvgWatts(double avgWatts)
 {
     this->avgWatts= avgWatts;
+}
+void RealtimeData::setGear(double gear)
+{
+    this->gear= gear;
 }
 void RealtimeData::setJoules(long joules)
 {
@@ -223,6 +227,10 @@ double RealtimeData::getWatts() const
 double RealtimeData::getAvgWatts() const
 {
     return avgWatts;
+}
+double RealtimeData::getGear() const
+{
+    return gear;
 }
 double RealtimeData::getHr() const
 {
@@ -492,6 +500,9 @@ double RealtimeData::value(DataSeries series) const
     case AvgWatts: return avgWatts;
         break;
 
+    case Gear: return gear;
+        break;
+
     case Watts: return watts;
         break;
 
@@ -668,6 +679,7 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << Bearing;
         seriesList << DeltaSlope;
         seriesList << ElevationGain;
+        seriesList << Gear;
     }
     return seriesList;
 }
@@ -762,6 +774,9 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
 
     case AvgWatts: return tr("Average Power");
+        break;
+
+    case Gear: return tr("Gear");
         break;
 
     case AvgSpeed: return tr("Average Speed");
