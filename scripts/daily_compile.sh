@@ -88,7 +88,8 @@ echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Debug\\ `git log -1  goldencheetah/ma
 
 echo script.sh: `date` >> $LOGFILE
 
-sed -i 's/-j4/-j1/' travis/linux/script.sh
+# El make usa tantos procesos como procesadores físicos
+sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
 
 travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED" >> $LOGFILE
 
