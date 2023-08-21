@@ -47,6 +47,7 @@ RUN sed -i "/r-base-dev/c\sudo apt-get install -qq r-base-dev" $TRAVIS_BUILD_DIR
 RUN mkdir $TRAVIS_BUILD_DIR/D2XX
 
 RUN cd $TRAVIS_BUILD_DIR && ./travis/linux/before_install.sh && rm awscliv2.zip libftd2xx-x86_64-1.3.6.tgz sip-4.19.8.tar.gz v0.1.1git1.tar.gz
+RUN cd $TRAVIS_BUILD_DIR && rm -rf aws sip-4.19.8 srmio-0.1.1git1
 RUN cd ${TRAVIS_BUILD_DIR} && git checkout -- ./travis/linux/before_install.sh && git checkout MyBuildAdapt
 
 RUN ln -s $TRAVIS_BUILD_DIR/scripts/daily_compile.sh $TRAVIS_BUILD_DIR/..
