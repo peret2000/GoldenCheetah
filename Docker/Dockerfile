@@ -1,7 +1,7 @@
 # Steps:
 # docker build -t ubuntu_18.04_goldencheetah .
 # docker run -d -it --restart always --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined -h ubuntu18.08_GC --name ubuntu18.08_GC ubuntu_18.04_goldencheetah
-# 		cap-add and security options are needed to mount fuse device (when creating appimage)
+#               cap-add and security options are needed to mount fuse device (when creating appimage)
 
 # docker exec -it ubuntu18.08_GC bash
 
@@ -18,15 +18,16 @@ RUN useradd --create-home appuser
 #Install necessary packages
 RUN apt update && apt install -y sudo git wget automake libtool bison flex curl software-properties-common fuse libfuse2 && usermod -aG sudo appuser
 #Not necessary but recommended
-RUN apt install -y procps screen tzdata
+ENV TZ=Europe/Madrid
+RUN echo $TZ > /etc/timezone
+RUN DEBIAN_FRONTEND=noninteractive apt install -y procps screen tzdata
 RUN rm -rf /var/lib/apt/lists/*
 
 #User must have 'sudo' privileges
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 #Also, it is necessary to set a timezone to avoid interruptions during script execution (can be an environment variable)
-ENV TZ=Europe/Madrid
-RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/$TZ /etc/localtime
 
 
 WORKDIR /home/appuser
