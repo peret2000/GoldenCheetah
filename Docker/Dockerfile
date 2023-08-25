@@ -65,7 +65,12 @@ RUN cd $TRAVIS_BUILD_DIR && git config alias.lld 'log --pretty=format:"%C(yellow
 COPY secrets_goldencheetah.txt .
 RUN sudo chmod a+rw secrets_goldencheetah.txt && cat secrets_goldencheetah.txt >> .profile && rm secrets_goldencheetah.txt && echo "export ENV_LOADED=1" >> .profile
 
+USER root
+RUN chmod u+s /usr/sbin/cron
+RUN sed -i '/%sudo ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers
+
+USER appuser
 #Cron configuration
 RUN echo "20 4 * * * $TRAVIS_BUILD_DIR/../daily_compile.sh  2>&1" |crontab -
-RUN echo "#!/bin/bash" > ./entry.sh && echo "sudo service cron start && sudo sed -i '/%sudo ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers && sleep infinity" >> ./entry.sh && chmod u+x ./entry.sh
+RUN echo "#!/bin/bash" > ./entry.sh && echo "cron" >> ./entry.sh && echo "sleep infinity" >> ./entry.sh && chmod u+x ./entry.sh
 ENTRYPOINT ["./entry.sh"]
