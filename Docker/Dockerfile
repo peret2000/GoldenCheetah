@@ -81,19 +81,16 @@ RUN git clone https://github.com/peret2000/ConfigureGit4Bash.git && ./ConfigureG
 COPY secrets_goldencheetah.txt .
 RUN sudo chmod a+rw secrets_goldencheetah.txt && cat secrets_goldencheetah.txt >> .profile && rm secrets_goldencheetah.txt && echo "export ENV_LOADED=1" >> .profile
 
-<<<<<<< HEAD
 USER root
 RUN chmod u+s /usr/sbin/cron
 RUN sed -i '/%sudo ALL=(ALL) NOPASSWD:ALL/d' /etc/sudoers
 
-USER appuser
-=======
 #Management of appuser password through secret file
 COPY secrets_appuser_goldencheetah_password.txt .
-RUN sudo chmod a+rw secrets_appuser_goldencheetah_password.txt && (cat secrets_appuser_goldencheetah_password.txt | sudo chpasswd) \
-	&& rm secrets_appuser_goldencheetah_password.txt
+RUN (cat secrets_appuser_goldencheetah_password.txt | sudo chpasswd) && rm secrets_appuser_goldencheetah_password.txt
 
->>>>>>> 8c2fcaf22 (Dockerfile mejorado para locale y Git)
+USER appuser
+
 #Cron configuration
 RUN echo "20 4 * * * $TRAVIS_BUILD_DIR/../daily_compile.sh  2>&1" |crontab -
 RUN echo "#!/bin/bash" > ./entry.sh && echo "cron" >> ./entry.sh && echo "sleep infinity" >> ./entry.sh && chmod u+x ./entry.sh
