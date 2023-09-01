@@ -22,10 +22,10 @@ FROM ubuntu:18.04
 RUN useradd --create-home appuser
 
 #Install necessary packages
-RUN apt update && apt install -y sudo git wget automake libtool bison flex curl software-properties-common fuse libfuse2 && usermod -aG sudo appuser
+RUN apt update && apt install -y sudo wget automake libtool bison flex curl software-properties-common fuse libfuse2 && usermod -aG sudo appuser
+	# To have last git version
+RUN add-apt-repository ppa:git-core/ppa -y && apt update && apt install git -y
 #Not necessary but recommended
-ENV TZ=Europe/Madrid
-RUN echo $TZ > /etc/timezone
 RUN DEBIAN_FRONTEND=noninteractive apt install -y procps screen tzdata locales nano
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -33,6 +33,8 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 #Also, it is necessary to set a timezone to avoid interruptions during script execution (can be an environment variable)
+ENV TZ=Europe/Madrid
+RUN echo $TZ > /etc/timezone
 RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/$TZ /etc/localtime
 
 # Set locale
