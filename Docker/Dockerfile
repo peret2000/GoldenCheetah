@@ -17,6 +17,11 @@
 ## with the password for the app user. Usefule to 'sudo'. Format:
 # appuser:<password>
 
+## And, finally, a file with user and token for pushover message (token for the app where the message will be sent to):
+## secrets_pushover_goldencheetahdev.txt. Format:
+#export PUSHOVERTOKEN=<app token>
+#export PUSHOVERUSER=<user id>
+
 FROM ubuntu:18.04
 
 RUN useradd --create-home appuser
@@ -82,6 +87,9 @@ RUN git clone https://github.com/peret2000/ConfigureGit4Bash.git && ./ConfigureG
 #Modifications for the daily script
 COPY secrets_goldencheetah.txt .
 RUN sudo chmod a+rw secrets_goldencheetah.txt && cat secrets_goldencheetah.txt >> .profile && rm secrets_goldencheetah.txt && echo "export ENV_LOADED=1" >> .profile
+
+COPY secrets_pushover_goldencheetahdev.txt .
+RUN sudo chmod a+rw secrets_pushover_goldencheetahdev.txt && cat secrets_pushover_goldencheetahdev.txt >> .profile && rm secrets_pushover_goldencheetahdev.txt
 
 USER root
 RUN chmod u+s /usr/sbin/cron
