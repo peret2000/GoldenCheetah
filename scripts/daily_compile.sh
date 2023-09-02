@@ -11,11 +11,12 @@ fi
 
 export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-export LOGFILE=$SCRIPT_DIR/log.txt
+export LOGFILE=$SCRIPT_DIR/logtmp.txt
+export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
 cd $SCRIPT_DIR
 
-echo ------------------------- >> $LOGFILE
+echo ------------------------- > $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 echo git fetch, merge, etc >> $LOGFILE
 
@@ -112,3 +113,15 @@ travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy
 src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
 echo Termina: `date` >> $LOGFILE
+
+if [[ -v PUSHOVERTOKEN && -v PUSHOVERUSER ]]; then
+  curl -s \
+    --form-string "token=$PUSHOVERTOKEN" \
+    --form-string "user=$PUSHOVERUSER" \
+    --form-string "title=Nightly Build" \
+    --form-string "message=$(cat $LOGFILE)" \
+    https://api.pushover.net/1/messages.json
+fi
+
+cat $LOGFILE >> $CUMLOGFILE
+rm $LOGFILE
