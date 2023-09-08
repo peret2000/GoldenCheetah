@@ -114,14 +114,7 @@ src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
 echo Termina: `date` >> $LOGFILE
 
-if [[ -v PUSHOVERTOKEN && -v PUSHOVERUSER ]]; then
-  curl -s \
-    --form-string "token=$PUSHOVERTOKEN" \
-    --form-string "user=$PUSHOVERUSER" \
-    --form-string "title=Nightly Build" \
-    --form-string "message=$(cat $LOGFILE)" \
-    https://api.pushover.net/1/messages.json
-fi
+scripts/pushover_end_compile.sh "Nightly Build" $LOGFILE
 
 cat $LOGFILE >> $CUMLOGFILE
 rm $LOGFILE
