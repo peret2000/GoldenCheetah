@@ -2,6 +2,9 @@
 # docker build -t ubuntu_18.04_goldencheetah .
 # docker run -d -it --restart always --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined -h ubuntu18.08_GC --name ubuntu18.08_GC ubuntu_18.04_goldencheetah
 #               cap-add and security options are needed to mount fuse device (when creating appimage)
+# In case you want to debug, with QTCreator or gdb, you also need to add:(This has not been confirmed to be necessary)
+#	--cap-add=SYS_PTRACE --security-opt seccomp=unconfined
+
 
 # docker exec -it ubuntu18.08_GC bash
 
