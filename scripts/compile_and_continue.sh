@@ -11,11 +11,12 @@ fi
 
 export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-export LOGFILE=$SCRIPT_DIR/log.txt
+export LOGFILE=$SCRIPT_DIR/logtmp.txt
+export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
 cd $SCRIPT_DIR
 
-echo ------------------------- >> $LOGFILE
+echo ------------------------- > $LOGFILE
 echo Compilación sólo!!!!! >> $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 
@@ -38,3 +39,7 @@ travis/linux/after_success.sh                           && echo "deploy OK" >> $
 
 src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
+scripts/pushover_end_compile.sh "Compile and Continue" $LOGFILE
+
+cat $LOGFILE >> $CUMLOGFILE
+rm $LOGFILE
