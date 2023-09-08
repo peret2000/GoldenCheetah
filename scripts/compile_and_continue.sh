@@ -21,7 +21,7 @@ echo Comienzo: `date` >> $LOGFILE
 
 cd GoldenCheetah_Debug
 
-make -j1                          && echo "Compile OK" >> $LOGFILE || echo "Compile FAILED" >> $LOGFILE
+make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)   && echo "Compile OK" >> $LOGFILE || echo "Compile FAILED" >> $LOGFILE
 
 # Generate the AppImage
 
