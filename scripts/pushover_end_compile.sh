@@ -1,7 +1,13 @@
+
 #!/bin/bash
 
+# Check whether .bashrc has been loaded (for example, cron does not load it)
+if [[ -z "${ENV_LOADED}" ]]; then
+        source $HOME/.profile
+fi
 
-[ -f $2 ] && msg="message=$(cat $2)" || msg="$2"
+
+[ -f "$2" ] && msg="$(cat $2)" || msg="$2"
 
 if [[ -v PUSHOVERTOKEN && -v PUSHOVERUSER ]]; then
   curl -s \
