@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Check whether .bashrc has been loaded (for example, cron does not load it)
