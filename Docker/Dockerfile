@@ -10,6 +10,9 @@
 
 # Depends on git project https://github.com/peret2000/ConfigureGit4Bash.git to configure Git
 
+### IMPORTANT: If there are changes in travis/linux/before_install.sh, the image must be regenerated, as this script is run at image creation
+# Just adding '--no-cache' to 'docker build' command
+
 ## There must exist a file along with Dockerfile: secrets_goldencheetah.txt
 ## With environment variables to be used by script before_install.sh. Its content must be:
 #export GC_STRAVA_CLIENT_SECRET=XXXXXX
