@@ -1,12 +1,16 @@
 # Steps:
-# docker build -t ubuntu_18.04_goldencheetah .
-# docker run -d -it --restart always --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined -h ubuntu18.08_GC --name ubuntu18.08_GC ubuntu_18.04_goldencheetah
+# docker build -t ubuntu_20.04_goldencheetah .
+# docker run -d -it --restart always --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined -h ubuntu20.04_GC --name ubuntu20.04_GC ubuntu_20.04_goldencheetah
 #               cap-add and security options are needed to mount fuse device (when creating appimage)
 # In case you want to debug, with QTCreator or gdb, you also need to add:(This has not been confirmed to be necessary)
 #	--cap-add=SYS_PTRACE --security-opt seccomp=unconfined
 
+# To use graphical interface, refer to the Docker google document. In short:
+# Run in the host: xhost + 
+# Add these parameters to the 'run':
+#	 -e DISPLAY=$DISPLAY -v /tmp/.X11-unix/:/tmp/.X11-unix
 
-# docker exec -it ubuntu18.08_GC bash
+# docker exec -it ubuntu20.04_GC bash
 
 # Depends on git project https://github.com/peret2000/ConfigureGit4Bash.git to configure Git
 
@@ -28,25 +32,27 @@
 #export PUSHOVERTOKEN=<app token>
 #export PUSHOVERUSER=<user id>
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN useradd --create-home appuser
 
+
+#It is necessary to set a timezone to avoid interruptions during script execution (can be an environment variable)
+ENV TZ=Europe/Madrid
+RUN echo $TZ > /etc/timezone
+RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/$TZ /etc/localtime
+
+
 #Install necessary packages
-RUN apt update && apt install -y sudo wget automake libtool bison flex curl software-properties-common fuse libfuse2 && usermod -aG sudo appuser
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo wget automake libtool bison flex curl software-properties-common fuse libfuse2 && usermod -aG sudo appuser
 	# To have last git version
 RUN add-apt-repository ppa:git-core/ppa -y && apt update && apt install git -y
-#Not necessary but recommended
-RUN DEBIAN_FRONTEND=noninteractive apt install -y procps screen tzdata locales nano
+#Not necessary but recommended, or used by this Dockerfile
+RUN DEBIAN_FRONTEND=noninteractive apt install -y procps screen tzdata locales nano cron
 RUN rm -rf /var/lib/apt/lists/*
 
 #User must have 'sudo' privileges
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-#Also, it is necessary to set a timezone to avoid interruptions during script execution (can be an environment variable)
-ENV TZ=Europe/Madrid
-RUN echo $TZ > /etc/timezone
-RUN rm -f /etc/localtime && ln -s /usr/share/zoneinfo/$TZ /etc/localtime
 
 # Set locale
 RUN sed -i '/es_ES.UTF-8/s/^# //g' /etc/locale.gen && \
@@ -76,7 +82,14 @@ RUN sed -i "/r-base-dev/c\sudo apt-get install -qq r-base-dev" $TRAVIS_BUILD_DIR
 
 RUN mkdir $TRAVIS_BUILD_DIR/D2XX
 
-RUN cd $TRAVIS_BUILD_DIR && ./travis/linux/before_install.sh && rm awscliv2.zip libftd2xx-x86_64-1.3.6.tgz sip-4.19.8.tar.gz v0.1.1git1.tar.gz
+# This is to avoid interaction when installing VLC (from https://stackoverflow.com/questions/63476497/docker-build-with-ubuntu-18-04-image-hangs-after-prompting-for-country-of-origin)
+RUN echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections
+
+## To avoid error installing sip-4.19.8 (fails: from distutils import sysconfig)
+#(https://stackoverflow.com/questions/63823964/importerror-cannot-import-name-sysconfig-from-distutils-usr-lib-python3-8)
+RUN sed -i '/python3.7 configure.py/ i sudo apt-get install -qq python3.7-distutils' $TRAVIS_BUILD_DIR/travis/linux/before_install.sh
+
+RUN cd $TRAVIS_BUILD_DIR && DEBIAN_FRONTEND=noninteractive ./travis/linux/before_install.sh && rm awscliv2.zip libftd2xx-x86_64-1.4.27.tgz sip-4.19.8.tar.gz v0.1.1git1.tar.gz
 RUN cd $TRAVIS_BUILD_DIR && rm -rf aws sip-4.19.8 srmio-0.1.1git1
 RUN cd ${TRAVIS_BUILD_DIR} && git checkout -- ./travis/linux/before_install.sh && git checkout MyBuildAdapt
 
