@@ -34,6 +34,12 @@ def main():
 		GC.setTag('SubSport', subsport)
 
 
+	# Si la actividad no tiene SubSport -> Se pone en SubSport lo mismo que en Sport
+	if subsport=="":
+		subsport = sport
+		GC.setTag('SubSport', subsport)
+
+
 	# General: PotenciaEstimada=0, salvo en los siguientes casos:
 	# Que ya esté a 1 (no se puede saber si es estimada o no, así que se respeta ese valor)
 	# Sport='Run', o SubSport='Ride', o Sport='Hike', o Sport='Walk', pero no Dispositivo='Kinomap' o 'Kinomap Run', y no tiene potencia calculada
