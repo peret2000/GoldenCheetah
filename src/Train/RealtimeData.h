@@ -51,7 +51,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining,
+                      DistanceRemaining, Bearing,
                       RightPowerPhaseBegin, RightPowerPhaseEnd,
                       RightPowerPhasePeakBegin, RightPowerPhasePeakEnd,
                       Position, RightPCO, LeftPCO,
@@ -141,6 +141,8 @@ public:
 
     void setCoreTemp(double,double,double);
     void setHeatLoad(double);
+    void setBearing(double);
+
     const char *getName() const;
 
     // new muscle oxygen stuff
@@ -219,6 +221,7 @@ public:
     double getLatitude() const;
     double getLongitude() const;
     double getAltitude() const;
+    double getBearing() const;
 
     double getAvgWatts() const;
     double getAvgSpeed() const;
@@ -284,6 +287,7 @@ private:
     double isoPower, bikeStress, iF, vI;
     double hhb, o2hb;
     double rer;
+    double bearing;
     long lap;
     long msecs;
     long lapMsecs;
