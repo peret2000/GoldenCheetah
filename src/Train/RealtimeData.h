@@ -51,7 +51,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining,
+                      DistanceRemaining, Bearing,
                       RightPowerPhaseBegin, RightPowerPhaseEnd,
                       RightPowerPhasePeakBegin, RightPowerPhasePeakEnd,
                       Position, RightPCO, LeftPCO,
@@ -122,7 +122,9 @@ public:
     void setLatitude(double);
     void setLongitude(double);
     void setAltitude(double);
-    void setCoreTemp(double,double,double);
+    void setBearing(double);
+    void setCoreTemp(double,double);
+
     const char *getName() const;
 
     // new muscle oxygen stuff
@@ -190,6 +192,7 @@ public:
     double getLatitude() const;
     double getLongitude() const;
     double getAltitude() const;
+    double getBearing() const;
 
     void setTrainerStatusAvailable(bool status);
     bool getTrainerStatusAvailable() const;
@@ -241,6 +244,7 @@ private:
     double wbal;
     double hhb, o2hb;
     double rer;
+    double bearing;
     long lap;
     long msecs;
     long lapMsecs;
