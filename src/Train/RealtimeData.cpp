@@ -53,6 +53,7 @@ RealtimeData::RealtimeData()
     trainerCalibRequired = false;
     trainerConfigRequired = false;
     trainerBrakeFault = false;
+    bearing = 0.0;
     memset(spinScan, 0, 24);
     temp = 0.0;
 }
@@ -262,6 +263,11 @@ void RealtimeData::setRPS(double x)
     this->rps = x;
 }
 
+void RealtimeData::setBearing(double x)
+{
+    this->bearing = x;
+}
+
 //Skin temp passed but not used elsewhere
 void RealtimeData::setCoreTemp(double core, double skin, double heatStrain) {
     this->coreTemp = core;
@@ -446,6 +452,10 @@ double RealtimeData::getLPS() const
 double RealtimeData::getRPS() const
 {
     return rps;
+}
+double RealtimeData::getBearing() const
+{
+    return bearing;
 }
 
 double RealtimeData::getRppb() const
@@ -751,6 +761,8 @@ double RealtimeData::value(DataSeries series) const
 
     case FeO2: return feo2;
         break;
+    case Bearing: return bearing;
+        break;
 
     case Temp: return temp;
         break;
@@ -841,6 +853,7 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << SkinTemp;
         seriesList << HeatStrain;
         seriesList << HeatLoad;
+        seriesList << Bearing;
         seriesList << VAM;
     }
     return seriesList;
@@ -1045,7 +1058,8 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
     case HeatLoad: return tr("Estimated Heat Load");
         break;
-
+    case Bearing: return tr("Bearing");
+        break;
     case RightPCO: return tr("Right PCO");
         break;
     case LeftPCO: return tr("Left PCO");
@@ -1252,7 +1266,8 @@ QString RealtimeData::seriesSymbol(DataSeries series)
         break;
     case HeatLoad: return QString("Estimated Heat Load");
         break;
-
+    case Bearing: return QString("Bearing");
+        break;
     case RightPCO: return QString("Right PCO");
         break;
     case LeftPCO: return QString("Left PCO");

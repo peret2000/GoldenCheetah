@@ -540,6 +540,12 @@ void VideoWindow::telemetryUpdate(const RealtimeData &rtd)
             p_meterWidget->Text = time_to_string(trunc(p_meterWidget->Value)).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = QString(".") + QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + p_meterWidget->AltTextSuffix;
         }
+        else if (p_meterWidget->Source() == QString("Bearing"))
+        {
+            p_meterWidget->Value = rtd.getBearing();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = tr(" °") + p_meterWidget->AltTextSuffix;
+        }
         else if (p_meterWidget->Source() == QString("TrainerStatus"))
         {
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
