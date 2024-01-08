@@ -47,8 +47,6 @@ git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
 git merge --no-edit origin/TrainButtons         && echo "merge TrainButtons OK" >> $LOGFILE || echo "merge TrainButtons FAILED" >> $LOGFILE
-git merge --no-edit origin/deltaSlope		&& echo "merge deltaSlope OK" >> $LOGFILE || echo "merge deltaSlope FAILED" >> $LOGFILE
-git merge --no-edit origin/elevationGain	&& echo "merge elevationGain OK" >> $LOGFILE  || echo "merge elevationGain FAILED" >> $LOGFILE
 git merge --no-edit origin/MyZEW		&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
 git merge --no-edit origin/VideoWidgets         && echo "merge VideoWidgets OK" >> $LOGFILE || echo "merge VideoWidgets FAILED" >> $LOGFILE
 git merge --no-edit origin/SmoothPowerEstim	&& echo "merge SmoothPowerEstim OK" >> $LOGFILE  || echo "merge SmoothPowerEstim FAILED" >> $LOGFILE
