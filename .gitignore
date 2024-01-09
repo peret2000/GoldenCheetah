@@ -70,6 +70,9 @@ unittests/Core/signalSafety/testSignalSafety
 unittests/Core/units/units
 unittests/Gui/calendarData/calendarData
 
+# MyBuildAdapt: excluye los logs
+./scrips/*.txt
+
 # Qt testlib
 target_wrapper.sh
 
