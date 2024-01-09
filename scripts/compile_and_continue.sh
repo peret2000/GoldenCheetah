@@ -9,18 +9,16 @@ if [[ -z "${ENV_LOADED}" ]]; then
 fi
 
 
-export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
-
-cd $SCRIPT_DIR
 
 echo ------------------------- > $LOGFILE
 echo Compilación sólo!!!!! >> $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 
-cd GoldenCheetah_Debug
+cd $SCRIPT_DIR/..
 
 make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)   && echo "Compile OK" >> $LOGFILE || echo "Compile FAILED" >> $LOGFILE
 
