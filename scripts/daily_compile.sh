@@ -8,21 +8,19 @@ if [[ -z "${ENV_LOADED}" ]]; then
         source $HOME/.profile
 fi
 
-
-export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
-cd $SCRIPT_DIR
 
 echo ------------------------- > $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 echo git fetch, merge, etc >> $LOGFILE
 
-###git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah_Debug
+###cd $SCRIPT_DIR/../.. && git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah
 
-cd GoldenCheetah_Debug
+cd $SCRIPT_DIR/..
 
 ###git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git
 
