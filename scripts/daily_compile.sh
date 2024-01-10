@@ -74,7 +74,7 @@ echo before_script.sh: `date` >> $LOGFILE
 travis/linux/before_script.sh			&& echo "before_script OK" >> $LOGFILE || echo "before_script FAILED" >> $LOGFILE
 
 sed -i '/GC_VERSION/ d' src/gcconfig.pri
-echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Debug\\ `git log -1  goldencheetah/master | sed -n 's/^commit *//p' | cut -c -7`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
+echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git merge-base HEAD  goldencheetah/master | cut -c -9`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
 
 ## Se genera la version release, ya que no es útil para depurar
 ##sed -i '/CONFIG += debug/ d' src/gcconfig.pri
