@@ -79,7 +79,7 @@ echo before_script.sh: `date` >> $LOGFILE
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
-travis/linux/before_script.sh			&& echo "before_script OK" >> $LOGFILE || ERR=$? && echo "before_script FAILED" >> $LOGFILE && echo $ERR && salida $ERR
+travis/linux/before_script.sh			&& echo "before_script OK" >> $LOGFILE || echo "before_script FAILED" >> $LOGFILE
 
 sed -i '/GC_VERSION/ d' src/gcconfig.pri
 echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git merge-base HEAD  goldencheetah/master | cut -c -9`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
@@ -96,7 +96,7 @@ echo script.sh: `date` >> $LOGFILE
 # El make usa tantos procesos como procesadores físicos
 sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
 
-travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || ERR=$? && echo "script FAILED" >> $LOGFILE && echo $ERR && salida $ERR
+travis/linux/script.sh				&& echo "script OK" >> $LOGFILE || echo "script FAILED" >> $LOGFILE
 
 
 # Generate the AppImage
@@ -111,7 +111,7 @@ sed -i 's/sudo //' travis/linux/after_success.sh
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
 [[ -f src/GoldenCheetah_v3.6-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.6-DEV_x64.AppImage
-travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || ERR=$? && echo "deploy FAILED" >> $LOGFILE && echo $ERR && salida $ERR
+travis/linux/after_success.sh				&& echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
 
 
 src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
