@@ -8,6 +8,12 @@ if [[ -z "${ENV_LOADED}" ]]; then
         source $HOME/.profile
 fi
 
+salida() {
+        scripts/pushover_end_compile.sh "Compile and Continue" $LOGFILE
+        cat $LOGFILE >> $CUMLOGFILE
+        rm $LOGFILE
+        exit $1
+}
 
 export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
@@ -20,7 +26,7 @@ echo Comienzo: `date` >> $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)   && echo "Compile OK" >> $LOGFILE || echo "Compile FAILED" >> $LOGFILE
+make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l) && echo "Compile OK" >> $LOGFILE || ERR=$? && echo "Compile FAILED" >> $LOGFILE && echo $ERR && salida $ERR
 
 # Generate the AppImage
 
@@ -33,11 +39,8 @@ sed -i 's/sudo //' travis/linux/after_success.sh
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
 [[ -f src/GoldenCheetah_v3.6-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.6-DEV_x64.AppImage
-travis/linux/after_success.sh                           && echo "deploy OK" >> $LOGFILE || echo "deploy FAILED" >> $LOGFILE
+travis/linux/after_success.sh                           && echo "deploy OK" >> $LOGFILE || ERR=$? echo "deploy FAILED" >> $LOGFILE && echo $ERR && salida $ERR
 
 src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
-scripts/pushover_end_compile.sh "Compile and Continue" $LOGFILE
-
-cat $LOGFILE >> $CUMLOGFILE
-rm $LOGFILE
+salida 0
