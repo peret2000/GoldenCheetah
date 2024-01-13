@@ -26,7 +26,7 @@ echo Comienzo: `date` >> $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l) && echo "Compile OK" >> $LOGFILE || ERR=$? && echo "Compile FAILED" >> $LOGFILE && echo $ERR && salida $ERR
+make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l) && { echo "Compile OK" >> $LOGFILE; } || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR; }
 
 # Generate the AppImage
 
@@ -39,7 +39,7 @@ sed -i 's/sudo //' travis/linux/after_success.sh
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
 [[ -f src/GoldenCheetah_v3.6-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.6-DEV_x64.AppImage
-travis/linux/after_success.sh                           && echo "deploy OK" >> $LOGFILE || ERR=$? echo "deploy FAILED" >> $LOGFILE && echo $ERR && salida $ERR
+travis/linux/after_success.sh && { echo "deploy OK" >> $LOGFILE; } || { ERR=$?; echo "deploy FAILED" >> $LOGFILE; salida $ERR;}
 
 src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
 
