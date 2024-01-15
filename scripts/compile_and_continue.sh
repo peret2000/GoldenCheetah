@@ -26,7 +26,7 @@ echo Comienzo: `date` >> $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-make -j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l) && { echo "Compile OK" >> $LOGFILE; } || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR; }
+./travis/linux/script.sh  && { echo "Compile OK" >> $LOGFILE; } || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR; }
 
 # Generate the AppImage
 

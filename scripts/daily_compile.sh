@@ -68,33 +68,11 @@ if [ "$1" ]; then
   git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
 fi
 
+echo preparedirectory.sh: `date` >> $LOGFILE
 
-###mkdir -p D2XX
-###travis/linux/before_install.sh
-###rm libftd2xx-x86_64-1.3.6.tgz
-###rm v0.1.1git1.tar.gz
-
-echo before_script.sh: `date` >> $LOGFILE
-
-
-# Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
-
-travis/linux/before_script.sh			&& { echo "before_script OK" >> $LOGFILE; } || { ERR=$?; echo "before_script FAILED" >> $LOGFILE; salida $ERR; }
-
-sed -i '/GC_VERSION/ d' src/gcconfig.pri
-echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git merge-base HEAD  goldencheetah/master | cut -c -9`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
-
-## Se genera la version release, ya que no es útil para depurar
-##sed -i '/CONFIG += debug/ d' src/gcconfig.pri
-##sed -i '/CONFIG += release/ d' src/gcconfig.pri
-##sed -i '/-O3/ d' src/gcconfig.pri
-##echo CONFIG += debug static >> src/gcconfig.pri
-
+./scripts/preparedirectory.sh  && { echo "preparedirectory OK" >> $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" >> $LOGFILE; salida $ERR; }
 
 echo script.sh: `date` >> $LOGFILE
-
-# El make usa tantos procesos como procesadores físicos
-sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
 
 travis/linux/script.sh && { echo "script OK" >> $LOGFILE; } || { ERR=$?; echo "script FAILED" >> $LOGFILE; salida $ERR; }
 
