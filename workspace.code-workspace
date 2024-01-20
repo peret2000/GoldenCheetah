@@ -1,0 +1,35 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "complex": "cpp",
+            "qtglobal": "cpp",
+            "qgraphicspathitem": "cpp",
+            "qmessagebox": "cpp"
+        },
+        "files.exclude": {
+            "**/moc_*.cpp": true,"**/*.o": true,
+            "**/*.AppImage": true,
+            "squashfs-root/**": true,
+            "D2XX/**": true,
+        },
+        "files.watcherExclude": {
+            "**/*.o": true,
+            "**/moc_*": true,
+            "**/*.AppImage": true,
+            "squashfs-root/**": true,
+            "D2XX/**": true,
+        },
+        "search.exclude": {
+            "**/*.o": true,
+            "**/moc_*": true,
+            "**/*.AppImage": true,
+            "squashfs-root/**": true,
+            "D2XX/**": true,
+        }
+    }
+}
