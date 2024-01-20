@@ -30,6 +30,7 @@
             "**/*.AppImage": true,
             "squashfs-root/**": true,
             "D2XX/**": true,
+            "**/*.ts": true,
         }
     }
 }
