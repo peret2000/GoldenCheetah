@@ -1,0 +1,44 @@
+{
+    "env": {
+            "includePath": [
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/qwt/src/**",
+                "${workspaceFolder}/contrib/**",
+                "${workspaceFolder}/D2XX/release",
+                "/opt/qt514/include/**",
+                "/opt/qt515/include/**",
+                "/opt/qt514/mkspecs/linux-g++",
+                "/opt/qt515/mkspecs/linux-g++"
+            ],
+            "defines": [
+                "DGC_DEBUG","_REENTRANT","DGC_WANT_R","GC_WANT_ROBOT","GC_VIDEO_VLC","GC_WANT_PYTHON",
+                "GC_VERSION=\"(Debug 1f999a3)\"",
+                "QXT_STATIC","SIP_STATIC_MODULE","GC_HAVE_PYTHON","STRICT_R_HEADERS","GC_HAVE_D2XX","GC_HAVE_SRMIO","GC_HAVE_KML",
+                "GC_HAVE_ICAL","GC_HAVE_LIBUSB","LIBUSB_V_1","GC_HAVE_VLC","GC_HAVE_SAMPLERATE","GC_WANT_HTTP","GC_HAS_CLOUD_DB",
+                "GC_HAVE_OVERVIEW","GC_HAVE_GENERIC","QT_QML_DEBUG","QT_SVG_LIB","QT_MULTIMEDIAWIDGETS_LIB",
+                "QT_WEBENGINEWIDGETS_LIB","QT_PRINTSUPPORT_LIB","QT_OPENGL_LIB","QT_CHARTS_LIB","QT_WIDGETS_LIB",
+                "QT_MULTIMEDIA_LIB","QT_WEBENGINE_LIB","QT_WEBENGINECORE_LIB","QT_QUICK_LIB","QT_GUI_LIB","QT_XML_LIB",
+                "QT_SQL_LIB","QT_QMLMODELS_LIB","QT_WEBCHANNEL_LIB","QT_QML_LIB","QT_NETWORK_LIB","QT_CONCURRENT_LIB",
+                "QT_SERIALPORT_LIB","QT_POSITIONING_LIB","QT_BLUETOOTH_LIB","QT_CORE_LIB"
+            ]
+    },
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${env:includePath}",
+                "/usr/include/python3.7",
+                "/usr/include/python3.11",
+                "/usr/share/R/include",
+                "/usr/local/include",
+                "/usr/include",
+        ],
+            "defines": ["${env:defines}"],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
