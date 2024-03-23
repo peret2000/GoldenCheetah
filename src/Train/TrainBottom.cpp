@@ -69,7 +69,7 @@ TrainBottom::TrainBottom(TrainSidebar *trainSidebar, QWidget *parent) :
     m_stopButton->setAutoDefault(false);
     m_stopButton->setFlat(true);
     m_stopButton->setStyleSheet("background-color: rgba( 255, 255, 255, 0% ); border: 0px;");
-    m_stopButton->setShortcut(Qt::Key_S);
+    m_stopButton->setShortcut(Qt::Key_MediaStop);
     toolbuttons->addWidget(m_stopButton);
 
     QIcon playIcon(":images/oxygen/play.png");
@@ -80,7 +80,7 @@ TrainBottom::TrainBottom(TrainSidebar *trainSidebar, QWidget *parent) :
     m_playButton->setAutoDefault(false);
     m_playButton->setFlat(true);
     m_playButton->setStyleSheet("background-color: rgba( 255, 255, 255, 0% ); border: 0px;");
-    m_playButton->setShortcut(Qt::Key_Space);
+    m_playButton->setShortcut(Qt::Key_MediaTogglePlayPause);
     toolbuttons->addWidget(m_playButton);
 
     QIcon fwdIcon(":images/oxygen/ffwd.png");
