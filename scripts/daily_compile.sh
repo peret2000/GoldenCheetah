@@ -53,7 +53,8 @@ git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
 git merge --no-edit origin/TrainButtons         && echo "merge TrainButtons OK" >> $LOGFILE || echo "merge TrainButtons FAILED" >> $LOGFILE
-git merge --no-edit origin/MyZEW		&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
+###### Cambio temporal
+git merge --no-edit MyZEWPR4400			&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
 git merge --no-edit origin/VideoWidgets         && echo "merge VideoWidgets OK" >> $LOGFILE || echo "merge VideoWidgets FAILED" >> $LOGFILE
 git merge --no-edit origin/SmoothPowerEstim	&& echo "merge SmoothPowerEstim OK" >> $LOGFILE  || echo "merge SmoothPowerEstim FAILED" >> $LOGFILE
 git merge --no-edit origin/PythonScripts	&& echo "merge PythonScripts OK" >> $LOGFILE  || echo "merge PythonScripts FAILED" >> $LOGFILE
@@ -61,7 +62,11 @@ git merge --no-edit origin/Strava		&& echo "merge Strava OK" >> $LOGFILE  || ech
 
 git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProcessors OK" >> $LOGFILE  || echo "merge PyAutomatedProcessors FAILED" >> $LOGFILE
 
-git merge --no-edit goldencheetah/master 	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
+git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
+
+##### Cambio temporal
+git remote add thejockl https://github.com/thejockl/GoldenCheetah.git
+git merge --no-edit thejockl/411-feature-request-favorite-workouts-v2	&& echo "merge PR4400 OK" >> $LOGFILE  || echo "merge PR4400 FAILED" >> $LOGFILE
 
 
 if [ "$1" ]; then
