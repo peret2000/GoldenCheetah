@@ -69,6 +69,7 @@ git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  
 
 ##### Cambio temporal
 git remote add thejockl https://github.com/thejockl/GoldenCheetah.git
+git fetch thejockl
 git merge --no-edit thejockl/411-feature-request-favorite-workouts-v2	&& echo "merge PR4400 OK" >> $LOGFILE  || echo "merge PR4400 FAILED" >> $LOGFILE
 
 
