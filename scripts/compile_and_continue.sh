@@ -20,13 +20,21 @@ export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
+export BUILDLOG=$SCRIPT_DIR/buildlog.txt
+echo Comienzo: `date` > $BUILDLOG
+echo ------------------------- >> $BUILDLOG
+
 echo ------------------------- > $LOGFILE
 echo Compilación sólo!!!!! >> $LOGFILE
 echo Comienzo: `date` >> $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-./travis/linux/script.sh  && { echo "Compile OK" >> $LOGFILE; } || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR; }
+# Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
+# el código de error de la salida (process substitution)
+./travis/linux/script.sh > >(tee -a $BUILDLOG) 2> >(tee -a $BUILDLOG >&2) && { echo "Compile OK"; } || { ERR=$?; echo "Compile FAILED"; }
+echo ------------------------- >> $BUILDLOG
+echo Finalización: `date` >> $BUILDLOG
 
 # Generate the AppImage
 
