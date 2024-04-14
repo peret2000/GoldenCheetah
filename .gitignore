@@ -70,8 +70,13 @@ unittests/Core/signalSafety/testSignalSafety
 unittests/Core/units/units
 unittests/Gui/calendarData/calendarData
 
-# MyBuildAdapt: excluye los logs
-./scrips/*.txt
+# MyBuildAdapt: excluye ficheros que no deben star en el repositorio
+scripts/*.txt
+D2XX
+Debug_*
+squashfs-root
+src/GCversionLinux.txt
+.vscode
 
 # Qt testlib
 target_wrapper.sh
