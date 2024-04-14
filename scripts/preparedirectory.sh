@@ -27,6 +27,9 @@ fi
 
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
+# In case the binary remains from previous compilations, it is removed
+rm -f src/GoldenCheetah
+
 # Extracted from travis/linux/before_install.sh : Downloads necessary header file if it was not downloaded yet
 # D2XX - refresh cache if folder is empty
 mkdir -p D2XX
