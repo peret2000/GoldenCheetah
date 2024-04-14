@@ -61,8 +61,13 @@ build.pro.user
 build.pro.user.*
 doc/contrib/WASP Packet Protocol.pdf
 
-# MyBuildAdapt: excluye los logs
-./scrips/*.txt
+# MyBuildAdapt: excluye ficheros que no deben star en el repositorio
+scripts/*.txt
+D2XX
+Debug_*
+squashfs-root
+src/GCversionLinux.txt
+.vscode
 
 # Qt testlib
 target_wrapper.sh
