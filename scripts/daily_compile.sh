@@ -100,11 +100,11 @@ sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/m
 [[ -d src/appdir ]] && rm -rf src/appdir
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
-[[ -f src/GoldenCheetah_v3.6-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.6-DEV_x64.AppImage
+[[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
 travis/linux/after_success.sh				&& { echo "deploy OK" >> $LOGFILE; } || { ERR=$?; echo "deploy FAILED" >> $LOGFILE; salida $ERR; }
 
 
-src/GoldenCheetah_v3.6-DEV_x64.AppImage --appimage-extract
+src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract
 
 echo Termina: `date` >> $LOGFILE
 
