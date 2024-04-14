@@ -60,5 +60,10 @@ build.pro.user
 build.pro.user.*
 doc/contrib/WASP Packet Protocol.pdf
 
-# MyBuildAdapy: excluye los logs
-./scrips/*.txt
+# MyBuildAdapy: excluye ficheros que no deben star en el repositorio
+scripts/*.txt
+D2XX
+Debug_*
+squashfs-root
+src/GCversionLinux.txt
+.vscode
