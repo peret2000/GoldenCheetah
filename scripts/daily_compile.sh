@@ -67,10 +67,17 @@ git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProce
 
 git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
 
-##### Cambio temporal
+##### Cambio temporal ########
+## Se fusiona con la rama thejockl/411-feature-request-favorite-workouts-v2, pero da un conflicto con origin/MyZEWPR4400
+## Para evitarlo, la solución encontrada es 'encapsular' esa rama en otro que deshaga el conflicto
+## Esa rama creada (origin/TMP-411-PR-favorite-workouts) se eliminará una vez que thejockl/411-feature-request-favorite-workouts-v2
+## se fusione en la rama master (goldencheetah/master)
+git merge --no-edit origin/TMP-411-PR-favorite-workouts
 git remote add thejockl https://github.com/thejockl/GoldenCheetah.git
 git fetch thejockl
+## Como thejockl/411-feature-request-favorite-workouts-v2 puede seguir acanzando, se fusiona también
 git merge --no-edit thejockl/411-feature-request-favorite-workouts-v2	&& echo "merge PR4400 OK" >> $LOGFILE  || echo "merge PR4400 FAILED" >> $LOGFILE
+##############################
 
 
 if [ "$1" ]; then
