@@ -85,7 +85,8 @@ echo script.sh: `date` >> $LOGFILE
 
 # Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
 # el código de error de la salida (process substitution)
-./travis/linux/script.sh > >(tee -a $BUILDLOG) 2> >(tee -a $BUILDLOG >&2) && { echo "Compile OK"; } || { ERR=$?; echo "Compile FAILED"; salida $ERR;}
+./travis/linux/script.sh > >(tee -a $BUILDLOG) 2> >(tee -a $BUILDLOG >&2) \
+	&& { echo "Compile OK" >> $LOGFILE;} || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR;}
 echo ------------------------- >> $BUILDLOG
 echo Finalización: `date` >> $BUILDLOG
 
