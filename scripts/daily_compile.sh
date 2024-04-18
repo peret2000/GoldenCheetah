@@ -75,10 +75,12 @@ git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  
 git merge --no-edit origin/TMP-411-PR-favorite-workouts
 git remote add thejockl https://github.com/thejockl/GoldenCheetah.git
 git fetch thejockl
-## Como thejockl/411-feature-request-favorite-workouts-v2 puede seguir acanzando, se fusiona también
+## Como thejockl/411-feature-request-favorite-workouts-v2 puede seguir avanzando, se fusiona también
 git merge --no-edit thejockl/411-feature-request-favorite-workouts-v2	&& echo "merge PR4400 OK" >> $LOGFILE  || echo "merge PR4400 FAILED" >> $LOGFILE
 ##############################
 
+#### Merge temporal del PR4466: Equipment management feature
+git pull --no-rebase goldencheetah refs/pull/4466/head
 
 if [ "$1" ]; then
   git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
