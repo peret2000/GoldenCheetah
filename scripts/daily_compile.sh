@@ -89,8 +89,6 @@ git fetch paulj49457
 git merge --no-edit paulj49457/equipment_feature_simple	&& echo "merge PR4466 OK" >> $LOGFILE  || echo "merge PR4466 FAILED" >> $LOGFILE
 ##############################
 
-exit
-
 if [ "$1" ]; then
   git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
 fi
