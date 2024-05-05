@@ -12,7 +12,7 @@ def main():
 		# Si viene de Garmin, pone el peso que tiene configurado
 		GC.setTag('Weight', '0')
 		# Si SubSport='VirtualRun' -> InclCinta = 2
-		if subsport == 'VirtualRun' and not (device=='Kinomap' or device=='Kinomap Run'):
+		if subsport == 'VirtualRun' and not (device=='Kinomap' or device=='Kinomap Run' or device=='Zwift Run'):
 			GC.setTag('InclCinta', '2')
 			print(GC.getTag("InclCinta"))
 		# Si SubSport='lap swimming' -> Longitud de piscina = 10 (piscina de la comunidad)
