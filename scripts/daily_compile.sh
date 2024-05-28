@@ -55,21 +55,9 @@ git merge
 git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
-##### Cambio temporal ########
-## Se fusiona con la rama thejockl/411-feature-request-favorite-workouts-v2, pero da un conflicto con origin/MyZEWPR4400
-## Para evitarlo, la solución encontrada es 'encapsular' esa rama en otro que deshaga el conflicto
-## Esa rama creada (origin/TMP-411-PR-favorite-workouts) se eliminará una vez que thejockl/411-feature-request-favorite-workouts-v2
-## se fusione en la rama master (goldencheetah/master)
-git remote add thejockl https://github.com/thejockl/GoldenCheetah.git
-git fetch thejockl
-## Como thejockl/411-feature-request-favorite-workouts-v2 puede seguir avanzando, se fusiona también
-git merge --no-edit thejockl/411-feature-request-favorite-workouts-v2	&& echo "merge PR4400 OK" >> $LOGFILE  || echo "merge PR4400 FAILED" >> $LOGFILE
-git merge --no-edit origin/TMP-411-PR-favorite-workouts
-##############################
 
 git merge --no-edit origin/TrainButtons         && echo "merge TrainButtons OK" >> $LOGFILE || echo "merge TrainButtons FAILED" >> $LOGFILE
-###### Cambio temporal
-git merge --no-edit origin/MyZEWPR4400			&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
+git merge --no-edit origin/MyZEW			&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
 git merge --no-edit origin/VideoWidgets         && echo "merge VideoWidgets OK" >> $LOGFILE || echo "merge VideoWidgets FAILED" >> $LOGFILE
 git merge --no-edit origin/SmoothPowerEstim	&& echo "merge SmoothPowerEstim OK" >> $LOGFILE  || echo "merge SmoothPowerEstim FAILED" >> $LOGFILE
 git merge --no-edit origin/PythonScripts	&& echo "merge PythonScripts OK" >> $LOGFILE  || echo "merge PythonScripts FAILED" >> $LOGFILE
