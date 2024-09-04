@@ -67,14 +67,10 @@ git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProce
 
 git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
 
-#### Merge temporal del PR4466: Equipment management feature
-# sustituye a:
-#git pull --no-rebase goldencheetah refs/pull/4466/head
-## Para evitar un conflicto al fusionar con PR4400
-git merge --no-edit origin/TMP-equipment_feature_simple
+#### Merge temporal del PR4533: Equipment management feature tiled
 git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git
 git fetch paulj49457
-git merge --no-edit paulj49457/equipment_feature_simple	&& echo "merge PR4466 OK" >> $LOGFILE  || echo "merge PR4466 FAILED" >> $LOGFILE
+git merge --no-edit paulj49457/equipment_feature_tiled && echo "merge PR4533 OK" >> $LOGFILE  || echo "merge PR4533 FAILED" >> $LOGFILE
 ##############################
 
 if [ "$1" ]; then
