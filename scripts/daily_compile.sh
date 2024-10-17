@@ -10,6 +10,7 @@ fi
 
 salida() {
   scripts/pushover_end_compile.sh "Nightly Build" $LOGFILE
+  echo Termina: `date` | tee -a $LOGFILE
   cat $LOGFILE >> $CUMLOGFILE
   rm $LOGFILE
   exit $1
@@ -21,13 +22,15 @@ export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
-export BUILDLOG=$SCRIPT_DIR/buildlog.txt
-echo Comienzo: `date` > $BUILDLOG
-echo ------------------------- >> $BUILDLOG
+merge() {
+git merge --no-edit $1 > /dev/null 2>&1 || {
+        ERR=$? ; echo "ERROR $ERR: merge $1 FAILED" | tee -a $LOGFILE ; salida $ERR
+        } && echo "merge $1 OK" | tee -a $LOGFILE
+}
 
-echo ------------------------- > $LOGFILE
-echo Comienzo: `date` >> $LOGFILE
-echo git fetch, merge, etc >> $LOGFILE
+echo ------------------------- | tee $LOGFILE
+echo Comienzo: `date` | tee -a $LOGFILE
+echo git fetch, merge, etc | tee -a $LOGFILE
 
 ###cd $SCRIPT_DIR/../.. && git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah
 
@@ -56,43 +59,45 @@ git branch -D NightlyBuild
 git checkout -b NightlyBuild
 
 
-git merge --no-edit origin/TrainButtons         && echo "merge TrainButtons OK" >> $LOGFILE || echo "merge TrainButtons FAILED" >> $LOGFILE
-git merge --no-edit origin/MyZEW			&& echo "merge MyZEW OK" >> $LOGFILE  || echo "merge MyZEW FAILED" >> $LOGFILE
-git merge --no-edit origin/VideoWidgets         && echo "merge VideoWidgets OK" >> $LOGFILE || echo "merge VideoWidgets FAILED" >> $LOGFILE
-git merge --no-edit origin/SmoothPowerEstim	&& echo "merge SmoothPowerEstim OK" >> $LOGFILE  || echo "merge SmoothPowerEstim FAILED" >> $LOGFILE
-git merge --no-edit origin/PythonScripts	&& echo "merge PythonScripts OK" >> $LOGFILE  || echo "merge PythonScripts FAILED" >> $LOGFILE
-git merge --no-edit origin/Strava		&& echo "merge Strava OK" >> $LOGFILE  || echo "merge Strava FAILED" >> $LOGFILE
+merge origin/TrainButtonsZ
+merge origin/MyZEW
+merge origin/VideoWidgets
+merge origin/SmoothPowerEstim
+merge origin/PythonScripts
+merge origin/Strava
+merge origin/PyAutomatedProcessors
 
-git merge --no-edit origin/PyAutomatedProcessors && echo "merge PyAutomatedProcessors OK" >> $LOGFILE  || echo "merge PyAutomatedProcessors FAILED" >> $LOGFILE
-
-git merge --no-edit goldencheetah/master	&& echo "merge master OK" >> $LOGFILE  || echo "merge master FAILED" >> $LOGFILE
+merge goldencheetah/master
 
 #### Merge temporal del PR4533: Equipment management feature tiled
 git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git
 git fetch paulj49457
-git merge --no-edit paulj49457/equipment_feature_tiled && echo "merge PR4533 OK" >> $LOGFILE  || echo "merge PR4533 FAILED" >> $LOGFILE
+merge paulj49457/equipment_feature_tiled
 ##############################
 
 if [ "$1" ]; then
-  git merge --no-edit origin/$1        		&& echo "merge " $1 " OK" >> $LOGFILE  || echo "merge " $1 " FAILED" >> $LOGFILE
+  merge origin/$1
 fi
 
-echo preparedirectory.sh: `date` >> $LOGFILE
+echo preparedirectory.sh: `date` | tee -a $LOGFILE
 
-./scripts/preparedirectory.sh  && { echo "preparedirectory OK" >> $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" >> $LOGFILE; salida $ERR; }
+./scripts/preparedirectory.sh  && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 
-echo script.sh: `date` >> $LOGFILE
+echo script.sh: `date` | tee -a $LOGFILE
 
+export BUILDLOG=$SCRIPT_DIR/buildlog.txt
+echo Comienzo: `date` > $BUILDLOG
+echo ------------------------- >> $BUILDLOG
 # Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
 # el código de error de la salida (process substitution)
 ./travis/linux/script.sh > >(tee -a $BUILDLOG) 2> >(tee -a $BUILDLOG >&2) \
-	&& { echo "Compile OK" >> $LOGFILE;} || { ERR=$?; echo "Compile FAILED" >> $LOGFILE; salida $ERR;}
+	&& { echo "Compile OK" | tee -a $LOGFILE;} || { ERR=$?; echo "Compile FAILED" | tee -a $LOGFILE; salida $ERR;}
 echo ------------------------- >> $BUILDLOG
 echo Finalización: `date` >> $BUILDLOG
 
 # Generate the AppImage
 
-echo after_success.sh: `date` >> $LOGFILE
+echo after_success.sh: `date` | tee -a $LOGFILE
 
 sed -i '/temp.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
 sed -i 's/sudo //' travis/linux/after_success.sh
@@ -102,11 +107,8 @@ sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/m
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
 [[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
-travis/linux/after_success.sh				&& { echo "deploy OK" >> $LOGFILE; } || { ERR=$?; echo "deploy FAILED" >> $LOGFILE; salida $ERR; }
-
+travis/linux/after_success.sh && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 
 src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract
-
-echo Termina: `date` >> $LOGFILE
 
 salida 0
