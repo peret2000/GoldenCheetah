@@ -9,11 +9,12 @@ if [[ -z "${ENV_LOADED}" ]]; then
 fi
 
 salida() {
-  scripts/pushover_end_compile.sh "Nightly Build" $LOGFILE
-  echo Termina: `date` | tee -a $LOGFILE
-  cat $LOGFILE >> $CUMLOGFILE
-  rm $LOGFILE
-  exit $1
+	[[ -n "$1" && "$1" != "0" ]] && echo ">>>EJECUCIÓN FALLIDA: $1" | tee -a $LOGFILE
+	scripts/pushover_end_compile.sh "Nightly Build $HOSTNAME" $LOGFILE > /dev/null 2>&1
+	echo Termina: `date` | tee -a $LOGFILE
+	cat $LOGFILE >> $CUMLOGFILE
+	rm $LOGFILE
+	exit $1
 }
 
 
@@ -41,7 +42,7 @@ cd $SCRIPT_DIR/..
 # Esto no debería ser necesario si se hace un git clone, partiendo de cero
 # Es por si el repositorio se quedó con un merge a medias, por ejemplo, por un conflicto
 # Si no había conflicto, dará un error que se puede ignorar
-git merge --abort
+git merge --abort > /dev/null 2>&1
 
 git fetch --all
 
@@ -102,7 +103,7 @@ echo Finalización: `date` >> $BUILDLOG
 
 echo after_success.sh: `date` | tee -a $LOGFILE
 
-sed -i '/temp.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
+sed -i '/temp.sh/s/^/echo Commented out:/' travis/linux/after_success.sh
 sed -i 's/sudo //' travis/linux/after_success.sh
 sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinux.txt/' travis/linux/after_success.sh
 
@@ -112,6 +113,6 @@ sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/m
 [[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
 travis/linux/after_success.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 
-src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract
+src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract > /dev/null 2>&1
 
 salida 0
