@@ -585,6 +585,7 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
         else if (p_meterWidget->Source() == QString("Speed"))
         {
             p_meterWidget->Value = rtd.getSpeed() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Value = std::round(p_meterWidget->Value * 10.0f) / 10.0f;
             p_meterWidget->Text = QString::number((int)p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = QString(".") +QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + (metric ? tr(" kph") : tr(" mph")) + p_meterWidget->AltTextSuffix;
         }
