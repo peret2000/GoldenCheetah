@@ -453,6 +453,7 @@ TrainConfig::TrainConfig(QDir home, Context *context) :
     remotePage = new RemotePage(this, context);
     simBicyclePage = new SimBicyclePage(this, context);
     workoutTagManagerPage = new WorkoutTagManagerPage(trainDB, this);
+    qdomyosTreadmillPage = new QdomyosTreadmillPage(this, context);
 
     setContentsMargins(0,0,0,0);
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
@@ -464,6 +465,7 @@ TrainConfig::TrainConfig(QDir home, Context *context) :
     tabs->addTab(remotePage, tr("Remote Controls"));
     tabs->addTab(simBicyclePage, tr("Virtual Bicycle Specifications"));
     tabs->addTab(workoutTagManagerPage, tr("Workout Tags"));
+    tabs->addTab(qdomyosTreadmillPage, tr("QDomyos Treadmill"));
 
     mainLayout->addWidget(tabs);
 }
@@ -477,6 +479,7 @@ qint32 TrainConfig::saveClicked()
     state |= remotePage->saveClicked();
     state |= simBicyclePage->saveClicked();
     state |= workoutTagManagerPage->saveClicked();
+    state |= qdomyosTreadmillPage->saveClicked();
 
     return state;
 }

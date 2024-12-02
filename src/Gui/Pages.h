@@ -322,6 +322,19 @@ private:
     NoEditDelegate numDelegate;
 };
 
+class QdomyosTreadmillPage: public QWidget
+{
+    Q_OBJECT
+    G_OBJECT
+public:
+    QdomyosTreadmillPage(QWidget *parent, Context *context);
+    qint32 saveClicked();
+private:
+    Context         *context;
+    QCheckBox       *useQDomyosWebSocket;
+    QLabel          *qdomyosWebSocketIPLabel;
+    QLineEdit       *qdomyosWebSocketIP;
+};
 
 
 class CustomMetricsPage : public QWidget

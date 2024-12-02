@@ -1257,6 +1257,36 @@ WorkoutTagManagerPage::modelCleaner
     }
 }
 
+////////////////////////////////////////////////////
+// QDoymos Treadmill page
+//
+QdomyosTreadmillPage::QdomyosTreadmillPage(QWidget *parent, Context *context) : QWidget(parent), context(context)
+{
+    useQDomyosWebSocket = new QCheckBox(tr("Use QDomyos WebSocket"), this);
+    useQDomyosWebSocket->setChecked(appsettings->value(this, TRAIN_QDMYOS_USEWEBSOCKETSRVIP, false).toBool());
+    useQDomyosWebSocket->setToolTip(tr("If GC connects to QDomoys app acting as a bridge to a treadmill\n"
+                                        "It can send treadmill inclination to QDomyos using websockets\n"
+                                        "GC and QDomyos must be connected to the same local network\n"
+                                        "and QDomyos IP must be specified"));
+
+    qdomyosWebSocketIPLabel = new QLabel(tr("QDomyos WebSocket Server IP"));
+    qdomyosWebSocketIP = new QLineEdit();
+    qdomyosWebSocketIP->setText(appsettings->value(this, TRAIN_QDMYOS_WEBSOCKETSRVIP, "").toString());
+
+    QFormLayout *all = newQFormLayout(this);
+
+    all->addRow("", useQDomyosWebSocket);
+    all->addRow(qdomyosWebSocketIPLabel, qdomyosWebSocketIP);
+}
+
+qint32
+QdomyosTreadmillPage::saveClicked()
+{
+    appsettings->setValue(TRAIN_QDMYOS_USEWEBSOCKETSRVIP, useQDomyosWebSocket->isChecked());
+    appsettings->setValue(TRAIN_QDMYOS_WEBSOCKETSRVIP, qdomyosWebSocketIP->text());
+    return 0;
+}
+
 
 
 //
