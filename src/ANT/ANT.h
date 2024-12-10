@@ -472,6 +472,8 @@ signals:
     void receivedAntMessage(const unsigned char RS, const ANTMessage message, const struct timeval timestamp);
     void sentAntMessage(const unsigned char RS, const ANTMessage message, const struct timeval timestamp);
 
+    void setNotification(QString msg, int timeout);
+
 public slots:
 
     // runtime controls

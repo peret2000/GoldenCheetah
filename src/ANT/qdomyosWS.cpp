@@ -20,7 +20,9 @@ qdSocket::qdSocket(const QString &url, QObject *parent)
     QObject::connect(m_webSocket, &QWebSocket::connected, this, &qdSocket::onConnected);
 
     QObject::connect(m_webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error), this, [this](QAbstractSocket::SocketError error) {
-        qCritical() << "QDomyos Websocket: WebSocket error:" << error << ". " << m_webSocket->errorString();
+        QString str = "QDomyos Websocket: WebSocket error: " + QString::number(error) + ". " + m_webSocket->errorString();
+        qCritical() << str;
+        emit setNotification(str, 2);
     });
 
     QObject::connect(m_webSocket, &QWebSocket::disconnected, this, &qdSocket::onDisconnected);
@@ -80,6 +82,7 @@ void qdSocket::sendResistance(double resistance, bool update_gc_slope) {
         m_webSocket->sendTextMessage(jsonString);
         qDebug() << "QDomyos Websocket: Sent message:" << jsonString;
         //emit TrainSidebar::setNotification("Changing Treadmill Slope to " + QString::number(resistance), 1);
+        emit setNotification("Changing Treadmill Slope to " + QString::number(resistance), 1);
 
         m_update_slope = false;
         m_timer_slope->start(5000);

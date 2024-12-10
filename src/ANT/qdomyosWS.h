@@ -39,6 +39,9 @@ private slots:
 
     void timeout_update_slot();
 
+signals:
+    void setNotification(QString msg, int timeout);
+
 private:
     QWebSocket *m_webSocket;
     QString m_url;

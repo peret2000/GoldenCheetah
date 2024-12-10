@@ -177,6 +177,8 @@ ANT::ANT(QObject *parent, DeviceConfiguration *devConf, QString athlete) : QThre
         antChannel[i]->channelTimer = new QTimer(this);
     }
 
+    connect(this, SIGNAL(setNotification(QString,int)), parent, SIGNAL(setNotification(QString,int)));
+
     // on windows and linux we use libusb to read from USB2
     // sticks, if it is not available we use stubs
 #if defined GC_HAVE_LIBUSB
@@ -594,6 +596,7 @@ ANT::setup()
                             qDebug() << "ANT Setup -> Creating QDomyos WebSocket Client";
                             if (wsQDomyos) delete wsQDomyos;
                             wsQDomyos = new qdSocket("ws://"+url);
+                            connect(wsQDomyos, SIGNAL(setNotification(QString,int)), this, SIGNAL(setNotification(QString,int)));
                         }
                     }
                 }
