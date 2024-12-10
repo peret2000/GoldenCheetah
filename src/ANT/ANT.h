@@ -91,6 +91,8 @@
 class ANTMessage;
 class ANTChannel;
 
+class qdSocket;
+
 typedef struct ant_sensor_type {
   bool user; // can user select this when calibrating ?
   int type;
@@ -808,6 +810,8 @@ private:
 
     // athlete for wheelsize settings, etc.
     QString trainAthlete;
+
+    qdSocket *wsQDomyos;
 };
 
 #include "ANTMessage.h"
