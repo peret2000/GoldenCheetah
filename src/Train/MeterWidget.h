@@ -131,6 +131,7 @@ class CompassWidget : public MeterWidget
   public:
     explicit CompassWidget(QString name, QWidget *parent = 0, QString Source = QString("None"));
     virtual void paintEvent(QPaintEvent* paintevent);
+    void setCompassMode(QwtCompass::Mode mode) { m_Compass.setMode(mode); }
 };
 
 

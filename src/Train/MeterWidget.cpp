@@ -368,7 +368,7 @@ CompassWidget::CompassWidget(QString Name, QWidget *parent, QString Source) : Me
 {
     m_Compass.setAttribute(Qt::WA_TranslucentBackground, true);
     m_Compass.setNeedle(new QwtCompassMagnetNeedle(QwtCompassMagnetNeedle::TriangleStyle, Qt::white, Qt::red));
-    m_Compass.setMode(QwtCompass::RotateScale);
+    setCompassMode(QwtCompass::RotateNeedle);
     QwtSimpleCompassRose *rose = new QwtSimpleCompassRose( 16, 2 );
     rose->setWidth( 0.15 );
     m_Compass.setRose(rose);
