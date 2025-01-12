@@ -9,6 +9,10 @@ scipy
 lmfit
 plotly
 importlib_metadata
+meteostat
+python-dateutil
+geopy
+folium
 Jinja2
 #
 # Nice to have
