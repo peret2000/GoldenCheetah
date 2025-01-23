@@ -64,7 +64,6 @@ merge origin/TrainButtons
 merge origin/MyZEW
 merge origin/VideoWidgets
 merge origin/SmoothPowerEstim
-merge origin/PythonScripts
 merge origin/Strava
 merge origin/PyAutomatedProcessors
 merge origin/treadmill_qdomyos
