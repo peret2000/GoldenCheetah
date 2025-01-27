@@ -1,7 +1,23 @@
 #!/bin/bash
 
-# Script para ganerar AppImage y extraer su contenido, cuando sólo se necesita compilar cambios
-# Compila los cambios y genera AppImage
+# Script que compila cambios. No se genera AppImage, salvo que se mande el parámetro --appimage
+# En ese caso, se genera AppImage y se extrae su contenido
+
+# Si no se manda ese parámetro, se asume que no es necesaria la creación de la estructura de directorios
+# Se asume que ya hay un directorio squashfs-root donde se depositará el binario
+# Si no existe ya ese directorio con todo el paquete de librerías, etc, necesario para la ejecución,
+# el binario no se ejecutará correctamente en ese entorno, pero realmente no es necesario, si la finalidad es
+# copiar el binario a otro lugar
+
+# Si se manda el parámetro, se genera todo el directorio squashfs-root
+
+
+# Chequea si se manda el parámetro --appimage
+if [[ "$1" == "--appimage" ]]; then
+        export APPIMAGE=1
+else
+        export APPIMAGE=0
+fi
 
 # Check whether .bashrc has been loaded (for example, cron does not load it)
 if [[ -z "${ENV_LOADED}" ]]; then
@@ -37,20 +53,41 @@ cd $SCRIPT_DIR/..
 echo ------------------------- >> $BUILDLOG
 echo Finalización: `date` >> $BUILDLOG
 
-# Generate the AppImage
-
-echo after_success.sh: `date` | tee -a $LOGFILE
-
-sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
-sed -i 's/sudo //' travis/linux/after_success.sh
-sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinux.txt/' travis/linux/after_success.sh
-
 [[ -d src/appdir ]] && rm -rf src/appdir
-[[ -d squashfs-root ]] && rm -rf squashfs-root
 
-[[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
-travis/linux/after_success.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
+if [[ $APPIMAGE -eq 0 ]]; then
+        echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
+        # Download current version of linuxdeployqt
+        cd src
+        wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/7/linuxdeployqt-7-x86_64.AppImage
+        chmod a+x linuxdeployqt-7-x86_64.AppImage
 
-src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract > /dev/null 2>&1
+        # Deploy to appdir
+        mkdir -p appdir
+        cp -p GoldenCheetah appdir/
+        # Lightweight deploy
+        ./linuxdeployqt-7-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libnss3,libnssutil3,libxcb-dri3.so.0 \
+                -unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
+        mkdir -p ../squashfs-root && mv appdir/GoldenCheetah ../squashfs-root/
+        # Cleanup
+        rm ./linuxdeployqt-7-x86_64.AppImage
+        rm -rf ./appdir
+
+else
+        # Generate the AppImage
+
+        echo after_success.sh: `date` | tee -a $LOGFILE
+
+        sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
+        sed -i 's/sudo //' travis/linux/after_success.sh
+        sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinux.txt/' travis/linux/after_success.sh
+
+        [[ -d squashfs-root ]] && rm -rf squashfs-root
+
+        [[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
+        travis/linux/after_success.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
+
+        src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract > /dev/null 2>&1
+fi
 
 salida 0
