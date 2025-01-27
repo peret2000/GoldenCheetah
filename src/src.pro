@@ -570,6 +570,9 @@ SOURCES += Train/VMProConfigurator.cpp Train/VMProWidget.cpp
 SOURCES += Train/Ftms.cpp
 HEADERS += Train/Ftms.h
 
+# For Utils::preventSleep() and Utils::allowSleep()
+QT += dbus
+
 QT += charts opengl
 
 # Dashboard uses qt charts, so needs at least Qt 5.7

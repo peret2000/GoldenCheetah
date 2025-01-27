@@ -110,6 +110,8 @@
 #endif
 #include "Secrets.h"
 
+#include "Utils.h"
+
 #if defined(_MSC_VER) && defined(_WIN64)
 #include "WindowsCrashHandler.cpp"
 #endif
@@ -1375,6 +1377,8 @@ MainWindow::resetPerspective(int view, bool force)
     static int lastview=-1;
 
     if (!force && lastview == view && lastathlete == currentAthleteTab) return;
+    if (lastview == 3 && view != 3)
+        Utils::allowSleep();
 
     // remember who last updated it.
     lastathlete = currentAthleteTab;
@@ -1387,7 +1391,9 @@ MainWindow::resetPerspective(int view, bool force)
     case 0:  current = currentAthleteTab->homeView; break;
     case 1:  current = currentAthleteTab->analysisView; break;
     case 2:  current = currentAthleteTab->planView; break;
-    case 3:  current = currentAthleteTab->trainView; break;
+    case 3:  current = currentAthleteTab->trainView;
+        Utils::preventSleep();
+        break;
     }
 
     // set the perspective
