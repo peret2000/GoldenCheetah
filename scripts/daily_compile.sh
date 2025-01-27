@@ -67,6 +67,7 @@ merge origin/SmoothPowerEstim
 merge origin/Strava
 merge origin/PyAutomatedProcessors
 merge origin/treadmill_qdomyos
+merge origin/utils
 
 merge goldencheetah/master
 
