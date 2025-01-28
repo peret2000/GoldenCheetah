@@ -78,7 +78,7 @@ else
 
         echo after_success.sh: `date` | tee -a $LOGFILE
 
-        sed -i '/free.keep.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
+        sed -i '/temp.sh/s/^/echo Commented out:/' travis/linux/after_success.sh 
         sed -i 's/sudo //' travis/linux/after_success.sh
         sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinux.txt/' travis/linux/after_success.sh
 
