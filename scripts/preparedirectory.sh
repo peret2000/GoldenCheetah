@@ -18,9 +18,16 @@
 # Ejecuta travis/linux/before_script.sh (debe estar la variable de entorno $GC_STRAVA_CLIENT_SECRET)
 # modifica gcconfig.pri
 
+# Si se quiere usar un entorno de Qt diferente al por defecto (por ejemplo Qt6.6.1), debe existir la variable QT_DIR,
+# y se usa para sustituir paths que hay hardcoded en los scripts de travis/linux
+
 # Check whether .bashrc has been loaded (for example, cron does not load it)
 if [[ -z "${ENV_LOADED}" ]]; then
         source $HOME/.profile
+fi
+
+if [ -n "${QT_DIR}" ]; then
+    sed -i "s|/opt/qt515|${QT_DIR}|g" travis/linux/*.sh
 fi
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
