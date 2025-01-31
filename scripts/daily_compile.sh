@@ -68,6 +68,7 @@ merge origin/Strava
 merge origin/PyAutomatedProcessors
 merge origin/treadmill_qdomyos
 merge origin/utils
+merge origin/pr_distance_and_speed_in_mapchart
 
 merge goldencheetah/master
 
