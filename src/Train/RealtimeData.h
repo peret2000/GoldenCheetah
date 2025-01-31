@@ -127,7 +127,7 @@ public:
     void setJoules(long);
     void setAvgWatts(double);
     void setGear(double);
-    void setCoreTemp(double,double);
+    void setCoreTemp(double,double,double);
 
     const char *getName() const;
 
