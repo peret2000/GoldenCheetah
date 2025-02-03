@@ -168,7 +168,7 @@ public:
     virtual void startPlayback(Context* context);
     virtual void stopPlayback();
     void setContext(Context* context) { this->context = context; }
-    void plotNewLatLng(double newLat, double newLong);
+    void plotNewLatLng(double newLat, double newLong, double bearing);
     void initLiveMap(Context* context);
     void loadingLiveMap();
     int  m_Zoom;
