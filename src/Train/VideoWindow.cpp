@@ -636,7 +636,8 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
                 geolocation geo(dLat, dLon, dAlt);
                 if (geo.IsReasonableGeoLocation())
                 {
-                    liveMapWidget->plotNewLatLng(dLat, dLon);
+                    double bearing = rtd.getBearing();
+                    liveMapWidget->plotNewLatLng(dLat, dLon, bearing);
                 }
             }
         }
