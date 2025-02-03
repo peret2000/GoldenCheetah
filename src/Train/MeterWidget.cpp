@@ -670,7 +670,7 @@ void LiveMapWidget::createHtml(QString sBaseUrl, QString autoRunJS)
         "integrity=\"sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==\" crossorigin=\"\"/>\n"
         "<script src=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.js\"\n"
         "integrity=\"sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==\" crossorigin=\"\"></script>\n"
-        "<style>#mapid {height:100%;width:100%} .custom-marker .arrow {width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 15px solid blue;}</style></head>\n"
+        "<style>#mapid {height:100%;width:100%} .custom-marker .arrow {width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 18px solid rgb(4, 142, 189);}</style></head>\n"
         "<body><div id=\"mapid\"></div>\n"
         "<script type=\"text/javascript\">\n"
         "var mapOptions, mymap, mylayer, mymarker, latlng, myscale, routepolyline\n"
