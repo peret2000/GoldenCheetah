@@ -235,6 +235,7 @@ void LiveMapWebPageWindow::telemetryUpdate(RealtimeData rtd)
     if (geoloc.IsReasonableGeoLocation()) {
         QString sLat = QVariant(rtd.getLatitude()).toString();
         QString sLon = QVariant(rtd.getLongitude()).toString();
+        QString sDirection = QVariant(rtd.getBearing()).toString();
         code = "";
         if (!markerIsVisible)
         {
@@ -242,13 +243,13 @@ void LiveMapWebPageWindow::telemetryUpdate(RealtimeData rtd)
                 QString sZoom = QString::number(zoom());
                 code += QString("centerMap (" + sLat + ", " + sLon + ", " + sZoom + ");");
             }
-            code += QString("showMyMarker (" + sLat + ", " + sLon + ");");
+            code += QString("showMyMarker (" + sLat + ", " + sLon + ", " + sDirection + ");");
             markerIsVisible = true;
         }
         else
         {
-            (zoom() != 0) ? code += QString("moveMarker (" + sLat + ", " + sLon + ", true);") :
-                code += QString("moveMarker (" + sLat + ", " + sLon + ");");
+            QString sMoveMap = (zoom() != 0 ? "true" : "false");
+            code += QString("moveMarker (" + sLat + ", " + sLon + "," + sMoveMap + "," + sDirection + ");");
         }
         view->page()->runJavaScript(code);
     }
@@ -267,15 +268,19 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
         "integrity=\"sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==\" crossorigin=\"\"/>\n"
         "<script src=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.js\"\n"
         "integrity=\"sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==\" crossorigin=\"\"></script>\n"
-        "<style>#mapid {height:100%;width:100%}</style></head>\n"
+        "<style>#mapid {height:100%;width:100%} .custom-marker .arrow {width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 15px solid blue;}</style></head>\n"
         "<body><div id=\"mapid\"></div>\n"
         "<script type=\"text/javascript\">\n"
         "var mapOptions, mymap, mylayer, mymarker, latlng, myscale, routepolyline\n"
-        "function moveMarker(myLat, myLon, moveMap) {\n"
+        "function moveMarker(myLat, myLon, moveMap, direction) {\n"
         "    if (moveMap) {\n"
         "       mymap.panTo(new L.LatLng(myLat, myLon));\n"
         "    }\n"
         "    mymarker.setLatLng(new L.latLng(myLat, myLon));\n"
+        "    mymarker.setIcon(L.divIcon({\n"
+        "        className: 'custom-marker',\n"
+        "        html: '<div class=\"arrow\" style=\"transform: rotate(' + direction + 'deg);\"></div>'\n"
+        "    }));\n"
         "}\n"
         "function initMap(myLat, myLon) {\n"
         "    mapOptions = {\n"
@@ -289,13 +294,17 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
         "    mylayer = new L.tileLayer('" + sBaseUrl +"');\n"
         "    mymap.addLayer(mylayer);\n"
         "}\n"
-        "function showMyMarker(myLat, myLon) {\n"
+        "function showMyMarker(myLat, myLon, direction) {\n"
         "    mymarker = new L.marker([myLat, myLon], {\n"
         "    draggable: false,\n"
         "    title : \"GoldenCheetah - Workout LiveMap\",\n"
         "    alt : \"GoldenCheetah - Workout LiveMap\",\n"
-        "    riseOnHover : true\n"
-        "        }).addTo(mymap);\n"
+        "    riseOnHover : true,\n"
+        "    icon: L.divIcon({\n"
+        "        className: 'custom-marker',\n"
+        "        html: '<div class=\"arrow\" style=\"transform: rotate(' + direction + 'deg);\"></div>'\n"
+        "    })\n"
+        "    }).addTo(mymap);\n"
         "}\n"
         "function centerMap(myLat, myLon, myZoom) {\n"
         "    latlng = L.latLng(myLat, myLon);\n"
@@ -308,5 +317,5 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
         "</script>\n"
         + autoRunJS +
         "</body></html>\n"
-     );
+    );
 }
