@@ -106,29 +106,61 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     static_cast<QwtPlotCanvas*>(canvas())->setFrameStyle(QFrame::NoFrame);
     //courseData = data;                      // what we plot
     setAutoDelete(false);
-    setAxesCount(QwtAxis::YRight, 4);
+    setAxesCount(QwtAxis::YRight, 2);   // Cadencia&HR y W'bal
+    setAxesCount(QwtAxis::YLeft, 3); // Altitud, Potencia y velocidad
 
-    // Setup the left axis (Power)
-    setAxisTitle(QwtAxis::YLeft, "Watts");
-    setAxisVisible(QwtAxis::YLeft, true);
-    QwtScaleDraw *sd = new QwtScaleDraw;
-    sd->setTickLength(QwtScaleDiv::MajorTick, 3);
-    setAxisMaxMinor(QwtAxis::YLeft, 0);
-    //setAxisScaleDraw(QwtAxis::YLeft, sd);
+    QwtAxisId axisAltitude(QwtAxis::YLeft, 0);
+    QwtAxisId axisPower(QwtAxis::YLeft, 1);
+    QwtAxisId axisSpeed(QwtAxis::YLeft, 2);
 
-    QPalette pal;
-    pal.setColor(QPalette::WindowText, GColor(CRIDEPLOTYAXIS));
-    pal.setColor(QPalette::Text, GColor(CRIDEPLOTYAXIS));
-    axisWidget(QwtAxis::YLeft)->setPalette(pal);
+    // Setup Altitude axis (hidden)
+    setAxisTitle(axisAltitude, "Altitude");
+    setAxisVisible(axisAltitude, false);
+    //setAxisMaxMinor(axisAltitude, 0);
 
     QFont stGiles;
     stGiles.fromString(appsettings->value(this, GC_FONT_CHARTLABELS, QFont().toString()).toString());
     stGiles.setPointSize(appsettings->value(NULL, GC_FONT_CHARTLABELS_SIZE, 8).toInt());
-    QwtText title("Watts");
-    title.setFont(stGiles);
-    QwtPlot::setAxisFont(QwtAxis::YLeft, stGiles);
-    QwtPlot::setAxisTitle(QwtAxis::YLeft, title);
 
+    // Setup Power axis
+    QwtText titleWatts("Watts");
+    titleWatts.setFont(stGiles);
+    setAxisFont(axisPower, stGiles);
+    setAxisTitle(axisPower, titleWatts);
+    setAxisVisible(axisPower, true);
+    setAxisScale(axisPower, 0, 280);
+    QPalette palWatts;
+    palWatts.setColor(QPalette::WindowText, GColor(CPOWER));
+    palWatts.setColor(QPalette::Text, GColor(CPOWER));
+    axisWidget(axisPower)->setPalette(palWatts);
+
+    // Setup Speed axis
+    QwtText titleSpeed("Speed");
+    titleSpeed.setFont(stGiles);
+    setAxisTitle(axisSpeed, titleSpeed);
+    setAxisVisible(axisSpeed, true);
+    setAxisScale(axisSpeed, 0, 60);
+    QPalette palSpeed;
+    palSpeed.setColor(QPalette::WindowText, GColor(CSPEED));
+    palSpeed.setColor(QPalette::Text, GColor(CSPEED));
+    axisWidget(axisSpeed)->setPalette(palSpeed);
+
+    QwtScaleDraw *sd = new QwtScaleDraw;
+    sd->enableComponent(QwtScaleDraw::Ticks, true);
+    sd->enableComponent(QwtScaleDraw::Backbone, true);
+    sd->setLabelRotation(270);
+    sd->setTickLength(QwtScaleDiv::MajorTick, 3);
+    setAxisScaleDraw(axisPower, sd);
+    QwtScaleDraw *sd2 = new QwtScaleDraw;
+    sd2->enableComponent(QwtScaleDraw::Ticks, true);
+    sd2->enableComponent(QwtScaleDraw::Backbone, true);
+    sd2->setLabelRotation(270);
+    sd2->setTickLength(QwtScaleDiv::MajorTick, 3);
+    setAxisScaleDraw(axisSpeed, sd2);
+
+
+
+    // Setup X axis
     setAxisVisible(QwtAxis::XBottom, true);
     distdraw = new DistScaleDraw;
     distdraw->setTickLength(QwtScaleDiv::MajorTick, 3);
@@ -136,33 +168,43 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     timedraw->setTickLength(QwtScaleDiv::MajorTick, 3);
     setAxisMaxMinor(QwtAxis::XBottom, 0);
     setAxisScaleDraw(QwtAxis::XBottom, timedraw);
-
     // set the axis so we default to an hour workout
     setAxisScale(QwtAxis::XBottom, (double)0, 1000 * 60  * 60 , 15 * 60 * 1000);
 
-    title.setFont(stGiles);
-    title.setText("Time (mins)");
+    QwtText titleX("Time (mins)");
+    titleX.setFont(stGiles);
     QwtPlot::setAxisFont(QwtAxis::XBottom, stGiles);
-    QwtPlot::setAxisTitle(QwtAxis::XBottom, title);
+    QwtPlot::setAxisTitle(QwtAxis::XBottom, titleX);
 
+    QPalette pal;
     pal.setColor(QPalette::WindowText, GColor(CRIDEPLOTXAXIS));
     pal.setColor(QPalette::Text, GColor(CRIDEPLOTXAXIS));
     axisWidget(QwtAxis::XBottom)->setPalette(pal);
 
-    // axis 1 not currently used
-    setAxisVisible(QwtAxisId(QwtAxis::YRight,1), false); // max speed of 60mph/60kmh seems ok to me!
-    setAxisVisible(QwtAxisId(QwtAxis::YRight,1).id, false);
+    // Ejes del lado derecho
+    QwtAxisId axisHRCadence(QwtAxis::YRight, 0);
+    QwtAxisId axisWbal(QwtAxis::YRight, 1);
+    setAxisVisible(axisHRCadence, true);
+    setAxisVisible(axisWbal, false);
+    setAxisScale(axisHRCadence, 0, 160); // max hr
+    QPalette palHR;
+    palHR.setColor(QPalette::WindowText, GColor(CHEARTRATE));
+    palHR.setColor(QPalette::Text, GColor(CHEARTRATE));
+    axisWidget(axisHRCadence)->setPalette(palHR);
+    QwtText titleHR("HR&Cadence");
+    setAxisFont(axisHRCadence, stGiles);
+    titleHR.setFont(stGiles);
+    setAxisTitle(axisHRCadence, titleHR);
 
-    // set all the orher axes off but scaled
-    setAxisScale(QwtAxis::YLeft, 0, 300); // max cadence and hr
-    setAxisVisible(QwtAxis::YLeft, true);
-    setAxisAutoScale(QwtAxis::YLeft, true);// we autoscale, since peaks are so much higher than troughs
+    QwtScaleDraw *sdH = new QwtScaleDraw;
+    sdH->enableComponent(QwtScaleDraw::Ticks, true);
+    sdH->enableComponent(QwtScaleDraw::Backbone, true);
+    sdH->setLabelRotation(90);// in the 000s
+    sdH->setTickLength(QwtScaleDiv::MajorTick, 3);
+    setAxisScaleDraw(axisHRCadence, sdH);
 
-    setAxisScale(QwtAxis::YRight, 0, 250); // max cadence and hr
-    setAxisVisible(QwtAxis::YRight, false);
-    setAxisScale(QwtAxisId(QwtAxis::YRight,2), 0, 60); // max speed of 60mph/60kmh seems ok to me!
-    setAxisVisible(QwtAxisId(QwtAxis::YRight,2), false); // max speed of 60mph/60kmh seems ok to me!
-    setAxisVisible(QwtAxisId(QwtAxis::YRight,2).id, false);
+
+
 
     // data bridge to ergfile
     lodData = new ErgFileData(context);
@@ -172,7 +214,7 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     LodCurve->attach(this);
     LodCurve->setVisible(workoutActive);
     LodCurve->setBaseline(-1000);
-    LodCurve->setYAxis(QwtAxis::YLeft);
+    LodCurve->setYAxis(axisAltitude);
 
     // load curve is blue for time and grey for gradient
     QColor brush_color = QColor(GColor(CTPOWER));
@@ -183,34 +225,20 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
 
     wbalCurvePredict = new QwtPlotCurve("W'bal Predict");
     wbalCurvePredict->attach(this);
-    wbalCurvePredict->setYAxis(QwtAxisId(QwtAxis::YRight, 3));
+    wbalCurvePredict->setYAxis(axisWbal);
     wbalCurvePredict->setVisible(true);
 
     wbalCurve = new QwtPlotCurve("W'bal Actual");
     wbalCurve->attach(this);
-    wbalCurve->setYAxis(QwtAxisId(QwtAxis::YRight, 3));
+    wbalCurve->setYAxis(axisWbal);
     wbalData = new CurveData;
     wbalCurve->setSamples(wbalData->x(), wbalData->y(), wbalData->count());
 
-    sd = new QwtScaleDraw;
-    sd->enableComponent(QwtScaleDraw::Ticks, false);
-    sd->enableComponent(QwtScaleDraw::Backbone, false);
-    sd->setLabelRotation(90);// in the 000s
-    sd->setTickLength(QwtScaleDiv::MajorTick, 3);
-    setAxisScaleDraw(QwtAxisId(QwtAxis::YRight, 3), sd);
-    pal.setColor(QPalette::WindowText, GColor(CWBAL));
-    pal.setColor(QPalette::Text, GColor(CWBAL));
-    axisWidget(QwtAxisId(QwtAxis::YRight, 3))->setPalette(pal);
-    QwtPlot::setAxisFont(QwtAxisId(QwtAxis::YRight, 3), stGiles);
-    QwtText title2(tr("W' Balance (J)"));
-    title2.setFont(stGiles);
-    QwtPlot::setAxisTitle(QwtAxisId(QwtAxis::YRight, 3), title2);
-    setAxisLabelAlignment(QwtAxisId(QwtAxis::YRight, 3), Qt::AlignVCenter);
 
     // telemetry history
     wattsCurve = new QwtPlotCurve("Power");
     wattsCurve->attach(this);
-    wattsCurve->setYAxis(QwtAxis::YLeft);
+    wattsCurve->setYAxis(axisPower);
     // dgr wattsCurve->setPaintAttribute(QwtPlotCurve::PaintFiltered);
     wattsData = new CurveData;
     wattsCurve->setSamples(wattsData->x(), wattsData->y(), wattsData->count());
@@ -218,21 +246,21 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     // telemetry history
     hrCurve = new QwtPlotCurve("Heartrate");
     hrCurve->attach(this);
-    hrCurve->setYAxis(QwtAxis::YRight);
+    hrCurve->setYAxis(axisHRCadence);
     hrData = new CurveData;
     hrCurve->setSamples(hrData->x(), hrData->y(), hrData->count());
 
     // telemetry history
     cadCurve = new QwtPlotCurve("Cadence");
     cadCurve->attach(this);
-    cadCurve->setYAxis(QwtAxis::YRight);
+    cadCurve->setYAxis(axisHRCadence);
     cadData = new CurveData;
     cadCurve->setSamples(cadData->x(), cadData->y(), cadData->count());
 
     // telemetry history
     speedCurve = new QwtPlotCurve("Speed");
     speedCurve->attach(this);
-    speedCurve->setYAxis(QwtAxisId(QwtAxis::YRight,2).id);
+    speedCurve->setYAxis(axisSpeed);
     speedData = new CurveData;
     speedCurve->setSamples(speedData->x(), speedData->y(), speedData->count());
 
@@ -247,13 +275,13 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     CPMarker->setLinePen(GColor(CPLOTMARKER), 1, Qt::DotLine);
     CPMarker->setLabel(CPText);
     CPMarker->setLabelAlignment(Qt::AlignLeft | Qt::AlignTop);
-    CPMarker->setYAxis(QwtAxis::YLeft);
+    CPMarker->setYAxis(axisPower);
     CPMarker->setYValue(274);
     CPMarker->attach(this);
 
     // Dummy curve for ensuring headroom in Ergmode
     powerHeadroom = new QwtPlotCurve("Dummy Headroom");
-    powerHeadroom->setYAxis(QwtAxis::YLeft);
+    powerHeadroom->setYAxis(axisAltitude);
     powerHeadroom->setPen(QColor(0, 0, 0, 0));
     powerHeadroom->attach(this);
     powerHeadroom->setVisible(false);
@@ -264,12 +292,12 @@ ErgFilePlot::ErgFilePlot(Context *context) : context(context)
     NowCurve->setPen(Nowpen);
     NowCurve->setSamples(nowData);
     NowCurve->attach(this);
-    NowCurve->setYAxis(QwtAxis::YLeft);
+    NowCurve->setYAxis(axisAltitude);
 
     tooltip = new penTooltip(static_cast<QwtPlotCanvas*>(canvas()));
     tooltip->setMousePattern(QwtEventPattern::MouseSelect1, Qt::LeftButton, Qt::ShiftModifier);
 
-    picker = new QwtPlotPicker(QwtAxis::XBottom, QwtAxis::YLeft, canvas());
+    picker = new QwtPlotPicker(QwtAxis::XBottom, axisAltitude, canvas());
     picker->setTrackerMode(QwtPlotPicker::AlwaysOff);
     picker->setStateMachine(new QwtPickerTrackerMachine());
     connect(picker, SIGNAL(moved(const QPoint&)), this, SLOT(hover(const QPoint&)));
@@ -544,7 +572,7 @@ ErgFilePlot::setData(ErgFile *ergfile)
             QwtPlotMarker *add = new QwtPlotMarker();
             add->setLineStyle(QwtPlotMarker::VLine);
             add->setLinePen(QPen(GColor(CPLOTMARKER), 0, Qt::DashDotLine));
-            add->setLabelAlignment(labelAlignment);
+            add->setLabelAlignment(Qt::AlignHCenter | Qt::AlignTop);
             // convert to imperial according to settings
             double unitsFactor = (!bydist || GlobalContext::context()->useMetricUnits) ? 1.0 : MILES_PER_KM;
             add->setValue(lap.x * unitsFactor, 0);
@@ -599,6 +627,37 @@ ErgFilePlot::setData(ErgFile *ergfile)
                 // only allocate a new one if its not the current (they get freed by Qwt)
                 if (axisScaleDraw(QwtAxis::XBottom) != timedraw)
                     setAxisScaleDraw(QwtAxis::XBottom, (timedraw=new HourTimeScaleDraw()));
+            }
+
+            if (ergFile->hasGPS()) {
+
+                setAxisScale(QwtAxis::YLeft, ergFile->minElevation(), ergFile->maxElevation());
+                // Escribe alturas mínima y máxima
+
+                QwtPlotMarker *markerL = new QwtPlotMarker();
+                markerL->setLineStyle(QwtPlotMarker::HLine);
+                markerL->setLinePen(QPen(GColor(CALTITUDE), 0, Qt::DashDotLine));
+                markerL->setLabelAlignment(Qt::AlignHCenter | Qt::AlignTop);
+                QwtText txtminaltitude("Min Altitutde: " + QString::number(ergFile->minElevation(), 'f', 0));
+                txtminaltitude.setColor(Qt::white);
+                txtminaltitude.setFont(QFont("Helvetica", 10, QFont::Bold));
+                markerL->setLabel(txtminaltitude);
+                markerL->setValue(0, ergFile->minElevation());
+                markerL->attach(this);
+                Marks.append(markerL);
+
+                QwtPlotMarker *markerH = new QwtPlotMarker();
+                markerH->setLineStyle(QwtPlotMarker::HLine);
+                markerH->setLinePen(QPen(GColor(CALTITUDE), 0, Qt::DashDotLine));
+                markerH->setLabelAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+                QwtText txtmaxaltitude("Max Altitutde: " + QString::number(ergFile->maxElevation(), 'f', 0));
+                txtmaxaltitude.setColor(Qt::white);
+                txtmaxaltitude.setFont(QFont("Helvetica", 10, QFont::Bold));
+                markerH->setLabel(txtmaxaltitude);
+                markerH->setValue(0, ergFile->maxElevation());
+                markerH->attach(this);
+                Marks.append(markerH);
+
             }
         }
 
@@ -1124,7 +1183,7 @@ ErgFilePlot::updateWBalCurvePredict
         // compute wbal curve for the erg file
         calculator.setErg(ergFile);
 
-        setAxisScale(QwtAxisId(QwtAxis::YRight, 3),qMin(double(calculator.minY-1000),double(0)),calculator.maxY+1000);
+        setAxisScale(QwtAxisId(QwtAxis::YRight, 1),qMin(double(calculator.minY-1000),double(0)),calculator.maxY+1000);
 
         // and the values ... but avoid sharing!
         wbalCurvePredict->setSamples(calculator.xdata(false), calculator.ydata());
