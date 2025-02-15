@@ -23,8 +23,9 @@ export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
 
+# $2 es opcional. Para hacer merge en una rama que no es la actual
 merge() {
-git merge --no-edit $1 > /dev/null 2>&1 || {
+git merge --no-edit $1 $2 > /dev/null 2>&1 || {
         ERR=$? ; echo "ERROR $ERR: merge $1 FAILED" | tee -a $LOGFILE ; salida $ERR
         } && echo "merge $1 OK" | tee -a $LOGFILE
 }
@@ -70,13 +71,17 @@ merge origin/treadmill_qdomyos
 merge origin/utils
 merge origin/train_view_improvements
 merge origin/pr_distance_and_speed_in_mapchart
+merge origin/train_elevation_chart
 
 merge goldencheetah/master
 
 #### Merge temporal del PR4533: Equipment management feature tiled
 git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
 git fetch paulj49457
-merge paulj49457/equipment_feature_tiled
+merge paulj49457/equipment_feature_tiled origin/tmp_equipment_feature_tiled
+merge origin/tmp_equipment_feature_tiled
+### De momento no se hace directamente, hay conflicto con train_elevation_chart:
+# merge paulj49457/equipment_feature_tiled
 ##############################
 
 if [ "$1" ]; then
