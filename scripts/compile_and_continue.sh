@@ -59,18 +59,17 @@ if [[ $APPIMAGE -eq 0 ]]; then
         echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
         # Download current version of linuxdeployqt
         cd src
-        wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/7/linuxdeployqt-7-x86_64.AppImage
-        chmod a+x linuxdeployqt-7-x86_64.AppImage
-
+        wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
         # Deploy to appdir
         mkdir -p appdir
         cp -p GoldenCheetah appdir/
         # Lightweight deploy
-        ./linuxdeployqt-7-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libnss3,libnssutil3,libxcb-dri3.so.0 \
+        ./linuxdeployqt-continuous-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libnss3,libnssutil3,libxcb-dri3.so.0 \
                 -unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
         mkdir -p ../squashfs-root && mv appdir/GoldenCheetah ../squashfs-root/
         # Cleanup
-        rm ./linuxdeployqt-7-x86_64.AppImage
+        rm linuxdeployqt-continuous-x86_64.AppImage
         rm -rf ./appdir
 
 else
