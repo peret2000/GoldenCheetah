@@ -70,7 +70,7 @@ merge origin/PyAutomatedProcessors
 merge origin/treadmill_qdomyos
 merge origin/utils
 merge origin/train_view_improvements
-merge origin/pr_distance_and_speed_in_mapchart
+merge origin/activities_view_improvements
 merge origin/train_elevation_chart
 
 merge goldencheetah/master
