@@ -276,6 +276,10 @@ Dropbox::writeFile(QByteArray &data, QString remotename, RideFile *ride)
     QString url("https://content.dropboxapi.com/2/files/upload");
 
     // request using the bearer token
+
+    if (path.endsWith('/')) {
+        path.chop(1);
+    }
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
     request.setRawHeader("Dropbox-API-Arg", (QString("{ \"path\": \"%1/%2\", \"mode\": \"overwrite\" }").arg(path).arg(remotename)).toLatin1());
