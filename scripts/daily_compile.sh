@@ -72,6 +72,7 @@ merge origin/utils
 merge origin/train_view_improvements
 merge origin/activities_view_improvements
 merge origin/train_elevation_chart
+merge origin/train_geolocation_widget
 
 merge goldencheetah/master
 
