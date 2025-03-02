@@ -42,6 +42,7 @@ class ScalingLabel : public QLabel
 
     public:
         ScalingLabel(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+        ScalingLabel(int rescaleEvery, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
         ScalingLabel(int minFontPointSize, int maxFontPointSize, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
         virtual ~ScalingLabel();
 
@@ -69,6 +70,7 @@ class ScalingLabel : public QLabel
         int maxFontPointSize;
         ScalingLabelStrategy strategy = ScalingLabelStrategy::Linear;
         int counter = 0;
+        int counterLimit;
 };
 
 #endif
