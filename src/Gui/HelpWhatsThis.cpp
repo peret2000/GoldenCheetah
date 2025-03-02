@@ -288,6 +288,8 @@ HelpWhatsThis::getText(GCHelp chapter) {
         return text.arg("ChartTypes_Train#video-player").arg(tr("Reproduces the currently selected media file"));
     case ChartTrain_WorkoutEditor:
         return text.arg("ChartTypes_Train#workout-editor").arg(tr("Edition and diplay of ergometer type workout files"));
+    case ChartTrain_GeoLocation:
+        return text.arg("ChartTypes_Train#geolocation").arg(tr("Display geolocation data of current position, updated periodically"));
     case ChartTrain_LiveMap:
         return text.arg("ChartTypes_Train#live-map").arg(tr("Real time display of the route of simulation workouts in an Open Street Map"));
     case ChartTrain_Elevation:

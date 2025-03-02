@@ -154,6 +154,7 @@ Q_OBJECT
                  ChartTrain_PedalStroke,
                  ChartTrain_VideoPlayer,
                  ChartTrain_WorkoutEditor,
+                 ChartTrain_GeoLocation,
                  ChartTrain_LiveMap,
                  ChartTrain_Elevation,
 
