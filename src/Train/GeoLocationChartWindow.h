@@ -37,6 +37,7 @@ class GeoLocationChartWindow : public GcChartWindow
 		void telemetryUpdate(const RealtimeData &rtData);
         void start();
         void stop();
+		void unpause();
 		void stopTimer();
 
 	private slots:
@@ -58,6 +59,7 @@ class GeoLocationChartWindow : public GcChartWindow
 
 		// Geolocation data (QtLocation)
 		QGeoServiceProvider *pQGeoProvider;
+		QString m_lastAddress;
 };
 
 #endif // _GC_GeoLocationChartWindow_h
