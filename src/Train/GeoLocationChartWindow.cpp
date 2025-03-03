@@ -42,7 +42,7 @@ private:
 
 
 GeoLocationChartWindow::GeoLocationChartWindow(Context *context) :
-	GcChartWindow(context)
+	GcChartWindow(context), m_lastAddress("")
 {
 
     HelpWhatsThis *helpContents = new HelpWhatsThis(this);
@@ -134,13 +134,22 @@ GeoLocationChartWindow::GeoLocationChartWindow(Context *context) :
     connect(context, SIGNAL(stop()), this, SLOT(stop()));
     connect(context, SIGNAL(start()), this, SLOT(start()));
     connect(context, SIGNAL(pause()), this, SLOT(stopTimer()));
-    connect(context, SIGNAL(unpause()), this, SLOT(start()));
+    connect(context, SIGNAL(unpause()), this, SLOT(unpause()));
     connect(context, SIGNAL(telemetryUpdate(RealtimeData)), this, SLOT(telemetryUpdate(RealtimeData)));
 
 }
 
 
+
+
 void GeoLocationChartWindow::start()
+{
+    m_lastAddress = "";
+    unpause();
+}
+
+
+void GeoLocationChartWindow::unpause()
 {
     onTimerTimeout();
     // Not necessary, as the timer is started in onTimerTimeout
@@ -203,20 +212,23 @@ void GeoLocationChartWindow::onTimerTimeout()
 
 void GeoLocationChartWindow::collectAddress(QGeoCodeReply *pQGeoCodeReply)
 {
-    QGeoLocation qGeoLocation = pQGeoCodeReply->locations().at(0);
-    QGeoAddress qGeoAddress = qGeoLocation.address();
-    QString text = qGeoAddress.text();
-    text = text.replace(",", "\n");
-    // text += qGeoAddress.street() + "\n";
-    // text += qGeoAddress.district() + "\n";
-    // text += qGeoAddress.city() + "\n";
-    // text += qGeoAddress.county() + "\n";
-    // text += qGeoAddress.state();
-
-    // Restart animation
-    backgroundAnimation->stop();    // In case it is still running
-    backgroundAnimation->start();
-    valueLabel->setText(text);
+    QString address;
+    if (pQGeoCodeReply->error() != QGeoCodeReply::NoError) {
+        address = tr("Error: %1").arg(pQGeoCodeReply->errorString());
+    }
+    else {
+        QGeoLocation qGeoLocation = pQGeoCodeReply->locations().at(0);
+        QGeoAddress qGeoAddress = qGeoLocation.address();
+        address = qGeoAddress.text();
+    }
+    if (address != m_lastAddress) {
+        m_lastAddress = address;
+        address = address.replace(",", "\n");
+        // Restart animation
+        backgroundAnimation->stop();    // In case it is still running
+        backgroundAnimation->start();
+        valueLabel->setText(address);
+    }
     pQGeoCodeReply->deleteLater();
 }
 
