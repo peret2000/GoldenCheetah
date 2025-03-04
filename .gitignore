@@ -31,7 +31,7 @@ xcshareddata/
 
 moc_*
 moc/
-.moc
+*.moc
 obj/
 lib/
 bin/
