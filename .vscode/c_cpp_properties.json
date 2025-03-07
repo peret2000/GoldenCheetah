@@ -5,10 +5,9 @@
                 "${workspaceFolder}/qwt/src/**",
                 "${workspaceFolder}/contrib/**",
                 "${workspaceFolder}/D2XX/release",
-                "/opt/qt514/include/**",
-                "/opt/qt515/include/**",
-                "/opt/qt514/mkspecs/linux-g++",
-                "/opt/qt515/mkspecs/linux-g++"
+                "${workspaceFolder}/contrib/**",
+                "/usr/include/x86_64-linux-gnu/qt5/**",
+                "/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++"
             ],
             "defines": [
                 "DGC_DEBUG","_REENTRANT","DGC_WANT_R","GC_WANT_ROBOT","GC_VIDEO_VLC","GC_WANT_PYTHON",
