@@ -155,7 +155,7 @@ WebPageWindow::WebPageWindow(Context *context) : GcChartWindow(context), context
     view->setWhatsThis(help->getWhatsThisText(HelpWhatsThis::Chart_Web));
 
     // if we change in settings, force replot by pressing return
-    connect(customUrl, SIGNAL(returnPressed()), this, SLOT(forceReplot()));
+    connect(customUrl, SIGNAL(returnPressed()), this, SLOT(userUrl()));
 
     first = true;
     configChanged(CONFIG_APPEARANCE);
@@ -197,7 +197,7 @@ WebPageWindow::userUrl()
 {
     // add http:// if scheme is missing
     QRegExp hasscheme("^[^:]*://.*");
-    QString url = rCustomUrl->text();
+    QString url = CustomUrl->text();
     if (!hasscheme.exactMatch(url)) url = "http://" + url;
     view->setZoomFactor(dpiXFactor);
     view->setUrl(QUrl(url));
