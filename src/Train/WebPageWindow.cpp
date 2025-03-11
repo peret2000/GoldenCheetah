@@ -203,7 +203,7 @@ WebPageWindow::userUrl()
 {
     // add http:// if scheme is missing
     QRegExp hasscheme("^[^:]*://.*");
-    QString url = CustomUrl->text();
+    QString url = customUrl->text();
     if (!hasscheme.exactMatch(url)) url = "http://" + url;
     view->setZoomFactor(dpiXFactor);
     view->setUrl(QUrl(url));
