@@ -326,6 +326,7 @@ class TrainSidebar : public GcWindow
 
         bool autoConnect;
         bool pendingConfigChange;
+        bool stopping;  // To distinguish from other situations. Used in mediaTreeWidgetSelectionChanged()
 
         Bicycle bicycle;
 
