@@ -130,6 +130,12 @@ WorkoutWidget::WorkoutWidget(WorkoutWindow *parent, Context *context) :
     configChanged(CONFIG_APPEARANCE);
 }
 
+void WorkoutWidget::update()
+{
+    if (isVisible())
+        QWidget::update();
+}
+
 void
 WorkoutWidget::updateErgFile(ErgFile *f)
 {
