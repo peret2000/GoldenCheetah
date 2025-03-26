@@ -13,6 +13,7 @@ meteostat
 python-dateutil
 geopy
 folium
+Pillow
 #
 # Nice to have
 #
