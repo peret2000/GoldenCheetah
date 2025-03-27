@@ -573,6 +573,13 @@ void VideoWindow::telemetryUpdate(const RealtimeData &rtd)
                 p_meterWidget->Text = tr("");
             }
         }
+        else if (dynamic_cast<GeolocMeterWidget*>(p_meterWidget) != nullptr && p_meterWidget->Source() == QString("Geolocation"))
+        {
+            GeolocMeterWidget* geolocWidget = dynamic_cast<GeolocMeterWidget*>(p_meterWidget);
+            // For next update, used by m_geolocationManager when it needs it
+            geolocWidget->updateLatitude(rtd.getLatitude());
+            geolocWidget->updateLongitude(rtd.getLongitude());
+        }
         else
         {
             for (RealtimeData::DataSeries series : RealtimeData::listDataSeries()) {
