@@ -4,18 +4,16 @@
 #include <QObject>
 
 #include "GoldenCheetah.h"
-#include "RealtimeData.h"
 
-class QGeoServiceProvider;
-class QGeoCodeReply;
+class RealtimeData;
 
 class Context;
 class ScalingLabel;
-class QTimer;
 class QLabel;
 class QSpinBox;
 class QPropertyAnimation;
 
+class GeolocationManager;
 class GeoLocationChartWindow : public GcChartWindow
 {
 	Q_OBJECT
@@ -23,7 +21,7 @@ class GeoLocationChartWindow : public GcChartWindow
 
     // properties can be saved/restored/set by the layout manager
     Q_PROPERTY(int updateInterval READ updateInterval WRITE setUpdateInterval USER true)
-
+	Q_PROPERTY(int linesLength READ linesLength WRITE setLinesLength USER true)
 
 	public:
 		GeoLocationChartWindow(Context *context);
@@ -32,34 +30,39 @@ class GeoLocationChartWindow : public GcChartWindow
         // set/get properties
         int updateInterval() const { return customUpdateInterval->value(); }
         void setUpdateInterval(int x) { customUpdateInterval->setValue(x); }
+        int linesLength() const { return customLinesLength->value(); }
+        void setLinesLength(int x) { customLinesLength->setValue(x); }
 
 	public slots:
 		void telemetryUpdate(const RealtimeData &rtData);
         void start();
         void stop();
+		void pause();
 		void unpause();
-		void stopTimer();
 
-	private slots:
-		void onTimerTimeout();
-		void collectAddress(QGeoCodeReply *pQGeoCodeReply);
+    protected:
+        void showEvent(QShowEvent *event) override;
+        void hideEvent(QHideEvent *event) override;
 
 	private:
+		Context *context;
+
 		// Settings data
         QLabel* customUpdateIntervalLabel;
         QSpinBox* customUpdateInterval;
+
+        QLabel* customLinesLengthLabel;
+        QSpinBox* customLinesLength;
 
 		// display
 		ScalingLabel *valueLabel;
 		QPropertyAnimation* backgroundAnimation;
 		//void setupBackgroundAnimation(QLabel *label);
 
-		RealtimeData m_rtData;
-		QTimer *updateTimer;
-
-		// Geolocation data (QtLocation)
-		QGeoServiceProvider *pQGeoProvider;
+		// Geolocation object
+		GeolocationManager *m_geolocationManager;
 		QString m_lastAddress;
+
 };
 
 #endif // _GC_GeoLocationChartWindow_h

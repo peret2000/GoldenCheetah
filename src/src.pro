@@ -686,7 +686,7 @@ HEADERS += Train/AddDeviceWizard.h Train/CalibrationData.h Train/ComputrainerCon
            Train/SpinScanPlotWindow.h Train/SpinScanPolarPlot.h Train/GarminServiceHelper.h Train/PhysicsUtility.h Train/BicycleSim.h \
            Train/PolynomialRegression.h Train/MultiRegressionizer.h Train/StravaRoutesDownload.h \
            Train/VideoSyncFileBase.h Train/ErgFileBase.h \
-           Train/GeoLocationChartWindow.h \
+           Train/GeoLocationChartWindow.h Train/GeolocationManager.h \
            Train/ModelFilter.h Train/MultiFilterProxyModel.h Train/WorkoutFilter.h Train/FilterEditor.h \
            Train/WorkoutFilterBox.h Train/TagBar.h Train/Taggable.h Train/TagStore.h Train/TagWidget.h \
            Train/TrainerDayAPIQuery.h Train/TrainerDayAPIDialog.h Train/ElevationChartWindow.h
@@ -803,7 +803,7 @@ SOURCES += Train/AddDeviceWizard.cpp Train/CalibrationData.cpp Train/Computraine
            Train/SpinScanPlotWindow.cpp Train/SpinScanPolarPlot.cpp Train/GarminServiceHelper.cpp Train/PhysicsUtility.cpp Train/BicycleSim.cpp \
            Train/PolynomialRegression.cpp Train/StravaRoutesDownload.cpp \
            Train/VideoSyncFileBase.cpp Train/ErgFileBase.cpp \
-           Train/GeoLocationChartWindow.cpp \
+           Train/GeoLocationChartWindow.cpp Train/GeolocationManager.cpp \
            Train/ModelFilter.cpp Train/MultiFilterProxyModel.cpp Train/WorkoutFilter.cpp Train/FilterEditor.cpp \
            Train/WorkoutFilterBox.cpp Train/TagBar.cpp Train/TagWidget.cpp \
            Train/TrainerDayAPIQuery.cpp Train/TrainerDayAPIDialog.cpp Train/ElevationChartWindow.cpp

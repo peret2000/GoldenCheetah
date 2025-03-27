@@ -218,7 +218,8 @@ ScalingLabel::scaleFontLinear
     int availableWidth = width() - 2 * horizontalMargin;
     int availableHeight = height() - 2 * verticalMargin;
 
-    int maxSize = (reason == ScalingLabelReason::CounterExceeded) ? font.pointSize() : maxFontPointSize;
+    //int maxSize = (reason == ScalingLabelReason::CounterExceeded) ? font.pointSize() : maxFontPointSize;
+    int maxSize = maxFontPointSize;
 
     // Split text into lines
     QStringList lines = text.split('\n');

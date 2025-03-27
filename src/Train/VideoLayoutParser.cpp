@@ -169,7 +169,10 @@ bool VideoLayoutParser::startElement( const QString&, const QString&,
         //create meter object
         if (meterType == QString("Text"))
         {
-            meterWidget = new TextMeterWidget(meterName, containerWidget, source);
+            if (source == QString("Geolocation"))
+                meterWidget = new GeolocMeterWidget(meterName, containerWidget, source);
+            else
+                meterWidget = new TextMeterWidget(meterName, containerWidget, source);
         }
         else if (meterType == QString("NeedleMeter"))
         {
