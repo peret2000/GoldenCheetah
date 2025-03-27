@@ -1,4 +1,5 @@
 #include "GeoLocationChartWindow.h"
+#include "GeolocationManager.h"
 
 #include <QObject>
 #include <QFrame>
@@ -7,22 +8,14 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
-#include <QTimer>
 #include <QPropertyAnimation>
 #include <QWidget>
 
+#include "RealtimeData.h"
 #include "Context.h"
 #include "HelpWhatsThis.h"
 #include "ScalingLabel.h"
 #include "Colors.h"
-
-#include <QGeoAddress>
-#include <QGeoCodingManager>
-#include <QGeoCoordinate>
-#include <QGeoLocation>
-#include <QGeoServiceProvider>
-#include <QGeoCodeReply>
-#include <QLocale>
 
 class AnimationFrame : public QFrame {
     Q_OBJECT
@@ -42,7 +35,7 @@ private:
 
 
 GeoLocationChartWindow::GeoLocationChartWindow(Context *context) :
-	GcChartWindow(context), m_lastAddress("")
+	context(context), GcChartWindow(context), m_lastAddress("")
 {
 
     HelpWhatsThis *helpContents = new HelpWhatsThis(this);
@@ -64,8 +57,17 @@ GeoLocationChartWindow::GeoLocationChartWindow(Context *context) :
     customUpdateInterval->setAccelerated(true);
     customUpdateInterval->setSuffix(" s");
     customUpdateInterval->setToolTip(tr("Set the interval in seconds for updating the location from GPS coordinates"));
-
     commonLayout->addRow(customUpdateIntervalLabel, customUpdateInterval);
+
+    customLinesLengthLabel = new QLabel(tr("Max. lines length"));
+    customLinesLength = new QSpinBox(this);
+    customLinesLength->setFixedWidth(60);
+    if (customLinesLength->text().trimmed().isEmpty()) customLinesLength->setValue(60);
+    customLinesLength->setRange(50, 120);
+    customLinesLength->setSingleStep(5);
+    customLinesLength->setAccelerated(true);
+    customLinesLength->setToolTip(tr("Set number of characters per line in the address text"));
+    commonLayout->addRow(customLinesLengthLabel, customLinesLength);
 
     setProperty("color", GColor(CTRAINPLOTBACKGROUND));
 
@@ -103,141 +105,85 @@ GeoLocationChartWindow::GeoLocationChartWindow(Context *context) :
 
     setChartLayout(mainLayout);
 
-    // Create and setup timer
-    updateTimer = new QTimer(this);
-    updateTimer->setSingleShot(true);
+    m_geolocationManager = new GeolocationManager;
 
-    // Geoprovider
-    pQGeoProvider = new QGeoServiceProvider("osm");
-    if (!pQGeoProvider) {
-        qDebug() << tr("ERROR: Geolocation Widget: GeoServiceProvider not available!");
-        valueLabel->setText(tr("GeoServiceProvider not available!"));
-        return;
-    }
-    else {
-        // QVariantMap parameters;
-        // parameters["mapbox.access_token"] = "xxxxxxx";
-        // pQGeoProvider->setParameters(parameters);
-        if (!pQGeoProvider->geocodingManager()) {
-            qDebug() << tr("ERROR: Geolocation Widget: GeoCodingManager not available!");
-            valueLabel->setText(tr("GeoCodingManager not available!"));
-            return;
-        }
-        else {
-            QLocale qLocaleC(QLocale::Spanish, QLocale::Spain);
-            pQGeoProvider->geocodingManager()->setLocale(qLocaleC);
-        }
-    }
-
-
-    connect(updateTimer, SIGNAL(timeout()), this, SLOT(onTimerTimeout()));
     connect(context, SIGNAL(stop()), this, SLOT(stop()));
     connect(context, SIGNAL(start()), this, SLOT(start()));
-    connect(context, SIGNAL(pause()), this, SLOT(stopTimer()));
+    connect(context, SIGNAL(pause()), this, SLOT(pause()));
     connect(context, SIGNAL(unpause()), this, SLOT(unpause()));
     connect(context, SIGNAL(telemetryUpdate(RealtimeData)), this, SLOT(telemetryUpdate(RealtimeData)));
-
 }
 
+void GeoLocationChartWindow::showEvent(QShowEvent *event)
+{
+    GcChartWindow::showEvent(event);
+    if (context->isRunning)
+        m_geolocationManager->enable(customUpdateInterval->value()*1000);
+}
 
-
+void GeoLocationChartWindow::hideEvent(QHideEvent *event)
+{
+    GcChartWindow::hideEvent(event);
+    m_geolocationManager->disable();
+}
 
 void GeoLocationChartWindow::start()
 {
     m_lastAddress = "";
-    unpause();
-}
-
-
-void GeoLocationChartWindow::unpause()
-{
-    onTimerTimeout();
-    // Not necessary, as the timer is started in onTimerTimeout
-    //updateTimer->setInterval(customUpdateInterval->value()*1000);
-    //updateTimer->start();
+    m_geolocationManager->enable(customUpdateInterval->value()*1000);
 }
 
 void GeoLocationChartWindow::stop()
 {
     valueLabel->clear();
-    stopTimer();
+    m_geolocationManager->disable();
 }
-void GeoLocationChartWindow::stopTimer()
+void GeoLocationChartWindow::pause()
 {
-    updateTimer->stop();
+    m_geolocationManager->disable();
 }
 
+void GeoLocationChartWindow::unpause()
+{
+    m_geolocationManager->enable(customUpdateInterval->value()*1000);
+}
 
 void
 GeoLocationChartWindow::telemetryUpdate(const RealtimeData &rtData)
 {
-    // Testing this is not worth
-    // if (isHidden()) {
-    //     return;
-    // }
-
-    m_rtData = rtData;
-}
-
-void GeoLocationChartWindow::onTimerTimeout()
-{
-    // Even if the window is hidden, we still want to start the timer, in case it is shown later
-    updateTimer->setInterval(customUpdateInterval->value()*1000);   // In case the user changed the interval
-    updateTimer->start();
-
-    if (isHidden()) {
+    if (!isVisible()) {
+        m_geolocationManager->disable();
         return;
     }
 
-    double lon = m_rtData.getLongitude();
-    double lat = m_rtData.getLatitude();
-    if (lon==0.0 && lat == 0.0) {
-        return;
-    }
+    // In case interval has changed at any moment
+    m_geolocationManager->setInterval(customUpdateInterval->value()*1000); // in millisecs
 
-    QGeoCoordinate qGeoCoord;
-
-    qGeoCoord.setLatitude(lat);
-    qGeoCoord.setLongitude(lon);
-  
-    QGeoCodeReply *pQGeoCodeReply
-      = pQGeoProvider->geocodingManager()->reverseGeocode(qGeoCoord);
-  
-    if (pQGeoCodeReply) {
-        QObject::connect(pQGeoCodeReply, &QGeoCodeReply::finished, this, [=]() {collectAddress(pQGeoCodeReply);});
-    } else {
-        valueLabel->clear();
-    }
-}
-
-void GeoLocationChartWindow::collectAddress(QGeoCodeReply *pQGeoCodeReply)
-{
-    QString address;
-    if (pQGeoCodeReply->error() != QGeoCodeReply::NoError) {
-        address = tr("Error: %1").arg(pQGeoCodeReply->errorString());
-    }
-    else {
-        QGeoLocation qGeoLocation = pQGeoCodeReply->locations().at(0);
-        QGeoAddress qGeoAddress = qGeoLocation.address();
-        address = qGeoAddress.text();
-    }
+    QString address = m_geolocationManager->getAddress();
     if (address != m_lastAddress) {
         m_lastAddress = address;
-        address = address.replace(",", "\n");
+
+        // Split address into lines with maximum length
+        int maxlength = customLinesLength->value(); // Define maximum characters per line
+        QString formattedAddress;
+
+        for (int i = 0; i < address.length(); i += maxlength) {
+            if (i > 0) formattedAddress += "\n";
+            formattedAddress += address.mid(i, maxlength);
+        }
+
         // Restart animation
         backgroundAnimation->stop();    // In case it is still running
         backgroundAnimation->start();
-        valueLabel->setText(address);
+        valueLabel->setText(formattedAddress);
     }
-    pQGeoCodeReply->deleteLater();
+        // For next update, used by m_geolocationManager when it needs it
+    m_geolocationManager->setLatitude(rtData.getLatitude());
+    m_geolocationManager->setLongitude(rtData.getLongitude());
 }
 
 GeoLocationChartWindow::~GeoLocationChartWindow()
 {
-    if (updateTimer) {
-        updateTimer->stop();
-        delete updateTimer;
-    }
     if (valueLabel) {
         delete valueLabel;
     }
@@ -245,7 +191,7 @@ GeoLocationChartWindow::~GeoLocationChartWindow()
         backgroundAnimation->stop();
         delete backgroundAnimation;
     }
-    if (pQGeoProvider) {
-        delete pQGeoProvider;
+    if (m_geolocationManager) {
+        delete m_geolocationManager;
     }
 }
