@@ -175,6 +175,7 @@ void TextMeterWidget::paintEvent(QPaintEvent* paintevent)
     MeterWidget::paintEvent(paintevent);
 
     m_MainBrush = QBrush(m_MainColor);
+    m_BackgroundBrush = QBrush(m_BackgroundColor);
     m_OutlinePen = QPen(m_OutlineColor);
     m_OutlinePen.setWidth(1);
     m_OutlinePen.setStyle(Qt::SolidLine);
@@ -210,6 +211,11 @@ void TextMeterWidget::paintEvent(QPaintEvent* paintevent)
         translationX += (m_Width/fontscale - ValueBoundingRct.width());
 
     painter.translate(translationX, -ValueBoundingRct.y()+(m_Height/fontscale - ValueBoundingRct.height())/2);
+
+    // Draw background
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(m_BackgroundBrush);
+    painter.drawRect(ValueBoundingRct);
 
     // Write Value
     painter.setPen(m_OutlinePen);
