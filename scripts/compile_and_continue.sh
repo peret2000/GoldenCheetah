@@ -83,10 +83,10 @@ else
 
         [[ -d squashfs-root ]] && rm -rf squashfs-root
 
-        [[ -f src/GoldenCheetah_v3.7-DEV_x64.AppImage ]] && rm src/GoldenCheetah_v3.7-DEV_x64.AppImage
+        ls src/GoldenCheetah*.AppImage >/dev/null 2>&1 && rm src/GoldenCheetah*.AppImage
         travis/linux/after_success.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 
-        src/GoldenCheetah_v3.7-DEV_x64.AppImage --appimage-extract > /dev/null 2>&1
+	src/GoldenCheetah_v3.7_x64.AppImage --appimage-extract > /dev/null 2>&1
 fi
 
 salida 0
