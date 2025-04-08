@@ -16,6 +16,7 @@
 #include "HelpWhatsThis.h"
 #include "ScalingLabel.h"
 #include "Colors.h"
+#include "Settings.h"
 
 class AnimationFrame : public QFrame {
     Q_OBJECT

@@ -571,7 +571,18 @@ HEADERS += Charts/UserChartWindow.h Charts/UserChartOverviewItem.h Charts/UserCh
 SOURCES += Charts/UserChartWindow.cpp Charts/UserChartOverviewItem.cpp Charts/UserChart.cpp Charts/UserChartData.cpp \
            Charts/GenericChart.cpp Charts/GenericPlot.cpp Charts/GenericSelectTool.cpp Charts/GenericLegend.cpp Charts/GenericAnnotations.cpp
 
-QT += positioning location
+
+###=====================
+### QtLocation module, compatible with 6.5 and above
+###=====================
+QT += positioning
+greaterThan(QT_MAJOR_VERSION, 5) {
+    INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QtLocation
+    LIBS += -lQt6Location
+} else {
+    QT += location
+}
+
 
 ###=====================
 ### LEX AND YACC SOURCES
