@@ -56,7 +56,7 @@ git checkout -- travis/linux/after_success.sh
 git checkout MyBuildAdapt
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse HEAD)
-git merge || { ERR=$?; echo "Unable to merge MyBuildAdapt. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
+git merge || { ERR=$?; echo "Unable to merge MyBuildAdapt, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 COMMIT_AFTER=$(git rev-parse HEAD)
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
 	echo "FAILED. MyBuildAdapt NOT in last version." | tee -a $LOGFILE
@@ -83,12 +83,12 @@ merge origin/train_geolocation_widget
 merge goldencheetah/master
 
 #### Merge temporal del PR4533: Equipment management feature tiled
-git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
-git fetch paulj49457
-merge paulj49457/equipment_feature_tiled origin/tmp_equipment_feature_tiled
+# La ramo paulj49457/equipment_feature_tiled ya no existe, por lo que el merge para actualizar esa rama
+# ya no se hace. La rama origin/tmp_equipment_feature_tiled contiene esa rama desaparecida
+#git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
+#git fetch paulj49457
+#merge paulj49457/equipment_feature_tiled origin/tmp_equipment_feature_tiled
 merge origin/tmp_equipment_feature_tiled
-### De momento no se hace directamente, hay conflicto con train_elevation_chart:
-# merge paulj49457/equipment_feature_tiled
 ##############################
 
 if [ "$1" ]; then
