@@ -32,6 +32,7 @@ fi
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
+export PATH=$PATH:/usr/lib/qt6/bin
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
@@ -46,6 +47,8 @@ if [ -z "$(ls -A D2XX)" ]; then
     rm libftd2xx-x86_64-1.4.27.tgz
 fi
 
+######## Cambios en src/gcconfig.pri
+
 DELIV_MODE=Release
 if [ "${1,,}" = "debug" ]; then
     sed -i '/CONFIG += debug/ d' src/gcconfig.pri
@@ -55,8 +58,31 @@ if [ "${1,,}" = "debug" ]; then
 	DELIV_MODE=Debug
 fi
 
+sed -i '/^VLC_INSTALL/ s/^/#/' src/gcconfig.pri
+sed -i '/^VLC_LIBS/ s/^/#/' src/gcconfig.pri
+sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
+sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
+sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
+
 sed -i '/GC_VERSION/ d' src/gcconfig.pri
 echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(${DELIV_MODE}\\ `git merge-base HEAD  goldencheetah/master | cut -c -9`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
 
+######## Cambios en travis/linux/script.sh
+
+sed -i 's/qmake /qmake6 /g'  travis/linux/script.sh
 # El make usa tantos procesos como procesadores físicos
-sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
+sed -i "s/-j4/-j8/" travis/linux/script.sh
+#sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
+
+######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
+
+sed -i 's|^qmake --version|qmake6 --version|' src/Resources/linux/MakeAppImageQt6.sh
+sed -i '
+/^\.\/linuxdeployqt.*AppImage/ {
+    /geoservices/ ! {
+        s/$/ -qmake=\/usr\/bin\/qmake6 -extra-plugins=geoservices/
+    }
+}
+' src/Resources/linux/MakeAppImageQt6.sh
+sed -i 's|^cp -r `qmake.*$|cp -r /usr/share/qt6/resources appdir|' src/Resources/linux/MakeAppImageQt6.sh
+sed -i 's/git log -1 >> GCversionLinuxQt6.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinuxQt6.txt/' src/Resources/linux/MakeAppImageQt6.sh

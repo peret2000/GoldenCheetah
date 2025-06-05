@@ -22,6 +22,7 @@ export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 export LOGFILE=$SCRIPT_DIR/logtmp.txt
 export CUMLOGFILE=$SCRIPT_DIR/log.txt
+export BUILDLOG=$SCRIPT_DIR/buildlog.txt
 
 # $2 es opcional. Para hacer merge en una rama que no es la actual
 merge() {
@@ -101,7 +102,6 @@ echo preparedirectory.sh: `date` | tee -a $LOGFILE
 
 echo script.sh: `date` | tee -a $LOGFILE
 
-export BUILDLOG=$SCRIPT_DIR/buildlog.txt
 echo Comienzo: `date` > $BUILDLOG
 echo ------------------------- >> $BUILDLOG
 ### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
@@ -116,18 +116,15 @@ echo Finalización: `date` >> $BUILDLOG
 
 # Generate the AppImage
 
-echo after_success.sh: `date` | tee -a $LOGFILE
-
-sed -i '/temp.sh/s/^/echo Commented out:/' travis/linux/after_success.sh
-sed -i 's/sudo //' travis/linux/after_success.sh
-sed -i 's/git log -1 >> GCversionLinux.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinux.txt/' travis/linux/after_success.sh
+echo MakeAppImageQt6.sh: `date` | tee -a $LOGFILE
 
 [[ -d src/appdir ]] && rm -rf src/appdir
 [[ -d squashfs-root ]] && rm -rf squashfs-root
 
 ls src/GoldenCheetah*.AppImage >/dev/null 2>&1 && rm src/GoldenCheetah*.AppImage
-travis/linux/after_success.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
-
-src/GoldenCheetah_v3.7_x64Old.AppImage --appimage-extract > /dev/null 2>&1
+cd src
+./Resources/linux/MakeAppImageQt6.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
+cd ..
+src/GoldenCheetah_v3.7_x64Qt6.AppImage --appimage-extract > /dev/null 2>&1
 
 salida 0
