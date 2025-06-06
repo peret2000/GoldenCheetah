@@ -71,8 +71,7 @@ echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(${DELIV_MODE}\\ `git merge-base HEAD 
 
 sed -i 's/qmake /qmake6 /g'  travis/linux/script.sh
 # El make usa tantos procesos como procesadores físicos
-sed -i "s/-j4/-j8/" travis/linux/script.sh
-#sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
+sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
 
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
