@@ -114,10 +114,6 @@ if $FROMSCRATCH; then
 	git branch -D NightlyBuild
 	git checkout -b NightlyBuild
 
-	echo preparedirectory.sh: `date` | tee -a $LOGFILE
-	# Si no está en la última versión, se detecta después y se aborta el script
-	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
-
 fi	# if $FROMSCRATCH; then
 
 # Siempre se actualiza la rama MyBuildAdapt. En caso de no estar en la última versión, se aborta el script
@@ -157,8 +153,14 @@ if $MERGECODE; then
 	merge origin/tmp_equipment_feature_tiled
 	##############################
 
-
 fi	# if $MERGECODE; then
+
+if $FROMSCRATCH; then
+	echo preparedirectory.sh: `date` | tee -a $LOGFILE
+	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
+fi	# if $FROMSCRATCH; then
+
+
 
 echo script.sh: `date` | tee -a $LOGFILE
 
