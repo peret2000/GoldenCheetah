@@ -53,13 +53,13 @@ git checkout -- src/Core/Secrets.h
 git checkout -- travis/linux/script.sh
 git checkout -- travis/linux/after_success.sh
 
-git checkout MyBuildAdapt
+git checkout MyBuildAdaptQt5.15
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse HEAD)
-git merge || { ERR=$?; echo "Unable to merge MyBuildAdapt, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
+git merge || { ERR=$?; echo "Unable to merge MyBuildAdaptQt5.15, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 COMMIT_AFTER=$(git rev-parse HEAD)
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
-	echo "FAILED. MyBuildAdapt NOT in last version." | tee -a $LOGFILE
+	echo "FAILED. MyBuildAdaptQt5.15 NOT in last version." | tee -a $LOGFILE
 	salida $ERR
 fi
 
