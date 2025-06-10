@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./daily_compile.sh [--appimage] [--justcompile] [--help|-h]
+# Usage: ./daily_compile.sh [--appimage] [--updatecode] [--fromscratch] [--help|-h]
 
 # Check whether .bashrc has been loaded (for example, cron does not load it)
 if [[ -z "${ENV_LOADED}" ]]; then
@@ -24,21 +24,27 @@ export CUMLOGFILE=$SCRIPT_DIR/log.txt
 export BUILDLOG=$SCRIPT_DIR/buildlog.txt
 
 APPIMAGE=false
-JUSTCOMPILE=false
+FROMSCRATCH=false
+MERGECODE=false	# Si es from scratch, se ignora
 
 # Script command line help
 mostrar_ayuda() {
     echo "Usage: $0 [options]"
     echo ""
+	echo "With no options, it will just compile incrementally the project, without updating the source code."
+	echo "In order for the incremental build to work, the project must have been built from scratch at least once"
+	echo "(From scratch makes necessary changes)"
+    echo ""
     echo "Options:"
     echo "  --appimage      Creates the appimage file"
-    echo "  --justcompile   Does not build from scratch, just compiles the code"
-	echo "  --help, -h     	Shows this help message"
+    echo "  --fromscratch   Builds from scratch"
+	echo "  --updatecode    If not from scratch, this option updates source from repository"
+	echo "  --help, -h      Shows this help message"
     echo ""
     exit 1
 }
 
-TEXT="Compilación diaria de GoldenCheetah"
+TEXT="Compilación incremental de GoldenCheetah"
 
 # Procesamos los argumentos
 while [[ $# -gt 0 ]]; do
@@ -47,9 +53,14 @@ while [[ $# -gt 0 ]]; do
             APPIMAGE=true
             shift
             ;;
-        --justcompile)
-            JUSTCOMPILE=true
-			TEXT="Compilación sólo!!!!!"
+        --fromscratch)
+            FROMSCRATCH=true
+			MERGECODE=true
+			TEXT="Compilación completa"
+            shift
+            ;;
+		--updatecode)
+			MERGECODE=true
             shift
             ;;
         --help|-h)
@@ -78,7 +89,9 @@ echo $TEXT | tee -a $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-if ! $JUSTCOMPILE; then
+BUILDBRANCH=MyBuildAdapt
+
+if $FROMSCRATCH; then
 
 	echo git fetch, merge, etc | tee -a $LOGFILE
 
@@ -89,28 +102,37 @@ if ! $JUSTCOMPILE; then
 	# Si no había conflicto, dará un error que se puede ignorar
 	git merge --abort > /dev/null 2>&1
 
-	git fetch --all
-
 	# Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
 	git checkout -- src/Resources/translations/
 	git checkout -- src/Core/Secrets.h
 	git checkout -- travis/linux/script.sh
 	git checkout -- travis/linux/after_success.sh
 
-	git checkout MyBuildAdapt
-	# Chequea que esté en la última versión
-	COMMIT_BEFORE=$(git rev-parse HEAD)
-	git merge || { ERR=$?; echo "Unable to merge MyBuildAdapt, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
-	COMMIT_AFTER=$(git rev-parse HEAD)
-	if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
-		echo "FAILED. MyBuildAdapt NOT in last version." | tee -a $LOGFILE
-		salida $ERR
-	fi
+	git checkout $BUILDBRANCH
 
-	# Por si existe ya la rama, primero se elimina
+	# Por si existe ya la rama, primero se elimina y luego se crea
 	git branch -D NightlyBuild
 	git checkout -b NightlyBuild
 
+	echo preparedirectory.sh: `date` | tee -a $LOGFILE
+	# Si no está en la última versión, se detecta después y se aborta el script
+	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
+
+fi	# if $FROMSCRATCH; then
+
+# Siempre se actualiza la rama MyBuildAdapt. En caso de no estar en la última versión, se aborta el script
+git fetch --all
+
+# Chequea que esté en la última versión
+COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
+git merge $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
+COMMIT_AFTER=$(git rev-parse $BUILDBRANCH)
+if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
+	echo "FAILED. $BUILDBRANCH NOT in last version." | tee -a $LOGFILE
+	salida $ERR
+fi
+
+if $MERGECODE; then
 
 	merge origin/TrainButtons
 	merge origin/MyZEW
@@ -135,11 +157,8 @@ if ! $JUSTCOMPILE; then
 	merge origin/tmp_equipment_feature_tiled
 	##############################
 
-	echo preparedirectory.sh: `date` | tee -a $LOGFILE
 
-	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
-
-fi	# if ! $JUSTCOMPILE; then
+fi	# if $MERGECODE; then
 
 echo script.sh: `date` | tee -a $LOGFILE
 
