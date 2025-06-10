@@ -121,12 +121,12 @@ git fetch --all
 
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
-git merge $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
-COMMIT_AFTER=$(git rev-parse $BUILDBRANCH)
+COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
 	echo "FAILED. $BUILDBRANCH NOT in last version." | tee -a $LOGFILE
 	salida $ERR
 fi
+git merge $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 
 if $MERGECODE; then
 
