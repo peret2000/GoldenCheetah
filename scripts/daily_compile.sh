@@ -82,13 +82,11 @@ merge origin/train_geolocation_widget
 
 merge goldencheetah/master
 
-#### Merge temporal del PR4533: Equipment management feature tiled
-# La ramo paulj49457/equipment_feature_tiled ya no existe, por lo que el merge para actualizar esa rama
-# ya no se hace. La rama origin/tmp_equipment_feature_tiled contiene esa rama desaparecida
-#git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
-#git fetch paulj49457
-#merge paulj49457/equipment_feature_tiled origin/tmp_equipment_feature_tiled
-merge origin/tmp_equipment_feature_tiled
+#### Merge temporal: Equipment management feature tiled
+git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
+git fetch paulj49457
+merge origin/tmp-equipment-management-feature
+merge paulj49457/origin-equipment-management-feature
 ##############################
 
 if [ "$1" ]; then
