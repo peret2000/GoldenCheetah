@@ -147,8 +147,8 @@ if $MERGECODE; then
 	#### Merge temporal: Equipment management feature tiled
 	git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
 	git fetch paulj49457
-	merge paulj49457/origin-equipment-management-feature tmp-equipment-management-feature
-	merge tmp-equipment-management-feature
+	merge origin/tmp-equipment-management-feature
+	merge paulj49457/origin-equipment-management-feature
 	##############################
 
 fi	# if $MERGECODE; then
