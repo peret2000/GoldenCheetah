@@ -1,0 +1,330 @@
+name: Nightly Build
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      appimage:
+        description: 'Create AppImage?'
+        required: true
+        default: false
+        type: boolean
+      fromscratch:
+        description: 'Build from scratch?'
+        required: true
+        default: true
+        type: boolean
+      updatecode:
+        description: 'Update code from repository?'
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  nightly-build:
+    runs-on: ubuntu-24.10
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Configure Git
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+    
+    - name: Set up environment variables
+      run: |
+        echo "BUILDBRANCH=TMP_MyBuildAdapt" >> $GITHUB_ENV
+        echo "APPIMAGE=${{ github.event.inputs.appimage || false }}" >> $GITHUB_ENV
+        echo "FROMSCRATCH=${{ github.event.inputs.fromscratch || true }}" >> $GITHUB_ENV
+        echo "UPDATECODE=${{ github.event.inputs.updatecode || true }}" >> $GITHUB_ENV
+        echo "SCRIPT_DIR=${{ github.workspace }}/scripts" >> $GITHUB_ENV
+    
+    - name: Clean up files that might cause merge conflicts
+      run: |
+        git checkout -- src/Resources/translations/ || true
+        git checkout -- src/Core/Secrets.h || true
+        git checkout -- src/Resources/linux/MakeAppImageQt6.sh || true
+        git checkout -- travis/linux/script.sh || true
+    
+    - name: Set up build branch
+      run: |
+        # Fetch all remotes
+        git fetch --all
+        
+        # Checkout or create build branch
+        git checkout $BUILDBRANCH || git checkout -b $BUILDBRANCH
+        
+        # Check if MyBuildAdapt is up to date
+        COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
+        COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
+        if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
+          echo "ERROR: $BUILDBRANCH is not in the latest version"
+          exit 1
+        fi
+        
+        # Delete and recreate NightlyBuild branch
+        git branch -D NightlyBuild || true
+        git checkout -b NightlyBuild
+        
+        # Merge MyBuildAdapt
+        git merge $BUILDBRANCH --no-edit || {
+          echo "Unable to merge $BUILDBRANCH. Process failed."
+          exit 1
+        }
+    
+    - name: Add remote repositories
+      run: |
+        # Add goldencheetah remote (upstream)
+        git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git || true
+        
+        # Add paulj49457 remote for equipment management feature
+        git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git || true
+        
+        # Fetch all remotes
+        git fetch --all
+    
+    - name: Merge feature branches
+      run: |
+        # Function to merge branches with error handling
+        merge_branch() {
+          local branch=$1
+          echo "Merging $branch..."
+          if git merge --no-edit $branch; then
+            echo "✅ Merge $branch OK"
+          else
+            echo "❌ ERROR: Merge $branch FAILED"
+            exit 1
+          fi
+        }
+        
+        # Merge all feature branches
+        merge_branch origin/TrainButtons
+        merge_branch origin/MyZEW
+        merge_branch origin/VideoWidgets
+        merge_branch origin/SmoothPowerEstim
+        merge_branch origin/Strava
+        merge_branch origin/PyAutomatedProcessors
+        merge_branch origin/treadmill_qdomyos
+        merge_branch origin/utils
+        merge_branch origin/train_view_improvements
+        merge_branch origin/activities_view_improvements
+        merge_branch origin/train_geolocation_widget
+        
+        # Merge upstream master
+        merge_branch goldencheetah/master
+        
+        # Merge equipment management features
+        merge_branch origin/tmp-equipment-management-feature
+        merge_branch paulj49457/origin-equipment-management-feature
+    
+    - name: Install Qt6 and dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          qt6-base-dev \
+          qt6-tools-dev \
+          qt6-tools-dev-tools \
+          qt6-l10n-tools \
+          qt6-svg-dev \
+          qt6-multimedia-dev \
+          qt6-charts-dev \
+          qt6-webengine-dev \
+          qt6-positioning-dev \
+          qt6-serialport-dev \
+          qt6-bluetooth-dev \
+          libqt6opengl6-dev \
+          libqt6webchannel6-dev \
+          libqt6webenginewidgets6 \
+          libqt6webenginecore6 \
+          libqt6concurrent6 \
+          libqt6printsupport6 \
+          libqt6widgets6 \
+          libqt6core6 \
+          libqt6gui6 \
+          libqt6network6 \
+          libqt6sql6 \
+          build-essential \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          libc6-dev \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          libusb-1.0-0-dev \
+          libgps-dev \
+          libvlc-dev \
+          libical-dev \
+          libsamplerate0-dev \
+          flex \
+          bison \
+          libgsl-dev \
+          libkml-dev \
+          libzip-dev \
+          libsndfile1-dev \
+          libudev-dev \
+          libical-dev \
+          libr-dev \
+          python3-dev \
+          python3-pip \
+          python3-sip-dev \
+          python3-numpy \
+          python3-scipy
+        
+        # Set Qt6 environment
+        export PATH=/usr/lib/qt6/bin:$PATH
+        echo "PATH=/usr/lib/qt6/bin:$PATH" >> $GITHUB_ENV
+    
+    - name: Prepare directory (if from scratch)
+      if: github.event.inputs.fromscratch == 'true' || github.event.inputs.fromscratch == true
+      env:
+        GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+        GC_CLOUD_DB_BASIC_AUTH: ${{ secrets.CLOUD_DB_BASIC_AUTH }}
+        GC_CLOUD_DB_APP_NAME: ${{ secrets.CLOUD_DB_APP_NAME }}
+      run: |
+        echo "🔧 Running preparedirectory.sh..."
+        chmod +x ./scripts/preparedirectory.sh
+        ./scripts/preparedirectory.sh || {
+          echo "❌ ERROR: preparedirectory.sh FAILED"
+          exit 1
+        }
+        echo "✅ preparedirectory.sh OK"
+    
+    - name: Build project
+      env:
+        GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+        GC_CLOUD_DB_BASIC_AUTH: ${{ secrets.CLOUD_DB_BASIC_AUTH }}
+        GC_CLOUD_DB_APP_NAME: ${{ secrets.CLOUD_DB_APP_NAME }}
+      run: |
+        echo "🔨 Building project..."
+        
+        # Create build log directory
+        mkdir -p $SCRIPT_DIR
+        
+        # Run build script
+        chmod +x ./travis/linux/script.sh
+        ./travis/linux/script.sh 2>&1 | tee $SCRIPT_DIR/buildlog.txt || {
+          echo "❌ ERROR: Compile FAILED"
+          exit 1
+        }
+        echo "✅ Compile OK"
+    
+    - name: Create binary with linuxdeployqt (if not AppImage)
+      if: github.event.inputs.appimage == 'false' || github.event.inputs.appimage == false
+      run: |
+        echo "📦 Creating binary with linuxdeployqt..."
+        
+        # Clean up previous builds
+        rm -rf src/appdir
+        
+        cd src
+        
+        # Download linuxdeployqt
+        wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+        chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+        
+        # Deploy to appdir
+        mkdir -p appdir
+        cp -p GoldenCheetah appdir/
+        
+        # Lightweight deploy
+        ./linuxdeployqt-continuous-x86_64.AppImage appdir/GoldenCheetah \
+          -verbose=2 \
+          -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
+          -unsupported-allow-new-glibc \
+          -no-translations \
+          -no-plugins \
+          -no-copy-copyright-files \
+          -no-strip \
+          -qmake=/usr/lib/qt6/bin/qmake6
+        
+        # Move to squashfs-root
+        mkdir -p ../squashfs-root
+        mv appdir/GoldenCheetah ../squashfs-root/
+        
+        # Cleanup
+        rm linuxdeployqt-continuous-x86_64.AppImage
+        rm -rf ./appdir
+        
+        cd ..
+        
+        echo "✅ Binary deployment OK"
+    
+    - name: Create AppImage
+      if: github.event.inputs.appimage == 'true' || github.event.inputs.appimage == true
+      run: |
+        echo "📦 Creating AppImage..."
+        
+        # Clean up previous builds
+        rm -rf squashfs-root
+        rm -f src/GoldenCheetah*.AppImage
+        
+        cd src
+        
+        # Make script executable and run
+        chmod +x ./Resources/linux/MakeAppImageQt6.sh
+        ./Resources/linux/MakeAppImageQt6.sh || {
+          echo "❌ ERROR: AppImage creation FAILED"
+          exit 1
+        }
+        
+        cd ..
+        
+        # Extract AppImage
+        src/GoldenCheetah_v3.7_x64Qt6.AppImage --appimage-extract || true
+        
+        echo "✅ AppImage creation OK"
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: goldencheetah-nightly-${{ github.run_number }}
+        path: |
+          src/GoldenCheetah*.AppImage
+          squashfs-root/
+          scripts/buildlog.txt
+        retention-days: 30
+    
+    - name: Create Release (if AppImage)
+      if: github.event.inputs.appimage == 'true' || github.event.inputs.appimage == true
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: nightly-${{ github.run_number }}
+        name: Nightly Build ${{ github.run_number }}
+        body: |
+          🌙 Nightly build created automatically
+          
+          **Build Information:**
+          - Build Number: ${{ github.run_number }}
+          - Commit: ${{ github.sha }}
+          - Date: ${{ github.event.repository.updated_at }}
+          
+          **Merged Branches:**
+          - TrainButtons, MyZEW, VideoWidgets, SmoothPowerEstim
+          - Strava, PyAutomatedProcessors, treadmill_qdomyos
+          - utils, train_view_improvements, activities_view_improvements
+          - train_geolocation_widget, goldencheetah/master
+          - Equipment management features
+          
+          Download the AppImage file below and make it executable to run GoldenCheetah.
+        files: |
+          src/GoldenCheetah*.AppImage
+        prerelease: true
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Cleanup
+      if: always()
+      run: |
+        # Clean up temporary files
+        rm -rf src/appdir
+        rm -rf squashfs-root
+        rm -f src/GoldenCheetah*.AppImage
+        
+        echo "🧹 Cleanup completed"
