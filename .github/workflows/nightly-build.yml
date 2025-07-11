@@ -1,9 +1,9 @@
 name: Nightly Build
 
 on:
-  schedule:
+  #schedule:
     # Ejecutar diariamente a las 2:00 AM UTC
-    - cron: '0 2 * * *'
+   # - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       appimage:
