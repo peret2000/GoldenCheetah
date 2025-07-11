@@ -281,7 +281,7 @@ jobs:
         echo "✅ AppImage creation OK"
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: goldencheetah-nightly-${{ github.run_number }}
         path: |
