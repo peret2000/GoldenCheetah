@@ -47,12 +47,13 @@ class AthleteTab: public QWidget
 
         NavigationModel *nav; // back/forward for this tab
 
+        Context *context;
+
     protected:
 
         friend class ::MainWindow;
         friend class ::NavigationModel;
         friend class ::AthleteLoader;
-        Context *context;
 
     signals:
 

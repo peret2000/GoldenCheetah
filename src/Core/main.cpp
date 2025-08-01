@@ -27,7 +27,9 @@
 #include "IdleTimer.h"
 #include "PowerProfile.h"
 #include "GcCrashDialog.h" // for versionHTML
-#include "OverviewItems.h"
+#include "EquipmentOverviewItems.h"
+#include "EquipmentCache.h"
+#include "EquipmentCalculator.h"
 
 #include <QApplication>
 #include <QtGui>
@@ -623,9 +625,16 @@ main(int argc, char *argv[])
 
         // initialize Overview Items once the translator is installed
         OverviewItemConfig::registerItems();
+        EquipmentOverviewItemConfig::registerItems();
 
         // initialise the trainDB
         trainDB = new TrainDB(home);
+
+        // read equipment xml file
+        EquipmentCache::getInstance();
+
+        // register global signals
+        EquipmentCalculator::getInstance();
 
         // lets do what the command line says ...
         QVariant lastOpened;

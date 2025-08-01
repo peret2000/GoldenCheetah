@@ -53,7 +53,7 @@
 #endif
 #include "PlanningWindow.h"
 #ifdef GC_HAVE_OVERVIEW
-#include "Overview.h"
+#include "OverviewWindows.h"
 #endif
 #include "UserChartWindow.h"
 // Not until v4.0
@@ -78,7 +78,7 @@ GcWindowRegistry::initialize()
     //{ VIEW_TRENDS, tr("Weekly Summary"),GcWindowTypes::WeeklySummary },// DEPRECATED
     { VIEW_TRENDS|VIEW_PLAN,  tr("Power Duration "),GcWindowTypes::CriticalPowerSummary },
     //{ VIEW_TRENDS,  tr("Training Plan"),GcWindowTypes::SeasonPlan },
-    //{ VIEW_TRENDS|VIEW_DIARY,  tr("Performance Manager"),GcWindowTypes::PerformanceManager },
+    //{ VIEW_TRENDS|VIEW_PLAN,  tr("Performance Manager"),GcWindowTypes::PerformanceManager },
     { VIEW_ANALYSIS, tr("Activity Overview"),GcWindowTypes::Overview },
     { VIEW_ANALYSIS, tr("Blank Overview"),GcWindowTypes::OverviewAnalysisBlank },
     { VIEW_ANALYSIS, tr("User Chart "),GcWindowTypes::UserAnalysis },
@@ -100,9 +100,9 @@ GcWindowRegistry::initialize()
     //{ VIEW_ANALYSIS, tr("Bing Map"),GcWindowTypes::BingMap },
     { VIEW_ANALYSIS, tr("Scatter"),GcWindowTypes::Scatter },
     { VIEW_ANALYSIS, tr("Aerolab"),GcWindowTypes::Aerolab },
-    //{ VIEW_TRENDS|VIEW_DIARY, tr("Calendar"),GcWindowTypes::Diary },
+    //{ VIEW_TRENDS|VIEW_PLAN, tr("Calendar"),GcWindowTypes::Diary },
     { VIEW_TRENDS|VIEW_PLAN, tr("Navigator"), GcWindowTypes::ActivityNavigator },
-    //{ VIEW_DIARY|VIEW_TRENDS, tr("Summary "), GcWindowTypes::DateRangeSummary }, // DEPRECATED IN V3.6
+    //{ VIEW_PLAN|VIEW_TRENDS, tr("Summary "), GcWindowTypes::DateRangeSummary }, // DEPRECATED IN V3.6
     { VIEW_TRAIN, tr("Telemetry"),GcWindowTypes::DialWindow },
     { VIEW_TRAIN, tr("Workout"),GcWindowTypes::WorkoutPlot },
     { VIEW_TRAIN, tr("Realtime"),GcWindowTypes::RealtimePlot },
@@ -114,6 +114,7 @@ GcWindowRegistry::initialize()
     { VIEW_ANALYSIS|VIEW_TRENDS|VIEW_TRAIN, tr("Web page"),GcWindowTypes::WebPageWindow },
     { VIEW_TRENDS|VIEW_PLAN, tr("Calendar"),GcWindowTypes::Calendar },
     { VIEW_TRENDS|VIEW_PLAN, tr("Agenda"),GcWindowTypes::Agenda },
+    { VIEW_EQUIPMENT, tr("Equipment Overview"),GcWindowTypes::EquipmentOverview },
     { 0, "", GcWindowTypes::None }};
   // initialize the global registry
   GcWindows = GcWindowsInit;
@@ -238,30 +239,30 @@ GcWindowRegistry::newGcWindow(GcWinID id, Context *context)
     // summary and old ride summary charts now replaced with an Overview - note id gets reset
     case GcWindowTypes::Summary:
     case GcWindowTypes::RideSummary:
-    case GcWindowTypes::Overview: returning = new OverviewWindow(context, OverviewScope::ANALYSIS); if (id != GcWindowTypes::Overview) { id=GcWindowTypes::Overview; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
+    case GcWindowTypes::Overview: returning = new AnalysisOverviewWindow(context); if (id != GcWindowTypes::Overview) { id=GcWindowTypes::Overview; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
 
     // blank analysis overview - note id gets reset
-    case GcWindowTypes::OverviewAnalysisBlank: returning = new OverviewWindow(context, OverviewScope::ANALYSIS, true); id=GcWindowTypes::Overview; break;
+    case GcWindowTypes::OverviewAnalysisBlank: returning = new AnalysisOverviewWindow(context, true); id=GcWindowTypes::Overview; break;
 
     // old summary now gets a trends overview - note id gets reset
     case GcWindowTypes::DateRangeSummary: // deprecated so now replace with overview
-    case GcWindowTypes::OverviewTrends: returning = new OverviewWindow(context, OverviewScope::TRENDS); if (id != GcWindowTypes::OverviewTrends) { id=GcWindowTypes::OverviewTrends; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
+    case GcWindowTypes::OverviewTrends: returning = new TrendsOverviewWindow(context); if (id != GcWindowTypes::OverviewTrends) { id=GcWindowTypes::OverviewTrends; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
 
     // blank trends overview - note id gets reset
-    case GcWindowTypes::OverviewTrendsBlank: returning = new OverviewWindow(context, OverviewScope::TRENDS, true); id=GcWindowTypes::OverviewTrends; break;
+    case GcWindowTypes::OverviewTrendsBlank: returning = new TrendsOverviewWindow(context, true); id=GcWindowTypes::OverviewTrends; break;
 
     // plan specific charts - note id gets reset for overview & blank
-    case GcWindowTypes::OverviewPlan: returning = new OverviewWindow(context, OverviewScope::PLAN); if (id != GcWindowTypes::OverviewPlan) { id=GcWindowTypes::OverviewPlan; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
-    case GcWindowTypes::OverviewPlanBlank: returning = new OverviewWindow(context, OverviewScope::PLAN, true); id=GcWindowTypes::OverviewPlan; break;
+    case GcWindowTypes::OverviewPlan: returning = new PlanOverviewWindow(context); if (id != GcWindowTypes::OverviewPlan) { id=GcWindowTypes::OverviewPlan; static_cast<OverviewWindow*>(returning)->setConfiguration(""); } break;
+    case GcWindowTypes::OverviewPlanBlank: returning = new PlanOverviewWindow(context, true); id=GcWindowTypes::OverviewPlan; break;
     case GcWindowTypes::UserPlan: returning = new UserChartWindow(context, true); break;
 
     case GcWindowTypes::SeasonPlan: returning = new PlanningWindow(context); break;
     case GcWindowTypes::UserAnalysis: returning = new UserChartWindow(context, false); break;
     case GcWindowTypes::UserTrends: returning = new UserChartWindow(context, true); break;
-
     case GcWindowTypes::Diary:
     case GcWindowTypes::Calendar: returning = new CalendarWindow(context); break;
     case GcWindowTypes::Agenda: returning = new AgendaWindow(context); break;
+    case GcWindowTypes::EquipmentOverview: returning = new EquipmentOverviewWindow(context); break;
     default: return NULL; break;
     }
     if (returning) returning->setProperty("type", QVariant::fromValue<GcWinID>(id));

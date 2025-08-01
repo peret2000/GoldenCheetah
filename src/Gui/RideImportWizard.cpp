@@ -1165,6 +1165,7 @@ RideImportWizard::abortClicked()
     } else {
         if (!isActiveWindow()) activateWindow();
     }
+    context->notifyBatchImportComplete(completed); // tell everyone we are done
 }
 
 

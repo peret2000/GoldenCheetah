@@ -574,8 +574,12 @@ QT += charts opengl
 
 # Dashboard uses qt charts, so needs at least Qt 5.7
 DEFINES += GC_HAVE_OVERVIEW
-HEADERS += Gui/ChartSpace.h Charts/OverviewItems.h Charts/Overview.h
-SOURCES += Gui/ChartSpace.cpp Charts/OverviewItems.cpp Charts/Overview.cpp
+HEADERS += Gui/ChartSpace.h Charts/OverviewItems.h Charts/Overview.h Charts/OverviewWindows.h
+SOURCES += Gui/ChartSpace.cpp Charts/OverviewItems.cpp Charts/Overview.cpp Charts/OverviewWindows.cpp
+
+# equipment management
+HEADERS += Core/EquipmentCache.h Core/EquipmentItems.h Core/EquipmentCalculator.h Charts/EquipmentOverviewItems.h
+SOURCES += Core/EquipmentCache.cpp Core/EquipmentItems.cpp Core/EquipmentCalculator.cpp Charts/EquipmentOverviewItems.cpp
 
 # generic chart
 DEFINES += GC_HAVE_GENERIC
@@ -667,7 +671,7 @@ HEADERS += Gui/AboutDialog.h Gui/AddIntervalDialog.h Gui/AnalysisSidebar.h Gui/C
            Gui/SaveDialogs.h Gui/SearchBox.h Gui/SearchFilterBox.h Gui/SolveCPDialog.h Gui/AthleteTab.h Gui/AbstractView.h Gui/ToolsRhoEstimator.h \
            Gui/Views.h Gui/BatchProcessingDialog.h Gui/DownloadRideDialog.h Gui/ManualActivityWizard.h Gui/NewSideBar.h \
            Gui/MergeActivityWizard.h Gui/RideImportWizard.h Gui/SplitActivityWizard.h Gui/SolverDisplay.h Gui/MetricSelect.h \
-           Gui/AddTileWizard.h Gui/NavigationModel.h Gui/AthleteView.h Gui/AthleteConfigDialog.h Gui/AthletePages.h Gui/Perspective.h \
+           Gui/AddTileWizard.h Gui/NavigationModel.h Gui/AthleteView.h Gui/AthleteConfigDialog.h Gui/AthletePages.h Gui/Perspective.h Gui/Perspectives.h \
            Gui/PerspectiveDialog.h Gui/SplashScreen.h Gui/StyledItemDelegates.h Gui/MetadataDialog.h Gui/ActionButtonBox.h \
            Gui/MetricOverrideDialog.h Gui/RepeatScheduleWizard.h \
            Gui/Calendar.h Gui/Agenda.h Gui/CalendarData.h Gui/CalendarItemDelegates.h \
@@ -780,7 +784,7 @@ SOURCES += Gui/AboutDialog.cpp Gui/AddIntervalDialog.cpp Gui/AnalysisSidebar.cpp
            Gui/SearchBox.cpp Gui/SearchFilterBox.cpp Gui/SolveCPDialog.cpp Gui/AthleteTab.cpp Gui/AbstractView.cpp Gui/ToolsRhoEstimator.cpp Gui/Views.cpp \
            Gui/BatchProcessingDialog.cpp Gui/DownloadRideDialog.cpp Gui/ManualActivityWizard.cpp Gui/EditUserMetricDialog.cpp Gui/NewSideBar.cpp \
            Gui/MergeActivityWizard.cpp Gui/RideImportWizard.cpp Gui/SplitActivityWizard.cpp Gui/SolverDisplay.cpp Gui/MetricSelect.cpp \
-           Gui/AddTileWizard.cpp Gui/NavigationModel.cpp Gui/AthleteView.cpp Gui/AthleteConfigDialog.cpp Gui/AthletePages.cpp Gui/Perspective.cpp \
+           Gui/AddTileWizard.cpp Gui/NavigationModel.cpp Gui/AthleteView.cpp Gui/AthleteConfigDialog.cpp Gui/AthletePages.cpp Gui/Perspective.cpp Gui/Perspectives.cpp \
            Gui/PerspectiveDialog.cpp Gui/SplashScreen.cpp Gui/StyledItemDelegates.cpp Gui/MetadataDialog.cpp Gui/ActionButtonBox.cpp \
            Gui/MetricOverrideDialog.cpp Gui/RepeatScheduleWizard.cpp \
            Gui/Calendar.cpp Gui/Agenda.cpp Gui/CalendarData.cpp Gui/CalendarItemDelegates.cpp \
