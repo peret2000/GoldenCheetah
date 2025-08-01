@@ -145,10 +145,12 @@ if $MERGECODE; then
 	merge goldencheetah/master
 
 	#### Merge temporal: Equipment management feature tiled
-	git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
-	git fetch paulj49457
+	### Se deja de hacer merge con paulj49457/origin-equipment-management-feature
+	### La rama ha sido borrada para hacer otro diseño
+	###git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
+	###git fetch paulj49457
 	merge origin/tmp-equipment-management-feature
-	merge paulj49457/origin-equipment-management-feature
+	###merge paulj49457/origin-equipment-management-feature
 	##############################
 
 fi	# if $MERGECODE; then
