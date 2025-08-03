@@ -83,10 +83,10 @@ merge origin/train_geolocation_widget
 merge goldencheetah/master
 
 #### Merge temporal: Equipment management feature tiled
-git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
-git fetch paulj49457
+#git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
+#git fetch paulj49457
 merge origin/tmp-equipment-management-feature
-merge paulj49457/origin-equipment-management-feature
+#merge paulj49457/origin-equipment-management-feature
 ##############################
 
 if [ "$1" ]; then
