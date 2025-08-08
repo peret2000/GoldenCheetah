@@ -84,21 +84,11 @@ sed -i '
 }
 ' src/Resources/linux/MakeAppImageQt6.sh
 
-sed -i '
-/^\.\/linuxdeployqt.*AppImage/ {
-    /--appimage-extract-and-run/ ! {
-        s/\(\.\/linuxdeployqt[^[:space:]]*AppImage\)/\1 --appimage-extract-and-run/
-    }
-}
-' src/Resources/linux/MakeAppImageQt6.sh
 
-sed -i '
-/^\.\/appimagetool.*AppImage/ {
-    /--appimage-extract-and-run/ ! {
-        s/\(\.\/appimagetool[^[:space:]]*AppImage\)/\1 --appimage-extract-and-run/
-    }
-}
-' src/Resources/linux/MakeAppImageQt6.sh
+# Agregar export APPIMAGE_EXTRACT_AND_RUN=1 antes de linuxdeployqt si no existe ya
+if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" src/Resources/linux/MakeAppImageQt6.sh; then
+    sed -i '/^\.\/linuxdeployqt.*AppImage/i export APPIMAGE_EXTRACT_AND_RUN=1' src/Resources/linux/MakeAppImageQt6.sh
+fi
 
 sed -i 's|^cp -r `qmake.*$|cp -r /usr/share/qt6/resources appdir|' src/Resources/linux/MakeAppImageQt6.sh
 sed -i 's/git log -1 >> GCversionLinuxQt6.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinuxQt6.txt/' src/Resources/linux/MakeAppImageQt6.sh
