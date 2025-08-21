@@ -112,7 +112,6 @@ if $FROMSCRATCH; then
 
 	# Por si existe ya la rama, primero se elimina y luego se crea
 	git branch -D NightlyBuild
-	git checkout -b NightlyBuild
 
 fi	# if $FROMSCRATCH; then
 
@@ -126,6 +125,12 @@ if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
 	echo "FAILED. $BUILDBRANCH NOT in last version." | tee -a $LOGFILE
 	salida $ERR
 fi
+
+if ! git checkout -B NightlyBuild; then
+	echo "ERROR: Not able to switch to NightlyBuild. Maybe not in previously built directory" | tee -a $LOGFILE
+	salida $ERR
+fi
+
 git merge $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 
 if $MERGECODE; then
