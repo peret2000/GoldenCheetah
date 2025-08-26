@@ -6,7 +6,7 @@
 
 # Prepara el directorio para compilar por primera vez
 
-# Si se ejecuta el script diario (daily_script.sh), ya prepara el directorio, pues llama a este script.
+# Si se ejecuta el script diario (build_project.sh), ya prepara el directorio, pues llama a este script.
 # Si no, es necesario ejecutar este script, para preparar una compilación, tanto de QtCreator como manual
 
 # Si se manda como parámetro 'Debug' (case insensitive) prepara la compilación para debug.
@@ -26,13 +26,8 @@ if [[ -z "${ENV_LOADED}" ]]; then
         source $HOME/.profile
 fi
 
-if [ -n "${QT_DIR}" ]; then
-    sed -i "s|/opt/qt515|${QT_DIR}|g" travis/linux/*.sh
-fi
-
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
-export PATH=$PATH:/usr/lib/qt6/bin
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
@@ -69,17 +64,15 @@ echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(${DELIV_MODE}\\ `git merge-base HEAD 
 
 ######## Cambios en travis/linux/script.sh
 
-sed -i 's/qmake /qmake6 /g'  travis/linux/script.sh
 # El make usa tantos procesos como procesadores físicos
 sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
 
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
-sed -i 's|^qmake --version|qmake6 --version|' src/Resources/linux/MakeAppImageQt6.sh
 sed -i '
 /^\.\/linuxdeployqt.*AppImage/ {
     /geoservices/ ! {
-        s/$/ -qmake=\/usr\/bin\/qmake6 -extra-plugins=geoservices/
+        s/$/ -extra-plugins=geoservices/
     }
 }
 ' src/Resources/linux/MakeAppImageQt6.sh
@@ -90,5 +83,4 @@ if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" src/Resources/linux/MakeAppImageQt6.sh; 
     sed -i '/^\.\/linuxdeployqt.*AppImage/i export APPIMAGE_EXTRACT_AND_RUN=1' src/Resources/linux/MakeAppImageQt6.sh
 fi
 
-sed -i 's|^cp -r `qmake.*$|cp -r /usr/share/qt6/resources appdir|' src/Resources/linux/MakeAppImageQt6.sh
 sed -i 's/git log -1 >> GCversionLinuxQt6.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinuxQt6.txt/' src/Resources/linux/MakeAppImageQt6.sh

@@ -165,8 +165,6 @@ if $FROMSCRATCH; then
 	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 fi	# if $FROMSCRATCH; then
 
-
-
 echo script.sh: `date` | tee -a $LOGFILE
 
 ### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
@@ -193,7 +191,7 @@ if ! $APPIMAGE; then
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
 	./linuxdeployqt-continuous-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
-			-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip -qmake=/usr/bin/qmake6
+			-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
 	mkdir -p ../squashfs-root && mv appdir/GoldenCheetah ../squashfs-root/
 	# Cleanup
 	rm linuxdeployqt-continuous-x86_64.AppImage
