@@ -575,13 +575,7 @@ SOURCES += Charts/UserChartWindow.cpp Charts/UserChartOverviewItem.cpp Charts/Us
 ###=====================
 ### QtLocation module, compatible with 6.5 and above
 ###=====================
-QT += positioning
-greaterThan(QT_MAJOR_VERSION, 5) {
-    INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QtLocation
-    LIBS += -lQt6Location
-} else {
-    QT += location
-}
+QT += positioning location
 
 
 ###=====================
