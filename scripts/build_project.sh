@@ -207,6 +207,7 @@ else
 
 	ls src/GoldenCheetah*.AppImage >/dev/null 2>&1 && rm src/GoldenCheetah*.AppImage
 	cd src
+	export LD_LIBRARY_PATH=$QT_DIR/lib:$LD_LIBRARY_PATH
 	./Resources/linux/MakeAppImageQt6.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 	cd ..
 	src/GoldenCheetah_v3.7_x64Qt6.AppImage --appimage-extract > /dev/null 2>&1
