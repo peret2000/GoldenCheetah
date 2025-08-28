@@ -184,17 +184,28 @@ if ! $APPIMAGE; then
 	echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
 	# Download current version of linuxdeployqt
 	cd src
-	wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
-	chmod a+x linuxdeployqt-continuous-x86_64.AppImage
-	# Deploy to appdir
+	wget -nv -O linuxdeployqt.AppImage -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+	chmod +x linuxdeployqt.AppImage
+	7z x -y linuxdeployqt.AppImage -olinuxdeployqt_extracted
+	rm -f linuxdeployqt.AppImage
+
+	LINUXDEPLOYQT_BIN=""
+	if [ -x linuxdeployqt_extracted/squashfs-root/usr/bin/linuxdeployqt ]; then
+	LINUXDEPLOYQT_BIN=linuxdeployqt_extracted/squashfs-root/usr/bin/linuxdeployqt
+	elif [ -x linuxdeployqt_extracted/usr/bin/linuxdeployqt ]; then
+	LINUXDEPLOYQT_BIN=linuxdeployqt_extracted/usr/bin/linuxdeployqt
+	else
+	echo "No se encontró linuxdeployqt dentro de linuxdeployqt_extracted" >&2
+	exit 1
+	fi
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
-	./linuxdeployqt-continuous-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
-			-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
+	"$LINUXDEPLOYQT_BIN" appdir/GoldenCheetah \
+	-verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
+	-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
+	rm -rf linuxdeployqt_extracted
 	mkdir -p ../squashfs-root && mv appdir/GoldenCheetah ../squashfs-root/
-	# Cleanup
-	rm linuxdeployqt-continuous-x86_64.AppImage
 	rm -rf ./appdir
 
 else
