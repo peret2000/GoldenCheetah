@@ -9,7 +9,7 @@ fi
 
 salida() {
 	[[ -n "$1" && "$1" != "0" ]] && echo ">>>EJECUCIÓN FALLIDA: $1" | tee -a $LOGFILE
-	scripts/pushover_end_compile.sh "$TEXT $HOSTNAME" $LOGFILE > /dev/null 2>&1
+	$SCRIPT_DIR/pushover_end_compile.sh "$TEXT $HOSTNAME" $LOGFILE > /dev/null 2>&1
 	echo Termina: `date` | tee -a $LOGFILE
 	cat $LOGFILE >> $CUMLOGFILE
 	rm $LOGFILE
@@ -162,7 +162,7 @@ fi	# if $MERGECODE; then
 
 if $FROMSCRATCH; then
 	echo preparedirectory.sh: `date` | tee -a $LOGFILE
-	./scripts/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
+	$SCRIPT_DIR/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 fi	# if $FROMSCRATCH; then
 
 echo script.sh: `date` | tee -a $LOGFILE
@@ -195,8 +195,7 @@ if ! $APPIMAGE; then
 	elif [ -x linuxdeployqt_extracted/usr/bin/linuxdeployqt ]; then
 	LINUXDEPLOYQT_BIN=linuxdeployqt_extracted/usr/bin/linuxdeployqt
 	else
-	echo "No se encontró linuxdeployqt dentro de linuxdeployqt_extracted" >&2
-	exit 1
+	echo "ERROR: deploy FAILED: No se encontró linuxdeployqt dentro de linuxdeployqt_extracted" | tee -a $LOGFILE; salida 1
 	fi
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
