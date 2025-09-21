@@ -37,12 +37,8 @@ cp Resources/images/gc.png appdir/
 #cp -r /usr/lib/x86_64-linux-gnu/vlc appdir/lib/vlc
 #sudo appdir/lib/vlc/vlc-cache-gen appdir/lib/vlc/plugins
 
-### Download current version of linuxdeployqt
-wget --no-verbose -c https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
-chmod a+x linuxdeployqt-continuous-x86_64.AppImage
-
-### Deploy to appdir
-./linuxdeployqt-continuous-x86_64.AppImage appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc
+### Deploy to appdir. linuxdeployqt must be in PATH
+linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc
 
 # Add Python and core modules
 wget --no-verbose https://github.com/niess/python-appimage/releases/download/python3.7/python3.7.17-cp37-cp37m-manylinux1_x86_64.AppImage
@@ -66,7 +62,6 @@ chmod a+x appimagetool-x86_64.AppImage
 ./appimagetool-x86_64.AppImage appdir
 
 ### Cleanup
-rm linuxdeployqt-continuous-x86_64.AppImage
 rm appimagetool-x86_64.AppImage
 rm -rf appdir
 
