@@ -70,7 +70,7 @@ sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travi
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
 sed -i '
-/^\.\/linuxdeployqt.*AppImage/ {
+/^linuxdeployqt/ {
     /geoservices/ ! {
         s/$/ -extra-plugins=geoservices/
     }
