@@ -184,6 +184,7 @@ if ! $APPIMAGE; then
 	echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
 
 	# El binario linuxdeployqt ya debe estar en el path
+	cd src
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
