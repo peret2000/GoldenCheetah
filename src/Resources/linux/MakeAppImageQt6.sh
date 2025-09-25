@@ -38,45 +38,62 @@ cp Resources/images/gc.png appdir/
 #sudo appdir/lib/vlc/vlc-cache-gen appdir/lib/vlc/plugins
 
 ### Deploy to appdir. linuxdeployqt must be in PATH
-linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc
+linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc -extra-plugins=geoservices
 
-# Add Python and core modules
-wget --no-verbose https://github.com/niess/python-appimage/releases/download/python3.7/python3.7.17-cp37-cp37m-manylinux1_x86_64.AppImage
-chmod +x python3.7.17-cp37-cp37m-manylinux1_x86_64.AppImage
-./python3.7.17-cp37-cp37m-manylinux1_x86_64.AppImage --appimage-extract
-rm -f python3.7.17-cp37-cp37m-manylinux1_x86_64.AppImage
-export PATH="$(pwd)/squashfs-root/usr/bin:$PATH"
+## Depending on architecture, download the right appimagetool and python3.7 AppImage
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64)
+    AIFILE="appimagetool-x86_64.AppImage"
+    ;;
+  aarch64|arm64)
+    AIFILE="appimagetool-aarch64.AppImage"
+    ;;
+  *)
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+    ;;
+esac
+
+PYTHON_BIN="$(command -v python3.7)"
+PYTHON_DIR="$(dirname "$PYTHON_BIN")"
+export PATH="$PYTHON_DIR:$PATH"
 pip install --upgrade pip
 pip install -q -r Python/requirements.txt
-mv squashfs-root/usr appdir/usr
-mv squashfs-root/opt appdir/opt
-rm -rf squashfs-root
+cp -rp $PYTHON_DIR/.. appdir/usr/
 
 # Fix RPATH on QtWebEngineProcess and copy missing resources
 patchelf --set-rpath '$ORIGIN/../lib' appdir/libexec/QtWebEngineProcess
 cp -r `qmake -v|awk '/Qt/ { print $6 "/../resources" }' -` appdir
 
 # Generate AppImage
-wget --no-verbose "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-chmod a+x appimagetool-x86_64.AppImage
-./appimagetool-x86_64.AppImage appdir
 
-### Cleanup
-rm appimagetool-x86_64.AppImage
-rm -rf appdir
+wget --no-verbose "https://github.com/AppImage/appimagetool/releases/download/continuous/$AIFILE"
+chmod a+x "$AIFILE"
+export APPIMAGE_EXTRACT_AND_RUN=1
+# It can fail in case of QEMU emulation, so we just warn and continue
+if ! ./"$AIFILE" appdir GoldenCheetah.AppImage >/dev/null 2>&1; then
+	echo "Warning: $AIFILE failed to create the AppImage (possible QEMU emulation); continuing."
+	echo "'appdir' directory will remain, with the whole application."
+	export FINAL_NAME=./appdir/GoldenCheetah
+else
+	rm -rf appdir
 
-if [ ! -x ./GoldenCheetah-x86_64.AppImage ]
-then echo "AppImage not generated, check the errors"; exit 1
+	if [ ! -x ./GoldenCheetah.AppImage ]
+	then echo "AppImage not generated, check the errors"; exit 1
+	fi
+
+	echo "Renaming AppImage file to branch and build number ready for deploy"
+	export FINAL_NAME=GoldenCheetah_v3.7_x64Qt6.AppImage
+	mv -f GoldenCheetah.AppImage $FINAL_NAME
+	ls -l $FINAL_NAME
 fi
 
-echo "Renaming AppImage file to branch and build number ready for deploy"
-export FINAL_NAME=GoldenCheetah_v3.7_x64Qt6.AppImage
-mv -f GoldenCheetah-x86_64.AppImage $FINAL_NAME
-ls -l $FINAL_NAME
+rm -f "$AIFILE"
 
 ### Generate version file with SHA
 ./$FINAL_NAME --version 2>GCversionLinuxQt6.txt
-git log -1 >> GCversionLinuxQt6.txt
+git merge-base HEAD  goldencheetah/master |xargs git log -1>>GCversionLinuxQt6.txt
 echo "SHA256 hash of $FINAL_NAME:" >> GCversionLinuxQt6.txt
 shasum -a 256 $FINAL_NAME | cut -f 1 -d ' '  >> GCversionLinuxQt6.txt
 cat GCversionLinuxQt6.txt
