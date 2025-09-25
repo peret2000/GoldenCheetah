@@ -28,6 +28,9 @@ fi
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
+# PYTHONHOME must be set to the directory where python3.7 is installed
+sed -i 's|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I\$PYTHONHOME/include/python3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
+sed -i 's|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L\$PYTHONHOME/lib -lpython3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
@@ -77,10 +80,5 @@ sed -i '
 }
 ' src/Resources/linux/MakeAppImageQt6.sh
 
-
-# Agregar export APPIMAGE_EXTRACT_AND_RUN=1 antes de appimagetool-x86_64.AppImage si no existe ya
-if ! grep -q "APPIMAGE_EXTRACT_AND_RUN" src/Resources/linux/MakeAppImageQt6.sh; then
-    sed -i '/^\.\/appimagetool-x86_64.AppImage/i export APPIMAGE_EXTRACT_AND_RUN=1' src/Resources/linux/MakeAppImageQt6.sh
-fi
 
 sed -i 's/git log -1 >> GCversionLinuxQt6.txt/git merge-base HEAD  goldencheetah\/master |xargs git log -1>>GCversionLinuxQt6.txt/' src/Resources/linux/MakeAppImageQt6.sh
