@@ -28,9 +28,10 @@ fi
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
 
-# PYTHONHOME must be set to the directory where python3.7 is installed
-sed -i 's|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I\$PYTHONHOME/include/python3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
-sed -i 's|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L\$PYTHONHOME/lib -lpython3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
+# Directory where python3.7 is installed
+PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+sed -i 's|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I\$PYTHON37DIR/include/python3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
+sed -i 's|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L\$PYTHON37DIR/lib -lpython3.7m >> src/gcconfig.pri|' travis/linux/before_script.sh
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
