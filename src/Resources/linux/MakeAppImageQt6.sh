@@ -38,7 +38,7 @@ cp Resources/images/gc.png appdir/
 #sudo appdir/lib/vlc/vlc-cache-gen appdir/lib/vlc/plugins
 
 ### Deploy to appdir. linuxdeployqt must be in PATH
-linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc -extra-plugins=geoservices
+linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc
 
 ## Depending on architecture, download the right appimagetool and python3.7 AppImage
 ARCH="$(uname -m)"
@@ -55,12 +55,11 @@ case "$ARCH" in
     ;;
 esac
 
-PYTHON_BIN="$(command -v python3.7)"
-PYTHON_DIR="$(dirname "$PYTHON_BIN")"
-export PATH="$PYTHON_DIR:$PATH"
+PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+export PATH="$PYTHON37DIR/bin:$PATH"
 pip install --upgrade pip
 pip install -q -r Python/requirements.txt
-cp -rp $PYTHON_DIR/.. appdir/usr/
+cp -rp $PYTHON37DIR appdir/opt/
 
 # Fix RPATH on QtWebEngineProcess and copy missing resources
 patchelf --set-rpath '$ORIGIN/../lib' appdir/libexec/QtWebEngineProcess
@@ -93,7 +92,7 @@ rm -f "$AIFILE"
 
 ### Generate version file with SHA
 ./$FINAL_NAME --version 2>GCversionLinuxQt6.txt
-git merge-base HEAD  goldencheetah/master |xargs git log -1>>GCversionLinuxQt6.txt
+git log -1 >> GCversionLinuxQt6.txt
 echo "SHA256 hash of $FINAL_NAME:" >> GCversionLinuxQt6.txt
 shasum -a 256 $FINAL_NAME | cut -f 1 -d ' '  >> GCversionLinuxQt6.txt
 cat GCversionLinuxQt6.txt

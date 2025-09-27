@@ -180,6 +180,9 @@ echo Finalización: `date` >> $BUILDLOG
 
 [[ -d src/appdir ]] && rm -rf src/appdir
 
+#Python directory in needed for both linuxdeployqt and MakeAppImageQt6.sh, so it is set here
+PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+
 if ! $APPIMAGE; then
 
 	echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
@@ -189,7 +192,7 @@ if ! $APPIMAGE; then
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
-	export LD_LIBRARY_PATH=$PYTHONHOME/lib:$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH=$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 	linuxdeployqt appdir/GoldenCheetah \
 		-verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
 		-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
@@ -207,7 +210,7 @@ else
 	ls src/GoldenCheetah*.AppImage >/dev/null 2>&1 && rm src/GoldenCheetah*.AppImage
 	cd src
 	[[ -d appdir ]] && rm -rf appdir
-	export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHONHOME/lib:$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 	./Resources/linux/MakeAppImageQt6.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 	cd ..
 	if [  -x src/GoldenCheetah_v3.7_x64Qt6.AppImage ]; then
