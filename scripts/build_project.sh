@@ -203,7 +203,7 @@ else
 
 	# Generate the AppImage
 
-	echo MakeAppImageQt6.sh: `date` | tee -a $LOGFILE
+	echo MakeAppImageQt6.sh: `date` | tee -a $BUILDLOG | tee -a $LOGFILE
 
 	[[ -d squashfs-root ]] && rm -rf squashfs-root
 
@@ -211,7 +211,7 @@ else
 	cd src
 	[[ -d appdir ]] && rm -rf appdir
 	export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
-	./Resources/linux/MakeAppImageQt6.sh > /dev/null 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
+	./Resources/linux/MakeAppImageQt6.sh >> $BUILDLOG 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 	cd ..
 	if [  -x src/GoldenCheetah_v3.7_x64Qt6.AppImage ]; then
 		src/GoldenCheetah_v3.7_x64Qt6.AppImage --appimage-extract > /dev/null 2>&1
