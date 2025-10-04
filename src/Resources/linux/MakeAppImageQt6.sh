@@ -59,7 +59,8 @@ PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
 export PATH="$PYTHON37DIR/bin:$PATH"
 pip install --upgrade pip
 pip install -q -r Python/requirements.txt
-cp -rp $PYTHON37DIR appdir/opt/python3.7
+mkdir -p appdir/opt/python3.7
+cp -rp $PYTHON37DIR appdir/opt/python3.7/
 
 # Fix RPATH on QtWebEngineProcess and copy missing resources
 patchelf --set-rpath '$ORIGIN/../lib' appdir/libexec/QtWebEngineProcess
