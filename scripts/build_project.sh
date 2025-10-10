@@ -26,6 +26,7 @@ export BUILDLOG=$SCRIPT_DIR/buildlog.txt
 APPIMAGE=false
 FROMSCRATCH=false
 MERGECODE=false	# Si es from scratch, se ignora
+DELIV_MODE=Release
 
 # Script command line help
 mostrar_ayuda() {
@@ -39,6 +40,7 @@ mostrar_ayuda() {
     echo "  --appimage      Creates the appimage file"
     echo "  --fromscratch   Builds from scratch"
     echo "  --updatecode    If not from scratch, this option updates source from repository"
+    echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
     echo "  --help, -h      Shows this help message"
     echo ""
     exit 1
@@ -63,6 +65,10 @@ while [[ $# -gt 0 ]]; do
 			MERGECODE=true
             shift
             ;;
+		--debug)
+			DELIV_MODE=Debug
+			shift
+			;;
         --help|-h)
             mostrar_ayuda
             ;;
@@ -163,10 +169,15 @@ fi	# if $MERGECODE; then
 
 if $FROMSCRATCH; then
 	echo preparedirectory.sh: `date` | tee -a $LOGFILE
-	$SCRIPT_DIR/preparedirectory.sh > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
+	$SCRIPT_DIR/preparedirectory.sh $DELIV_MODE > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 fi	# if $FROMSCRATCH; then
 
 echo script.sh: `date` | tee -a $LOGFILE
+
+# Modifica el código para poner la versión que se genera
+gcdialogfile=src/Gui/GcCrashDialog.cpp
+sed -i '/^[[:space:]]*#define[[:space:]]\+GC_VERSION/ d' ${gcdialogfile}
+sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\#define GC_VERSION \"(${DELIV_MODE} $(git merge-base HEAD goldencheetah/master | cut -c -9))\"" ${gcdialogfile}
 
 ### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
 ### el código de error de la salida (process substitution)
