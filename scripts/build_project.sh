@@ -176,8 +176,14 @@ echo script.sh: `date` | tee -a $LOGFILE
 
 # Modifica el código para poner la versión que se genera
 gcdialogfile=src/Gui/GcCrashDialog.cpp
-sed -i '/^[[:space:]]*#define[[:space:]]\+GC_VERSION/ d' ${gcdialogfile}
-sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\#define GC_VERSION \"(${DELIV_MODE} $(git merge-base HEAD goldencheetah/master | cut -c -9))\"" ${gcdialogfile}
+commit=$(git merge-base HEAD goldencheetah/master 2>/dev/null | cut -c -9)
+desired_line="#define GC_VERSION \"(${DELIV_MODE} ${commit})\""
+if grep -q -F "${desired_line}" "${gcdialogfile}"; then
+    echo "GC_VERSION already up-to-date: ${desired_line}" | tee -a $LOGFILE
+else
+	sed -i '/^[[:space:]]*#define[[:space:]]\+GC_VERSION/ d' ${gcdialogfile}
+	sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\${desired_line}" ${gcdialogfile}
+fi
 
 ### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
 ### el código de error de la salida (process substitution)
