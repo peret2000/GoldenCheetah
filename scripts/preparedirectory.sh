@@ -48,13 +48,11 @@ fi
 
 ######## Cambios en src/gcconfig.pri
 
-DELIV_MODE=Release
 if [ "${1,,}" = "debug" ]; then
     sed -i '/CONFIG += debug/ d' src/gcconfig.pri
     sed -i '/CONFIG += release/ d' src/gcconfig.pri
     sed -i '/-O3/ d' src/gcconfig.pri
     echo CONFIG += debug static >> src/gcconfig.pri
-	DELIV_MODE=Debug
 fi
 
 sed -i '/^VLC_INSTALL/ s/^/#/' src/gcconfig.pri
@@ -62,9 +60,6 @@ sed -i '/^VLC_LIBS/ s/^/#/' src/gcconfig.pri
 sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
-
-sed -i '/GC_VERSION/ d' src/gcconfig.pri
-echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(${DELIV_MODE}\\ `git merge-base HEAD  goldencheetah/master | cut -c -9`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
 
 ######## Cambios en travis/linux/script.sh
 
