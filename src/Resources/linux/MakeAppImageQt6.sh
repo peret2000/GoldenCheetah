@@ -2,9 +2,20 @@
 set -ev
 
 ### This script should be run from GoldenCheetah src directory after build
+### QT_DIR must be set to the Qt6 installation directory
+### python3.7 must be installed and in PATH
+
 if [ ! -x ./GoldenCheetah ]
 then echo "Build GoldenCheetah and execute from distribution src"; exit 1
 fi
+
+### Clean previous AppImage files and directories
+[[ -d ../squashfs-root ]] && rm -rf ../squashfs-root
+ls ./GoldenCheetah*.AppImage >/dev/null 2>&1 && rm ./GoldenCheetah*.AppImage
+[[ -d appdir ]] && rm -rf appdir
+
+PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 
 qmake --version
 
@@ -55,7 +66,6 @@ case "$ARCH" in
     ;;
 esac
 
-PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
 export PATH="$PYTHON37DIR/bin:$PATH"
 pip install --upgrade pip
 pip install -q -r Python/requirements.txt
@@ -71,6 +81,7 @@ cp -r `qmake -v|awk '/Qt/ { print $6 "/../resources" }' -` appdir
 wget --no-verbose "https://github.com/AppImage/appimagetool/releases/download/continuous/$AIFILE"
 chmod a+x "$AIFILE"
 export APPIMAGE_EXTRACT_AND_RUN=1
+export APPIMAGE_TMPDIR=/tmp
 # It can fail in case of QEMU emulation, so we just warn and continue
 if ! ./"$AIFILE" appdir GoldenCheetah.AppImage >/dev/null 2>&1; then
 	echo "Warning: $AIFILE failed to create the AppImage (possible QEMU emulation); continuing."
@@ -93,6 +104,7 @@ rm -f "$AIFILE"
 
 ### Generate version file with SHA
 ./$FINAL_NAME --version 2>GCversionLinuxQt6.txt
+rm -rf ${APPIMAGE_TMPDIR}/appimage*
 git log -1 >> GCversionLinuxQt6.txt
 echo "SHA256 hash of $FINAL_NAME:" >> GCversionLinuxQt6.txt
 shasum -a 256 $FINAL_NAME | cut -f 1 -d ' '  >> GCversionLinuxQt6.txt
