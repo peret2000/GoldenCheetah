@@ -179,10 +179,11 @@ gcdialogfile=src/Gui/GcCrashDialog.cpp
 commit=$(git merge-base HEAD goldencheetah/master 2>/dev/null | cut -c -9)
 desired_line="#define GC_VERSION \"(${DELIV_MODE} ${commit})\""
 if grep -q -F "${desired_line}" "${gcdialogfile}"; then
-    echo "GC_VERSION already up-to-date: ${desired_line}" | tee -a $LOGFILE
+    echo "GC_VERSION already up-to-date: ${commit}" | tee -a $LOGFILE
 else
 	sed -i '/^[[:space:]]*#define[[:space:]]\+GC_VERSION/ d' ${gcdialogfile}
 	sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\${desired_line}" ${gcdialogfile}
+	echo "GC_VERSION updated to: ${commit}" | tee -a $LOGFILE
 fi
 
 ### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
@@ -197,9 +198,6 @@ echo Finalización: `date` >> $BUILDLOG
 
 [[ -d src/appdir ]] && rm -rf src/appdir
 
-#Python directory in needed for both linuxdeployqt and MakeAppImageQt6.sh, so it is set here
-PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
-
 if ! $APPIMAGE; then
 
 	echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
@@ -209,6 +207,7 @@ if ! $APPIMAGE; then
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
+	PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
 	export LD_LIBRARY_PATH=$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 	linuxdeployqt appdir/GoldenCheetah \
 		-verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
@@ -222,12 +221,7 @@ else
 
 	echo MakeAppImageQt6.sh: `date` | tee -a $BUILDLOG | tee -a $LOGFILE
 
-	[[ -d squashfs-root ]] && rm -rf squashfs-root
-
-	ls src/GoldenCheetah*.AppImage >/dev/null 2>&1 && rm src/GoldenCheetah*.AppImage
 	cd src
-	[[ -d appdir ]] && rm -rf appdir
-	export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 	./Resources/linux/MakeAppImageQt6.sh >> $BUILDLOG 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
 	cd ..
 	if [  -x src/GoldenCheetah_v3.7_x64Qt6.AppImage ]; then
