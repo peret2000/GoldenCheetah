@@ -9,7 +9,6 @@ scipy
 lmfit
 plotly
 importlib_metadata
-meteostat
 python-dateutil
 geopy
 folium
