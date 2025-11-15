@@ -2022,7 +2022,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
 
                 }
 
-                {
+                if (ergFile->hasGradient()) {
                     // Average slope in 10 seconds (taking into account current speed)
 
                     int lap;
@@ -2039,6 +2039,8 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     displayDeltaSlope = deltaSlope - rtData.getSlope();
                     rtData.setDeltaSlope(displayDeltaSlope);
                 }
+                else
+                   rtData.setDeltaSlope(0.0);
 
                     // Elevation Gain
                 {
