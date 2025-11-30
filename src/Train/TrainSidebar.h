@@ -131,6 +131,7 @@ class TrainSidebar : public GcWindow
 
         RemoteControl *remote;      // remote control settings
         int currentStatus() {return status;}
+        int getCurrentFTP() const { return FTP > 0 ? FTP : 285; } // Return FTP or default if not set
 
     signals:
         void deviceSelected();
