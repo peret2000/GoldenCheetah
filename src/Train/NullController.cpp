@@ -39,7 +39,7 @@
 
 NullController::NullController(TrainSidebar *parent,
                                DeviceConfiguration *dc)
-  : RealtimeController(parent, dc), parent(parent), load(100),
+  : RealtimeController(parent, dc), parent(parent), load(parent ? parent->getCurrentFTP() : 100),
     bicycle(NULL)
 {
   //set values before start as heat
