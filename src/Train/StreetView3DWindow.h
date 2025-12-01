@@ -22,21 +22,17 @@
 
 #include <QWidget>
 #include <QDialog>
+#include <QFormLayout>
+#include <string>
+#include <QSslSocket>
+#include <QWebEnginePage>
+#include <QWebEngineView>
 
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include "RideFile.h"
 #include "IntervalItem.h"
 #include "Context.h"
 #include "ErgFile.h"
 #include "RealtimeData.h"
-
-#include <QDialog>
-#include <QSslSocket>
-#include <QWebEnginePage>
-#include <QWebEngineView>
 
 
 class QMouseEvent;
@@ -47,10 +43,6 @@ class QVBoxLayout;
 class QTabWidget;
 class IntervalSummaryWindow;
 class SmallPlot;
-
-class StreetView3DWebPage : public QWebEnginePage
-{
-};
 
 class StreetView3DWindow : public GcChartWindow
 {

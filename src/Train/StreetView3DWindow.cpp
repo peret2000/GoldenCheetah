@@ -128,7 +128,12 @@ void StreetView3DWindow::applySettings()
 
 StreetView3DWindow::~StreetView3DWindow()
 {
-    if (view) delete view->page();
+    // webPage is managed by view's setPage, so just delete the view's page
+    // The webPage pointer is the same as view->page() after setPage was called
+    if (view) {
+        delete view->page();
+        view = nullptr;
+    }
 }
 
 double StreetView3DWindow::calculateBearing(double lat1, double lon1, double lat2, double lon2)
@@ -215,11 +220,11 @@ void StreetView3DWindow::drawRoute(ErgFile* f) {
     routeLatLngs = "[";
     QString code = "";
 
-    for (int pt = 0; pt < f->Points.size() - 1; pt++) {
+    for (int pt = 0; pt < f->Points.size(); pt++) {
         geolocation geoloc(f->Points[pt].lat, f->Points[pt].lon, f->Points[pt].y);
         if (geoloc.IsReasonableGeoLocation()) {
-            if (pt == 0) { routeLatLngs += "["; }
-            else { routeLatLngs += ",["; }
+            if (routeLatLngs != "[") { routeLatLngs += ","; }
+            routeLatLngs += "[";
             routeLatLngs += QVariant(f->Points[pt].lat).toString();
             routeLatLngs += ",";
             routeLatLngs += QVariant(f->Points[pt].lon).toString();
