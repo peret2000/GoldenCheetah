@@ -22,9 +22,6 @@
 
 #include <QWidget>
 #include <QDialog>
-#include <QFormLayout>
-#include <string>
-#include <QSslSocket>
 #include <QWebEnginePage>
 #include <QWebEngineView>
 

@@ -128,12 +128,7 @@ void StreetView3DWindow::applySettings()
 
 StreetView3DWindow::~StreetView3DWindow()
 {
-    // webPage is managed by view's setPage, so just delete the view's page
-    // The webPage pointer is the same as view->page() after setPage was called
-    if (view) {
-        delete view->page();
-        view = nullptr;
-    }
+    if (view) delete view->page();
 }
 
 double StreetView3DWindow::calculateBearing(double lat1, double lon1, double lat2, double lon2)
