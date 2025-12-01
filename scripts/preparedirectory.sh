@@ -60,8 +60,6 @@ sed -i '/^VLC_LIBS/ s/^/#/' src/gcconfig.pri
 sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
-sed -i "s|#\(DEFINES += GC_ACTIVITY_PLAN.*\)|\1|" src/gcconfig.pri
-sed -i "s|#\(DEFINES += GC_CALENDAR_AGENDA.*\)|\1|" src/gcconfig.pri
 
 ######## Cambios en travis/linux/script.sh
 
