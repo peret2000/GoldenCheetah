@@ -94,7 +94,7 @@ class StreetView3DWindow : public GcChartWindow
         QPushButton* applyButton;
 
         void createHtml(double startLat, double startLon, double bearing);
-        void drawRoute(ErgFile* f);
+        void buildRouteLatLngs(ErgFile* f);
         double calculateBearing(double lat1, double lon1, double lat2, double lon2);
 
     private slots:

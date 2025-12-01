@@ -185,20 +185,8 @@ void StreetView3DWindow::ergFileSelected(ErgFile* f)
                 }
             }
             
-            // Build route coordinates for the polyline
-            routeLatLngs = "[";
-            for (int pt = 0; pt < f->Points.size(); pt++) {
-                geolocation geoloc(f->Points[pt].lat, f->Points[pt].lon, f->Points[pt].y);
-                if (geoloc.IsReasonableGeoLocation()) {
-                    if (routeLatLngs != "[") { routeLatLngs += ","; }
-                    routeLatLngs += "[";
-                    routeLatLngs += QVariant(f->Points[pt].lat).toString();
-                    routeLatLngs += ",";
-                    routeLatLngs += QVariant(f->Points[pt].lon).toString();
-                    routeLatLngs += "]";
-                }
-            }
-            routeLatLngs += "]";
+            // Build route coordinates for the polyline using helper method
+            buildRouteLatLngs(f);
             
             // Store initial values
             lastLat = startingLat;
@@ -216,10 +204,9 @@ void StreetView3DWindow::ergFileSelected(ErgFile* f)
     }
 }
 
-void StreetView3DWindow::drawRoute(ErgFile* f) {
+// Helper method to build route coordinates from ErgFile
+void StreetView3DWindow::buildRouteLatLngs(ErgFile* f) {
     routeLatLngs = "[";
-    QString code = "";
-
     for (int pt = 0; pt < f->Points.size(); pt++) {
         geolocation geoloc(f->Points[pt].lat, f->Points[pt].lon, f->Points[pt].y);
         if (geoloc.IsReasonableGeoLocation()) {
@@ -232,8 +219,6 @@ void StreetView3DWindow::drawRoute(ErgFile* f) {
         }
     }
     routeLatLngs += "]";
-    code = QString("showRoute (" + routeLatLngs + ");");
-    view->page()->runJavaScript(code);
 }
 
 // Reset map to preferred View when the activity is stopped.
@@ -267,10 +252,13 @@ void StreetView3DWindow::telemetryUpdate(RealtimeData rtd)
         QString sLat = QVariant(newLat).toString();
         QString sLon = QVariant(newLon).toString();
         
-        // Calculate new bearing if we've moved
+        // Calculate new bearing if we've moved using Haversine distance approximation
         if (lastLat != 0 && lastLon != 0) {
-            double distance = sqrt(pow(newLat - lastLat, 2) + pow(newLon - lastLon, 2));
-            if (distance > 0.00001) { // Only update bearing if we've moved significantly
+            // Use cosine of latitude for a rough but more accurate distance estimate
+            double latDiff = toRadians(newLat - lastLat);
+            double lonDiff = toRadians(newLon - lastLon) * cos(toRadians((newLat + lastLat) / 2.0));
+            double distance = sqrt(latDiff * latDiff + lonDiff * lonDiff);
+            if (distance > 0.0000001) { // Only update bearing if we've moved significantly (~11m at equator)
                 currentBearing = calculateBearing(lastLat, lastLon, newLat, newLon);
             }
         }
@@ -316,11 +304,11 @@ void StreetView3DWindow::createHtml(double startLat, double startLon, double bea
         "<meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\"/>\n"
         "<title>GoldenCheetah 3D Street View</title>\n"
         
-        // Leaflet CSS and JS
-        "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\"\n"
-        "integrity=\"sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=\" crossorigin=\"\"/>\n"
-        "<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"\n"
-        "integrity=\"sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=\" crossorigin=\"\"></script>\n"
+        // Leaflet CSS and JS (using 1.6.0 for consistency with LiveMapWebPageWindow)
+        "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.css\"\n"
+        "integrity=\"sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==\" crossorigin=\"\"/>\n"
+        "<script src=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.js\"\n"
+        "integrity=\"sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==\" crossorigin=\"\"></script>\n"
         
         // Custom CSS for 3D effect
         "<style>\n"
