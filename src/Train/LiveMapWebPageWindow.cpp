@@ -262,7 +262,7 @@ void LiveMapWebPageWindow::telemetryUpdate(RealtimeData rtd)
     }
 }
 // Build HTML code with all the javascript functions to be called later
-// to update the postion on the mapp
+// to update the position on the map
 void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
 {
     currentPage = "";
@@ -272,11 +272,14 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
     QString sTilt = QString::number(tiltValue);
     
     // CSS for 3D perspective - only apply if tilt > 0
+    // The tilt effect is applied to the tile layer container, not the entire map
+    // This preserves zoom controls and markers
     QString tiltCSS = "";
     if (tiltValue > 0) {
         tiltCSS = QString(
-            "#map-wrapper { width: 100%; height: 100%; position: relative; overflow: hidden; }\n"
-            "#mapid { transform-origin: center bottom; transform: perspective(1000px) rotateX(%1deg); height: 150%; margin-top: -25%; }\n"
+            ".leaflet-tile-pane { transform-origin: center bottom; transform: perspective(1000px) rotateX(%1deg); }\n"
+            ".leaflet-marker-pane { transform-origin: center bottom; transform: perspective(1000px) rotateX(%1deg); }\n"
+            ".leaflet-overlay-pane { transform-origin: center bottom; transform: perspective(1000px) rotateX(%1deg); }\n"
         ).arg(sTilt);
     }
 
@@ -293,7 +296,7 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
         "#mapid { height: 100%; width: 100%; }\n"
         + tiltCSS +
         "</style></head>\n"
-        "<body><div id=\"map-wrapper\"><div id=\"mapid\"></div></div>\n"
+        "<body><div id=\"mapid\"></div>\n"
         "<script type=\"text/javascript\">\n"
         "var mapOptions, mymap, mylayer, mymarker, latlng, myscale, routepolyline\n"
         "function moveMarker(myLat, myLon) {\n"
