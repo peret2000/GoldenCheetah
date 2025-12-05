@@ -87,6 +87,12 @@ LiveMapWebPageWindow::LiveMapWebPageWindow(Context *context) : GcChartWindow(con
     customZoom->setFixedWidth(60);
     customZoom->setRange(0, 20); // Set the range for zoom levels
 
+    customTiltLabel = new QLabel(tr("3D Tilt (degrees)"));
+    customTilt = new QSpinBox(this);
+    customTilt->setFixedWidth(60);
+    customTilt->setRange(0, 75); // Set the range for tilt (0 = flat, 75 = very tilted)
+    customTilt->setValue(0); // Default to flat view (no tilt)
+
     if (customUrl->text().trimmed().isEmpty()) customUrl->setText("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png");
     commonLayout->addRow(customUrlLabel, customUrl);
 
@@ -94,6 +100,7 @@ LiveMapWebPageWindow::LiveMapWebPageWindow(Context *context) : GcChartWindow(con
 
     if (customZoom->text().trimmed().isEmpty()) customZoom->setValue(15);
     commonLayout->addRow(customZoomLabel, customZoom);
+    commonLayout->addRow(customTiltLabel, customTilt);
     
     applyButton = new QPushButton(application->style()->standardIcon(QStyle::SP_ArrowRight), tr("Apply changes"), this);
     commonLayout->addRow(applyButton);
@@ -259,6 +266,19 @@ void LiveMapWebPageWindow::telemetryUpdate(RealtimeData rtd)
 void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
 {
     currentPage = "";
+    
+    // Get the tilt value for 3D perspective effect
+    int tiltValue = tilt();
+    QString sTilt = QString::number(tiltValue);
+    
+    // CSS for 3D perspective - only apply if tilt > 0
+    QString tiltCSS = "";
+    if (tiltValue > 0) {
+        tiltCSS = QString(
+            "#map-wrapper { width: 100%; height: 100%; position: relative; overflow: hidden; }\n"
+            "#mapid { transform-origin: center bottom; transform: perspective(1000px) rotateX(%1deg); height: 150%; margin-top: -25%; }\n"
+        ).arg(sTilt);
+    }
 
     currentPage = QString("<html><head>\n"
         "<meta name=\"viewport\" content=\"initial-scale=1.0, user-scalable=yes\"/> \n"
@@ -268,8 +288,12 @@ void LiveMapWebPageWindow::createHtml(QString sBaseUrl, QString autoRunJS)
         "integrity=\"sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==\" crossorigin=\"\"/>\n"
         "<script src=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.js\"\n"
         "integrity=\"sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==\" crossorigin=\"\"></script>\n"
-        "<style>#mapid {height:100%;width:100%}</style></head>\n"
-        "<body><div id=\"mapid\"></div>\n"
+        "<style>\n"
+        "html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }\n"
+        "#mapid { height: 100%; width: 100%; }\n"
+        + tiltCSS +
+        "</style></head>\n"
+        "<body><div id=\"map-wrapper\"><div id=\"mapid\"></div></div>\n"
         "<script type=\"text/javascript\">\n"
         "var mapOptions, mymap, mylayer, mymarker, latlng, myscale, routepolyline\n"
         "function moveMarker(myLat, myLon) {\n"
