@@ -68,9 +68,20 @@ esac
 
 export PATH="$PYTHON37DIR/bin:$PATH"
 pip install --upgrade pip
-pip install -q -r Python/requirements.txt
+pip install -q -U --upgrade-strategy eager -r Python/requirements.txt
 mkdir -p appdir/opt/python3.10
 cp -rp $PYTHON37DIR/* appdir/opt/python3.10/
+# Change scripts in python bin directory to execute correct python binary
+find appdir/opt/python3.10/bin -type f -print0 | while IFS= read -r -d '' f; do
+  if file -b "$f" | grep -qi 'script'; then
+    if sed -n '1p' "$f" | grep -q '^#!.*python'; then
+      sed -i '1 s|^#!.*python.*$|#! /bin/sh\
+"exec" "$(dirname $(readlink -f ${0}))/python3" "$0" "$@"|' "$f"
+    fi
+  fi
+done
+
+
 
 # Fix RPATH on QtWebEngineProcess and copy missing resources
 patchelf --set-rpath '$ORIGIN/../lib' appdir/libexec/QtWebEngineProcess
