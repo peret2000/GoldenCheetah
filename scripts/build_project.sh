@@ -207,7 +207,7 @@ if ! $APPIMAGE; then
 	mkdir -p appdir
 	cp -p GoldenCheetah appdir/
 	# Lightweight deploy
-	PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+	PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.10)")")"
 	export LD_LIBRARY_PATH=$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 	linuxdeployqt appdir/GoldenCheetah \
 		-verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
