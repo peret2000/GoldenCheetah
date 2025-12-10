@@ -3,7 +3,7 @@ set -ev
 
 ### This script should be run from GoldenCheetah src directory after build
 ### QT_DIR must be set to the Qt6 installation directory
-### python3.7 must be installed and in PATH
+### python3.10 must be installed and in PATH
 
 if [ ! -x ./GoldenCheetah ]
 then echo "Build GoldenCheetah and execute from distribution src"; exit 1
@@ -14,7 +14,7 @@ fi
 ls ./GoldenCheetah*.AppImage >/dev/null 2>&1 && rm ./GoldenCheetah*.AppImage
 [[ -d appdir ]] && rm -rf appdir
 
-PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.7)")")"
+PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.10)")")"
 export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
 
 qmake --version
@@ -51,7 +51,7 @@ cp Resources/images/gc.png appdir/
 ### Deploy to appdir. linuxdeployqt must be in PATH
 linuxdeployqt appdir/GoldenCheetah -verbose=2 -bundle-non-qt-libs -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 -unsupported-allow-new-glibc
 
-## Depending on architecture, download the right appimagetool and python3.7 AppImage
+## Depending on architecture, download the right appimagetool
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64)
@@ -69,8 +69,8 @@ esac
 export PATH="$PYTHON37DIR/bin:$PATH"
 pip install --upgrade pip
 pip install -q -r Python/requirements.txt
-mkdir -p appdir/opt/python3.7
-cp -rp $PYTHON37DIR/* appdir/opt/python3.7/
+mkdir -p appdir/opt/python3.10
+cp -rp $PYTHON37DIR/* appdir/opt/python3.10/
 
 # Fix RPATH on QtWebEngineProcess and copy missing resources
 patchelf --set-rpath '$ORIGIN/../lib' appdir/libexec/QtWebEngineProcess
