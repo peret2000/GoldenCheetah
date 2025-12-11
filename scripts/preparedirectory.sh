@@ -31,8 +31,8 @@ fi
 # Directory where python3 is installed
 PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
 PYTHONVERS=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I\$PYTHONDIR/include/python\$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
-sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L\$PYTHONDIR/lib -lpython\$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
+sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I$PYTHONDIR/include/python$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
+sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L$PYTHONDIR/lib -lpython$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
 travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
