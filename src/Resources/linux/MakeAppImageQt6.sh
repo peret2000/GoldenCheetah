@@ -3,7 +3,7 @@ set -ev
 
 ### This script should be run from GoldenCheetah src directory after build
 ### QT_DIR must be set to the Qt6 installation directory
-### python3.10 must be installed and in PATH
+### python3 must be installed and in PATH
 
 if [ ! -x ./GoldenCheetah ]
 then echo "Build GoldenCheetah and execute from distribution src"; exit 1
@@ -14,8 +14,9 @@ fi
 ls ./GoldenCheetah*.AppImage >/dev/null 2>&1 && rm ./GoldenCheetah*.AppImage
 [[ -d appdir ]] && rm -rf appdir
 
-PYTHON37DIR="$(dirname "$(dirname "$(command -v python3.10)")")"
-export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHON37DIR/lib:$LD_LIBRARY_PATH
+PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
+PYTHONVERS=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+export LD_LIBRARY_PATH=$QT_DIR/lib:$PYTHONDIR/lib:$LD_LIBRARY_PATH
 
 qmake --version
 
@@ -66,13 +67,13 @@ case "$ARCH" in
     ;;
 esac
 
-export PATH="$PYTHON37DIR/bin:$PATH"
+export PATH="$PYTHONDIR/bin:$PATH"
 pip install --upgrade pip
 pip install -q -U --upgrade-strategy eager -r Python/requirements.txt
-mkdir -p appdir/opt/python3.10
-cp -rp $PYTHON37DIR/* appdir/opt/python3.10/
+mkdir -p appdir/opt/python${PYTHONVERS}
+cp -rp $PYTHONDIR/* appdir/opt/python${PYTHONVERS}/
 # Change scripts in python bin directory to execute correct python binary
-find appdir/opt/python3.10/bin -type f -print0 | while IFS= read -r -d '' f; do
+find appdir/opt/python${PYTHONVERS}/bin -type f -print0 | while IFS= read -r -d '' f; do
   if file -b "$f" | grep -qi 'script'; then
     if sed -n '1p' "$f" | grep -q '^#!.*python'; then
       sed -i '1 s|^#!.*python.*$|#! /bin/sh\
