@@ -112,8 +112,8 @@ if $FROMSCRATCH; then
 	git checkout -- src/Resources/translations/
 	git checkout -- src/Core/Secrets.h
 	git checkout -- src/Resources/linux/MakeAppImageQt6.sh
-	git checkout -- travis/linux/before_script.sh
-	git checkout -- travis/linux/script.sh
+	git checkout -- scripts/script.sh
+	git checkout -- appveyor/linux/before_build.sh
 
 	git checkout $BUILDBRANCH
 
@@ -172,7 +172,7 @@ if $FROMSCRATCH; then
 	$SCRIPT_DIR/preparedirectory.sh $DELIV_MODE > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 fi	# if $FROMSCRATCH; then
 
-echo script.sh: `date` | tee -a $LOGFILE
+echo Build: `date` | tee -a $LOGFILE
 
 # Modifica el código para poner la versión que se genera
 gcdialogfile=src/Gui/GcCrashDialog.cpp
@@ -186,12 +186,7 @@ else
 	echo "GC_VERSION updated to: ${commit}" | tee -a $LOGFILE
 fi
 
-### Ésta es una forma 'compleja' de ejecutar un comando, que muestre la salida por pantalla, además de escribir en un fichero, y utilizar
-### el código de error de la salida (process substitution)
-##./travis/linux/script.sh > >(tee -a $BUILDLOG) 2> >(tee -a $BUILDLOG >&2) \
-##	&& { echo "Compile OK" | tee -a $LOGFILE;} || { ERR=$?; echo "Compile FAILED" | tee -a $LOGFILE; salida $ERR;}
-# No saca la salida por pantalla
-./travis/linux/script.sh >> $BUILDLOG 2>&1 && { echo "Compile OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: Compile FAILED" | tee -a $LOGFILE; salida $ERR; }
+./scripts/script.sh >> $BUILDLOG 2>&1 && { echo "Compile OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: Compile FAILED" | tee -a $LOGFILE; salida $ERR; }
 
 echo ------------------------- >> $BUILDLOG
 echo Finalización: `date` >> $BUILDLOG
