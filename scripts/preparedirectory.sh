@@ -15,7 +15,7 @@
 # de 'release' en otro directorio (por ejemplo, una compilaqción manual), habrá que ejecutar de nuevo este script, para dejar
 # gcconfig.pri como 'release' (y eso conlleva que tiene que compilar todo de nuevo)
 
-# Ejecuta travis/linux/before_script.sh (debe estar la variable de entorno $GC_STRAVA_CLIENT_SECRET)
+# Ejecuta appveyor/linux/before_build.sh (debe estar la variable de entorno $GC_STRAVA_CLIENT_SECRET)
 # modifica gcconfig.pri
 
 # Si se quiere usar un entorno de Qt diferente al por defecto (por ejemplo Qt6.6.1), debe existir la variable QT_DIR,
@@ -31,14 +31,14 @@ fi
 # Directory where python3 is installed
 PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
 PYTHONVERS=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I$PYTHONDIR/include/python$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
-sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L$PYTHONDIR/lib -lpython$PYTHONVERS >> src/gcconfig.pri|" travis/linux/before_script.sh
-travis/linux/before_script.sh || { ERR=$?; exit $ERR; }
+sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I$PYTHONDIR/include/python$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
+sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L$PYTHONDIR/lib -lpython$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
+appveyor/linux/before_build.sh || { ERR=$?; exit $ERR; }
 
 # In case the binary remains from previous compilations, it is removed
 rm -f src/GoldenCheetah
 
-# Extracted from travis/linux/before_install.sh : Downloads necessary header file if it was not downloaded yet
+# Download necessary header file if it was not downloaded yet
 # D2XX - refresh cache if folder is empty
 mkdir -p D2XX
 if [ -z "$(ls -A D2XX)" ]; then
@@ -62,10 +62,10 @@ sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
 
-######## Cambios en travis/linux/script.sh
+######## Cambios en scripts/script.sh
 
 # El make usa tantos procesos como procesadores físicos
-sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" travis/linux/script.sh
+sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" ./scripts/script.sh
 
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
