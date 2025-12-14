@@ -3,6 +3,8 @@
 # IMPORTANTE: Ejecutar desde el directorio del repositorio: por ejemplo:
 # ./scripts/preparedirectory.sh [debug]
 
+# Deben estar las variables de entorno $GC_STRAVA_CLIENT_SECRET y otras que se utilizan
+# para los servicios de cloud
 
 # Prepara el directorio para compilar por primera vez
 
@@ -15,8 +17,8 @@
 # de 'release' en otro directorio (por ejemplo, una compilaqción manual), habrá que ejecutar de nuevo este script, para dejar
 # gcconfig.pri como 'release' (y eso conlleva que tiene que compilar todo de nuevo)
 
-# Ejecuta appveyor/linux/before_build.sh (debe estar la variable de entorno $GC_STRAVA_CLIENT_SECRET)
-# modifica gcconfig.pri
+# Modifica y Ejecuta appveyor/linux/before_build.sh
+# Modifica gcconfig.pri
 
 # Si se quiere usar un entorno de Qt diferente al por defecto (por ejemplo Qt6.6.1), debe existir la variable QT_DIR,
 # y se usa para sustituir paths que hay hardcoded en los scripts de travis/linux
@@ -27,6 +29,32 @@ if [[ -z "${ENV_LOADED}" ]]; then
 fi
 
 # Aquí se debe poner la variables de entorno $GC_STRAVA_CLIENT_SECRET (o existir ya) si se quiere compilar con ella
+
+# Patch Secrets.h
+sed -i "s/__GC_GOOGLE_CALENDAR_CLIENT_SECRET__/"$GC_GOOGLE_CALENDAR_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_STRAVA_CLIENT_SECRET__/"$GC_STRAVA_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_DROPBOX_CLIENT_SECRET__/"$GC_DROPBOX_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_CYCLINGANALYTICS_CLIENT_SECRET__/"$GC_CYCLINGANALYTICS_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_TWITTER_CONSUMER_SECRET__/"$GC_TWITTER_CONSUMER_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_DROPBOX_CLIENT_ID__/"$GC_DROPBOX_CLIENT_ID"/" src/Core/Secrets.h
+sed -i "s/__GC_MAPQUESTAPI_KEY__/"$GC_MAPQUESTAPI_KEY"/" src/Core/Secrets.h
+sed -i "s/__GC_CLOUD_DB_BASIC_AUTH__/"$GC_CLOUD_DB_BASIC_AUTH"/" src/Core/Secrets.h
+sed -i "s/__GC_CLOUD_DB_APP_NAME__/"$GC_CLOUD_DB_APP_NAME"/" src/Core/Secrets.h
+sed -i "s/__GC_GOOGLE_DRIVE_CLIENT_ID__/"$GC_GOOGLE_DRIVE_CLIENT_ID"/" src/Core/Secrets.h
+sed -i "s/__GC_GOOGLE_DRIVE_CLIENT_SECRET__/"$GC_GOOGLE_DRIVE_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_GOOGLE_DRIVE_API_KEY__/"$GC_GOOGLE_DRIVE_API_KEY"/" src/Core/Secrets.h
+sed -i "s/__GC_WITHINGS_CONSUMER_SECRET__/"$GC_WITHINGS_CONSUMER_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_NOKIA_CLIENT_SECRET__/"$GC_NOKIA_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_SPORTTRACKS_CLIENT_SECRET__/"$GC_SPORTTRACKS_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/OPENDATA_DISABLE/OPENDATA_ENABLE/" src/Core/Secrets.h
+sed -i "s/__GC_CLOUD_OPENDATA_SECRET__/"$GC_CLOUD_OPENDATA_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_RWGPS_API_KEY__/"$GC_RWGPS_API_KEY"/" src/Core/Secrets.h
+sed -i "s/__GC_NOLIO_CLIENT_ID__/"$GC_NOLIO_CLIENT_ID"/" src/Core/Secrets.h
+sed -i "s/__GC_NOLIO_SECRET__/"$GC_NOLIO_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_XERT_CLIENT_SECRET__/"$GC_XERT_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_AZUM_CLIENT_SECRET__/"$GC_AZUM_CLIENT_SECRET"/" src/Core/Secrets.h
+sed -i "s/__GC_TRAINERDAY_API_KEY__/"$GC_TRAINERDAY_API_KEY"/" src/Core/Secrets.h
+
 
 # Directory where python3 is installed
 PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
