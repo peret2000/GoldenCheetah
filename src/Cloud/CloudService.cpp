@@ -1656,11 +1656,12 @@ CloudServiceSyncDialog::saveRide(RideFile *ride, QStringList &errors)
         return false;
     }
 
+    // run the processor first... import
+    DataProcessorFactory::instance().autoProcess(ride, "Auto", "Import");
+
     // process linked defaults
     GlobalContext::context()->rideMetadata->setLinkedDefaults(ride);
 
-    // run the processor first... import
-    DataProcessorFactory::instance().autoProcess(ride, "Auto", "Import");
     ride->recalculateDerivedSeries();
     // now metrics have been calculated
     DataProcessorFactory::instance().autoProcess(ride, "Save", "ADD");
