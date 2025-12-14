@@ -153,6 +153,7 @@ class AbstractView : public QWidget
                         // we don't care what values are pass through to the GcWindowRegistry to decide
                         // what charts are relevant for this view.
         const QString view; // type of view:  "train", "analysis", "diary", "home"
+        QString viewCfgPath; // directory path to the view's configuration
 
         // properties
         bool _filtered;
@@ -182,6 +183,13 @@ class AbstractView : public QWidget
         BlankStatePage *blank_;
 
         bool loaded;
+
+        // Support view specific behaviour
+        virtual void notifyViewStateRestored() {}
+        virtual void notifyViewPerspectiveAdded(Perspective* page);
+        virtual void notifyViewSidebarChanged() {}
+        virtual void setViewSpecificPerspective() {};
+        virtual void notifyViewSplitterMoved() {};
 
     private slots:
         void onIdle();
@@ -230,7 +238,7 @@ public:
 protected:
     double fh() { QFontMetrics fm(baseFont); return fm.height(); }
     double spacer() { return (2 * dpiYFactor); }
-    QSplitterHandle *createHandle() {
+    QSplitterHandle *createHandle() override {
         if (this->tabView)
         {
             if (this->tabView->viewType() == VIEW_TRAIN)

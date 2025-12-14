@@ -25,6 +25,7 @@
 #include "DataFilter.h"
 #include <QGraphicsItem>
 #include "MetadataDialog.h"
+#include "MetricOverrideDialog.h"
 
 // qt charts for zone chart
 #include <QtCharts>
@@ -251,15 +252,19 @@ class MetricOverviewItem : public ChartSpaceItem
         MetricOverviewItem(ChartSpace *parent, QString name, QString symbol);
         ~MetricOverviewItem();
 
-        void itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *);
-        void itemGeometryChanged();
-        void setData(RideItem *item);
-        void setDateRange(DateRange);
+        void itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) override;
+        void itemGeometryChanged() override;
+        void setData(RideItem *item) override;
+        void setDateRange(DateRange) override;
 
-        QWidget *config() { return configwidget; }
+        virtual void displayTileEditMenu(const QPoint& pos) override;
+
+        QWidget *config() override { return configwidget; }
 
         // create and config
         static ChartSpaceItem *create(ChartSpace *parent) { return new MetricOverviewItem(parent, "PowerIndex", "power_index"); }
+
+        void configChanged(qint32) override;
 
         QString symbol;
         const RideMetric *metric;
@@ -267,6 +272,7 @@ class MetricOverviewItem : public ChartSpaceItem
 
         bool up;
         bool showrange = false;
+        bool overridden = false;
         QString value, upper, lower, mean;
 
         Sparkline *sparkline;
@@ -276,6 +282,15 @@ class MetricOverviewItem : public ChartSpaceItem
         QPixmap gold, silver, bronze; // medals
 
         OverviewItemConfig *configwidget;
+
+    protected slots:
+
+        void updateTile(int ret);
+        void metadataChanged();
+
+    protected:
+
+        RideItem* rideItem = nullptr;
 };
 
 // top N uses this to hold details for date range

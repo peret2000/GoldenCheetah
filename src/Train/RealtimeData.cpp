@@ -25,8 +25,8 @@
 RealtimeData::RealtimeData()
 {
     name[0] = '\0';
-    hr= watts= altWatts= speed= wheelRpm= load= slope= torque= 0.0;
-    cadence = distance = altDistance = virtualSpeed = wbal = 0.0;
+    hr= watts= avgWatts = altWatts= speed= wheelRpm= load= slope= torque= gear= 0.0;
+    cadence = distance = altDistance = virtualSpeed = avgSpeed = wbal = 0.0;
     lap = msecs = lapMsecs = lapMsecsRemaining = ergMsecsRemaining = 0;
     thb = smo2 = o2hb = hhb = 0.0;
     lrbalance = RideFile::NA;
@@ -38,13 +38,17 @@ RealtimeData::RealtimeData()
     heatStrain = 0.0;
     latitude = longitude = altitude = 0.0;
     rf = rmv = vo2 = vco2 = tv = feo2 = 0.0;
+    routeDistance = distanceRemaining = deltaSlope = 0.0;
+    elevationGain = 0.0;
     routeDistance = distanceRemaining = 0.0;
+    joules = 0;
     trainerStatusAvailable = false;
     trainerReady = true;
     trainerRunning = true;
     trainerCalibRequired = false;
     trainerConfigRequired = false;
     trainerBrakeFault = false;
+    bearing = 0.0;
     memset(spinScan, 0, 24);
     temp = 0.0;
 }
@@ -56,6 +60,18 @@ void RealtimeData::setName(char *name)
 void RealtimeData::setAltWatts(double watts)
 {
     this->altWatts = (int)watts;
+}
+void RealtimeData::setAvgWatts(double avgWatts)
+{
+    this->avgWatts= avgWatts;
+}
+void RealtimeData::setGear(double gear)
+{
+    this->gear= gear;
+}
+void RealtimeData::setJoules(long joules)
+{
+    this->joules= joules;
 }
 void RealtimeData::setWatts(double watts)
 {
@@ -85,6 +101,10 @@ void RealtimeData::setWbal(double wbal)
 void RealtimeData::setVirtualSpeed(double speed)
 {
     this->virtualSpeed = speed;
+}
+void RealtimeData::setAvgSpeed(double speed)
+{
+    this->avgSpeed = speed;
 }
 void RealtimeData::setWheelRpm(double wheelRpm, bool fMarkWheelRpmTime)
 {
@@ -138,6 +158,16 @@ void RealtimeData::setDistanceRemaining(double x)
     this->distanceRemaining = x;
 }
 
+void RealtimeData::setDeltaSlope(double x)
+{
+    this->deltaSlope = x;
+}
+
+void RealtimeData::setElevationGain(double x)
+{
+    this->elevationGain = x;
+}
+
 void RealtimeData::setLapDistance(double x)
 {
     this->lapDistance = x;
@@ -173,11 +203,16 @@ void RealtimeData::setRPS(double x)
     this->rps = x;
 }
 
+void RealtimeData::setBearing(double x)
+{
+    this->bearing = x;
+}
+
 //Skin temp passed but not used elsewhere
 void RealtimeData::setCoreTemp(double core, double skin, double heatStrain) {
-  this->coreTemp = core;
-  this->skinTemp = skin;
-  this->heatStrain = heatStrain;
+    this->coreTemp = core;
+    this->skinTemp = skin;
+    this->heatStrain = heatStrain;
 }
 
 const char *
@@ -199,6 +234,14 @@ double RealtimeData::getWatts() const
 {
     return watts;
 }
+double RealtimeData::getAvgWatts() const
+{
+    return avgWatts;
+}
+double RealtimeData::getGear() const
+{
+    return gear;
+}
 double RealtimeData::getHr() const
 {
     return hr;
@@ -214,6 +257,10 @@ double RealtimeData::getWbal() const
 double RealtimeData::getVirtualSpeed() const
 {
     return virtualSpeed;
+}
+double RealtimeData::getAvgSpeed() const
+{
+    return avgSpeed;
 }
 double RealtimeData::getWheelRpm() const
 {
@@ -255,6 +302,18 @@ double RealtimeData::getDistanceRemaining() const
 {
     return distanceRemaining;
 }
+double RealtimeData::getDeltaSlope() const
+{
+    return deltaSlope;
+}
+double RealtimeData::getElevationGain() const
+{
+    return elevationGain;
+}
+long RealtimeData::getJoules() const
+{
+    return joules;
+}
 double RealtimeData::getLapDistance() const
 {
     return lapDistance;
@@ -282,6 +341,10 @@ double RealtimeData::getLPS() const
 double RealtimeData::getRPS() const
 {
     return rps;
+}
+double RealtimeData::getBearing() const
+{
+    return bearing;
 }
 
 double RealtimeData::getRppb() const
@@ -426,13 +489,28 @@ double RealtimeData::value(DataSeries series) const
     case DistanceRemaining: return distanceRemaining;
         break;
 
+    case DeltaSlope: return deltaSlope;
+        break;
+
+    case ElevationGain: return elevationGain;
+        break;
+
     case LapDistance: return lapDistance;
         break;
 
     case LapDistanceRemaining: return lapDistanceRemaining;
         break;
 
+    case Joules: return joules;
+        break;
+
     case AltWatts: return altWatts;
+        break;
+
+    case AvgWatts: return avgWatts;
+        break;
+
+    case Gear: return gear;
         break;
 
     case Watts: return watts;
@@ -442,6 +520,9 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case VirtualSpeed: return virtualSpeed;
+        break;
+
+    case AvgSpeed: return avgSpeed;
         break;
 
     case Cadence: return cadence;
@@ -530,11 +611,17 @@ double RealtimeData::value(DataSeries series) const
 
     case FeO2: return feo2;
         break;
+    case Bearing: return bearing;
+        break;
 
     case Temp: return temp;
         break;
 
     case CoreTemp: return coreTemp;
+        break;
+    case SkinTemp: return skinTemp;
+        break;
+    case HeatStrain: return heatStrain;
         break;
 
     case None:
@@ -563,15 +650,15 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << Cadence;
         seriesList << HeartRate;
         seriesList << Load;
+        seriesList << XPower;
         seriesList << BikeScore;
+        seriesList << RI;
+        seriesList << Joules;
         seriesList << SkibaVI;
         seriesList << BikeStress;
-        seriesList << XPower;
         seriesList << IsoPower;
-        seriesList << RI;
         seriesList << IF;
         seriesList << VI;
-        seriesList << Joules;
         seriesList << Wbal;
         seriesList << SmO2;
         seriesList << tHb;
@@ -611,6 +698,13 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << DistanceRemaining;
         seriesList << Temp;
         seriesList << CoreTemp;
+        seriesList << SkinTemp;
+        seriesList << HeatStrain;
+        seriesList << HeatLoad;
+        seriesList << Bearing;
+        seriesList << DeltaSlope;
+        seriesList << ElevationGain;
+        seriesList << Gear;
     }
     return seriesList;
 }
@@ -677,6 +771,12 @@ QString RealtimeData::seriesName(DataSeries series)
     case DistanceRemaining: return tr("Distance Remaining");
         break;
 
+    case DeltaSlope: return tr("Delta Slope");
+        break;
+
+    case ElevationGain: return tr("Elevation Gain");
+        break;
+
     case AltWatts: return tr("Alternate Power");
         break;
 
@@ -699,6 +799,9 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
 
     case AvgWatts: return tr("Average Power");
+        break;
+
+    case Gear: return tr("Gear");
         break;
 
     case AvgSpeed: return tr("Average Speed");
@@ -803,7 +906,15 @@ QString RealtimeData::seriesName(DataSeries series)
     case Temp: return tr("Temperature");
         break;
 
-    case CoreTemp: return tr("CoreTemp");
+    case CoreTemp: return tr("Core Temp");
+        break;
+    case SkinTemp: return tr("Skin Temp");
+        break;
+    case HeatStrain: return tr("Heat Strain");
+        break;
+    case HeatLoad: return tr("Estimated Heat Load");
+        break;
+    case Bearing: return tr("Bearing");
         break;
     }
 }

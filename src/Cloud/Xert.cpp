@@ -199,12 +199,11 @@ Xert::readdir(QString path, QStringList &errors, QDateTime from, QDateTime to)
     connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
     loop.exec();
 
-    // if successful, lets unpack
     int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    printd("fetch response: %d: %s\n", reply->error(), reply->errorString().toStdString().c_str());
+    printd("fetch response: status=%d, error=%d: %s\n", statusCode, reply->error(), reply->errorString().toStdString().c_str());
 
+    // if successful, lets unpack
     if (reply->error() == 0) {
-
         // get the data
         QByteArray r = reply->readAll();
 
@@ -259,7 +258,7 @@ Xert::readdir(QString path, QStringList &errors, QDateTime from, QDateTime to)
     }
 
     // all good ?
-    printd("returning count(%d), errors(%s)\n", returning.count(), errors.join(",").toStdString().c_str());
+    printd("returning count(%lld), errors(%s)\n", returning.count(), errors.join(",").toStdString().c_str());
     return returning;
 }
 
@@ -267,8 +266,8 @@ QString
 Xert::getRideName(RideFile *ride)
 {
     QString name = "";
-    // is "Name" set?
-    if (!ride->getTag("Name", "").isEmpty()) {
+    // is "Objective" set?
+    if (!ride->getTag("Objective", "").isEmpty()) {
         name = ride->getTag("Name", "");
     } else {
         // is "Route" set?
@@ -308,10 +307,10 @@ Xert::readActivityDetail(QString path, bool withSessionData)
     connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
     loop.exec();
 
-    // if successful, lets unpack
     int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    printd("fetch response: %d: %s\n", reply->error(), reply->errorString().toStdString().c_str());
+    printd("fetch response: status=%d, error=%d: %s\n", statusCode, reply->error(), reply->errorString().toStdString().c_str());
 
+    // if successful, lets unpack
     if (reply->error() == 0) {
 
         // get the data
@@ -373,7 +372,7 @@ Xert::readyRead()
     buffers.value(reply)->append(reply->readAll());
 }
 
-// SportTracks workouts are delivered back as JSON, the original is lost
+// Xert workouts are delivered back as JSON, the original is lost
 // so we need to parse the response and turn it into a JSON file to
 // import. The description of the format is here:
 // https://sporttracks.mobi/api/doc/data-structures
@@ -412,7 +411,7 @@ Xert::readFileCompleted()
         }
 
         // location => route
-        if (!ride["name"].isNull()) ret->setTag("Objectives", ride["name"].toString());
+        if (!ride["name"].isNull()) ret->setTag("Objective", ride["name"].toString());
         if (!ride["notes"].isNull()) ret->setTag("Notes", ride["description"].toString());
 
         // SAMPLES DATA

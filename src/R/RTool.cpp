@@ -39,6 +39,7 @@
 #include "PaceZones.h"
 #include "GenericChart.h"
 #include "Perspective.h"
+#include "SpecialFields.h"
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wcast-function-type" // shut gcc up
@@ -209,8 +210,8 @@ RTool::RTool()
             { "GC.season.intervals", (DL_FUNC) &RTool::seasonIntervals, 2 },
             { "GC.season.meanmax", (DL_FUNC) &RTool::seasonMeanmax, 3 },
             { "GC.season.peaks", (DL_FUNC) &RTool::seasonPeaks, 5 },
-            // return a data.frame of pmc series (all=FALSE, metric="BikeStress")
-            { "GC.season.pmc", (DL_FUNC) &RTool::pmc, 2 },
+            // return a data.frame of pmc series (all=FALSE, metric="BikeStress", type="Actual")
+            { "GC.season.pmc", (DL_FUNC) &RTool::pmc, 3 },
             // return a data.frame of measure fields (all=FALSE, group="Body")
             { "GC.season.measures", (DL_FUNC) &RTool::measures, 2 },
             { "GC.chart.set", (DL_FUNC) &RTool::setChart, 6 },
@@ -304,7 +305,7 @@ RTool::RTool()
                                "GC.season <- function(all=FALSE, compare=FALSE) { .Call(\"GC.season\", all, compare) }\n"
                                "GC.season.metrics <- function(all=FALSE, filter=\"\", compare=FALSE) { .Call(\"GC.season.metrics\", all, filter, compare) }\n"
                                "GC.season.intervals <- function(type=NULL, compare=FALSE) { .Call(\"GC.season.intervals\", type, compare) }\n"
-                               "GC.season.pmc <- function(all=FALSE, metric=\"BikeStress\") { .Call(\"GC.season.pmc\", all, metric) }\n"
+                               "GC.season.pmc <- function(all=FALSE, metric=\"BikeStress\", type=\"Actual\") { .Call(\"GC.season.pmc\", all, metric, type) }\n"
                                "GC.season.measures <- function(all=FALSE, group=\"Body\") { .Call(\"GC.season.measures\", all, group) }\n"
                                "GC.season.meanmax <- function(all=FALSE, filter=\"\", compare=FALSE) { .Call(\"GC.season.meanmax\", all, filter, compare) }\n"
                                // find peaks does a few validation checks on the R side
@@ -316,7 +317,7 @@ RTool::RTool()
                                "}\n"
                                // these 2 added for backward compatibility, may be deprecated
                                "GC.metrics <- function(all=FALSE, filter=\"\", compare=FALSE) { .Call(\"GC.season.metrics\", all, filter, compare) }\n"
-                               "GC.pmc <- function(all=FALSE, metric=\"BikeStress\") { .Call(\"GC.season.pmc\", all, metric) }\n"
+                               "GC.pmc <- function(all=FALSE, metric=\"BikeStress\", type=\"Actual\") { .Call(\"GC.season.pmc\", all, metric, type) }\n"
 
                                // charts
                                "GC.setChart <- function(title=\"\", type=1, animate=FALSE, legpos=2, stack=FALSE, orientation=2) { .Call(\"GC.chart.set\", title, type, animate, legpos ,stack, orientation)}\n"
@@ -968,7 +969,7 @@ RTool::dfForRideItem(const RideItem *ri)
         // count active fields
         foreach(FieldDefinition def, GlobalContext::context()->rideMetadata->getFields()) {
             if (def.name != "" && def.tab != "" &&
-                !GlobalContext::context()->specialFields.isMetric(def.name))
+                !SpecialFields::getInstance().isMetric(def.name))
                 meta++;
         }
     }
@@ -1043,7 +1044,7 @@ RTool::dfForRideItem(const RideItem *ri)
 
         QString symbol = factory.metricName(i);
         const RideMetric *metric = factory.rideMetric(symbol);
-        QString name = GlobalContext::context()->specialFields.internalName(factory.rideMetric(symbol)->name());
+        QString name = SpecialFields::getInstance().internalName(factory.rideMetric(symbol)->name());
         name = name.replace(" ","_");
         name = name.replace("'","_");
 
@@ -1069,7 +1070,7 @@ RTool::dfForRideItem(const RideItem *ri)
 
         // don't add incomplete meta definitions or metric override fields
         if (field.name == "" || field.tab == "" ||
-            GlobalContext::context()->specialFields.isMetric(field.name)) continue;
+            SpecialFields::getInstance().isMetric(field.name)) continue;
 
         // Create a string vector
         SEXP m;
@@ -1138,7 +1139,7 @@ RTool::dfForDateRange(bool all, DateRange range, SEXP filter)
         // count active fields
         foreach(FieldDefinition def, GlobalContext::context()->rideMetadata->getFields()) {
             if (def.name != "" && def.tab != "" &&
-                !GlobalContext::context()->specialFields.isMetric(def.name))
+                !SpecialFields::getInstance().isMetric(def.name))
                 meta++;
         }
     }
@@ -1258,7 +1259,7 @@ RTool::dfForDateRange(bool all, DateRange range, SEXP filter)
 
         QString symbol = factory.metricName(i);
         const RideMetric *metric = factory.rideMetric(symbol);
-        QString name = GlobalContext::context()->specialFields.internalName(factory.rideMetric(symbol)->name());
+        QString name = SpecialFields::getInstance().internalName(factory.rideMetric(symbol)->name());
         name = name.replace(" ","_");
         name = name.replace("'","_");
 
@@ -1292,7 +1293,7 @@ RTool::dfForDateRange(bool all, DateRange range, SEXP filter)
 
         // don't add incomplete meta definitions or metric override fields
         if (field.name == "" || field.tab == "" ||
-            GlobalContext::context()->specialFields.isMetric(field.name)) continue;
+            SpecialFields::getInstance().isMetric(field.name)) continue;
 
         // Create a string vector
         SEXP m;
@@ -1514,7 +1515,7 @@ RTool::dfForDateRangeIntervals(DateRange range, QStringList types)
 
         QString symbol = factory.metricName(i);
         const RideMetric *metric = factory.rideMetric(symbol);
-        QString name = GlobalContext::context()->specialFields.internalName(factory.rideMetric(symbol)->name());
+        QString name = SpecialFields::getInstance().internalName(factory.rideMetric(symbol)->name());
         name = name.replace(" ","_");
         name = name.replace("'","_");
 
@@ -1952,7 +1953,7 @@ RTool::activityIntervals(SEXP pTypes, SEXP datetime)
 
         QString symbol = factory.metricName(i);
         const RideMetric *metric = factory.rideMetric(symbol);
-        QString name = GlobalContext::context()->specialFields.internalName(factory.rideMetric(symbol)->name());
+        QString name = SpecialFields::getInstance().internalName(factory.rideMetric(symbol)->name());
         name = name.replace(" ","_");
         name = name.replace("'","_");
 
@@ -3329,7 +3330,7 @@ RTool::activityMetrics(SEXP pCompare)
 }
 
 SEXP
-RTool::pmc(SEXP pAll, SEXP pMetric)
+RTool::pmc(SEXP pAll, SEXP pMetric, SEXP pType)
 {
     // parse parameters
     // p1 - all=TRUE|FALSE - return all metrics or just within
@@ -3340,6 +3341,10 @@ RTool::pmc(SEXP pAll, SEXP pMetric)
     // p2 - metric="BikeStress" - base stress metric
     pMetric = Rf_coerceVector(pMetric, STRSXP);
     QString metric (CHAR(STRING_ELT(pMetric,0)));
+
+    // p3 - type="Actual" - PMC type: Actual/Planned/Expected
+    pMetric = Rf_coerceVector(pType, STRSXP);
+    QString type (CHAR(STRING_ELT(pType,0)));
 
     // return a dataframe with PMC data for all or the current season
     // XXX uses the default half-life
@@ -3352,7 +3357,7 @@ RTool::pmc(SEXP pAll, SEXP pMetric)
         const RideMetricFactory &factory = RideMetricFactory::instance();
         for (int i=0; i<factory.metricCount(); i++) {
             QString symbol = factory.metricName(i);
-            QString name = GlobalContext::context()->specialFields.internalName(factory.rideMetric(symbol)->name());
+            QString name = SpecialFields::getInstance().internalName(factory.rideMetric(symbol)->name());
             name.replace(" ","_");
 
             if (name == metric) {
@@ -3415,11 +3420,25 @@ RTool::pmc(SEXP pAll, SEXP pMetric)
         if (all) {
 
             // just copy
-            for(unsigned int k=0; k<size; k++)  REAL(stress)[k] = pmcData.stress()[k];
-            for(unsigned int k=0; k<size; k++)  REAL(lts)[k] = pmcData.lts()[k];
-            for(unsigned int k=0; k<size; k++)  REAL(sts)[k] = pmcData.sts()[k];
-            for(unsigned int k=0; k<size; k++)  REAL(sb)[k] = pmcData.sb()[k];
-            for(unsigned int k=0; k<size; k++)  REAL(rr)[k] = pmcData.rr()[k];
+            if (type == "Planned") {
+                for(unsigned int k=0; k<size; k++)  REAL(stress)[k] = pmcData.plannedStress()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(lts)[k] = pmcData.plannedLts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sts)[k] = pmcData.plannedSts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sb)[k] = pmcData.plannedSb()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(rr)[k] = pmcData.plannedRr()[k];
+            } else if (type == "Expected") {
+                for(unsigned int k=0; k<size; k++)  REAL(stress)[k] = pmcData.expectedStress()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(lts)[k] = pmcData.expectedLts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sts)[k] = pmcData.expectedSts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sb)[k] = pmcData.expectedSb()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(rr)[k] = pmcData.expectedRr()[k];
+            } else {
+                for(unsigned int k=0; k<size; k++)  REAL(stress)[k] = pmcData.stress()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(lts)[k] = pmcData.lts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sts)[k] = pmcData.sts()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(sb)[k] = pmcData.sb()[k];
+                for(unsigned int k=0; k<size; k++)  REAL(rr)[k] = pmcData.rr()[k];
+            }
 
         } else {
 
@@ -3429,11 +3448,25 @@ RTool::pmc(SEXP pAll, SEXP pMetric)
                 // day today
                 if (day >= from && day <= to) {
 
-                    REAL(stress)[index] = pmcData.stress()[k];
-                    REAL(lts)[index] = pmcData.lts()[k];
-                    REAL(sts)[index] = pmcData.sts()[k];
-                    REAL(sb)[index] = pmcData.sb()[k];
-                    REAL(rr)[index] = pmcData.rr()[k];
+                    if (type == "Planned") {
+                        REAL(stress)[index] = pmcData.plannedStress()[k];
+                        REAL(lts)[index] = pmcData.plannedLts()[k];
+                        REAL(sts)[index] = pmcData.plannedSts()[k];
+                        REAL(sb)[index] = pmcData.plannedSb()[k];
+                        REAL(rr)[index] = pmcData.plannedRr()[k];
+                    } else if (type == "Expected") {
+                        REAL(stress)[index] = pmcData.expectedStress()[k];
+                        REAL(lts)[index] = pmcData.expectedLts()[k];
+                        REAL(sts)[index] = pmcData.expectedSts()[k];
+                        REAL(sb)[index] = pmcData.expectedSb()[k];
+                        REAL(rr)[index] = pmcData.expectedRr()[k];
+                    } else {
+                        REAL(stress)[index] = pmcData.stress()[k];
+                        REAL(lts)[index] = pmcData.lts()[k];
+                        REAL(sts)[index] = pmcData.sts()[k];
+                        REAL(sb)[index] = pmcData.sb()[k];
+                        REAL(rr)[index] = pmcData.rr()[k];
+                    }
                     index++;
                 }
                 day++;

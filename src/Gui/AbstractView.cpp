@@ -41,7 +41,7 @@ AbstractView::AbstractView(Context *context, int type, const QString& view, cons
     sidebar_(NULL), bottom_(NULL), perspective_(NULL), blank_(NULL),
     loaded(false)
 {
-
+    viewCfgPath = context->athlete->home->config().canonicalPath();
     defaultAppearance= GSettings::defaultAppearanceSettings();
 
     // setup the basic widget
@@ -90,9 +90,7 @@ AbstractView::~AbstractView()
     perspectives_.clear();
 }
 
-// this generally gets re-implemented in the view, so e.g. AnalysisView
-// has its own version of this method that switches perspective to match
-// the type of activity based upon the perspective's associated "switch expression".
+// generally this gets overriden by the view
 void
 AbstractView::setRide(RideItem*ride)
 {
@@ -116,12 +114,7 @@ AbstractView::splitterMoved(int pos,int)
     QString setting = QString("%1/%2").arg(GC_SETTINGS_SPLITTER_SIZES).arg(type);
     appsettings->setCValue(context->athlete->cyclist, setting, splitter->saveState());
 
-    // if user moved us then tell ride navigator if
-    // we are the analysis view
-    // all a bit of a hack to stop the column widths from
-    // being adjusted as the splitter gets resized and reset
-    if (type == VIEW_ANALYSIS && active == false && context->rideNavigator->geometry().width() != 100)
-        context->rideNavigator->setWidth(context->rideNavigator->geometry().width());
+    notifyViewSplitterMoved();
 }
 
 void
@@ -152,6 +145,12 @@ AbstractView::resizeEvent(QResizeEvent *)
     }
 
     active = false;
+}
+
+void
+AbstractView::notifyViewPerspectiveAdded(Perspective* page)
+{
+    page->styleChanged(0);
 }
 
 void
@@ -265,7 +264,7 @@ AbstractView::saveState()
     // we do not save all the other Qt properties since
     // we're not interested in them
     // NOTE: currently we support QString, int, double and bool types - beware custom types!!
-    QString filename = context->athlete->home->config().canonicalPath() + "/" + view + "-perspectives.xml";
+    QString filename = viewCfgPath + "/" + view + "-perspectives.xml";
 
     QFile file(filename);
     if (!file.open(QFile::WriteOnly)) {
@@ -299,7 +298,7 @@ void
 AbstractView::restoreState(bool useDefault)
 {
     // restore window state
-    QString filename = context->athlete->home->config().canonicalPath() + "/" + view + "-perspectives.xml";
+    QString filename = viewCfgPath + "/" + view + "-perspectives.xml";
 
     QFileInfo finfo(filename);
 
@@ -424,23 +423,7 @@ AbstractView::restoreState(bool useDefault)
     // default to first one
     perspective_ = perspectives_[0];
 
-    // if this is analysis view then lets select the first ride now
-    if (type == VIEW_ANALYSIS) {
-
-        // used to happen in Tab.cpp on create, but we do it later now
-        QDateTime now = QDateTime::currentDateTime();
-        for (int i=context->athlete->rideCache->rides().count(); i>0; --i) {
-            if (context->athlete->rideCache->rides()[i-1]->dateTime <= now) {
-                context->athlete->selectRideFile(context->athlete->rideCache->rides()[i-1]->fileName);
-                break;
-            }
-        }
-
-        // otherwise just the latest
-        if (context->currentRideItem() == NULL && context->athlete->rideCache->rides().count() != 0) {
-            context->athlete->selectRideFile(context->athlete->rideCache->rides().last()->fileName);
-        }
-    }
+    notifyViewStateRestored();
 }
 
 void
@@ -478,9 +461,7 @@ AbstractView::addPerspective(QString name)
 {
     Perspective *page = new Perspective(context, name, type);
 
-    // tabbed unless on train view
-    if (type == VIEW_TRAIN) page->styleChanged(2);
-    else page->styleChanged(0);
+    notifyViewPerspectiveAdded(page);
 
     // append
     appendPerspective(page);
@@ -704,12 +685,8 @@ AbstractView::sidebarChanged()
             splitter->setSizes(sizes);
         }
 
-        // if user moved us then tell ride navigator if
-        // we are the analysis view
-        // all a bit of a hack to stop the column widths from
-        // being adjusted as the splitter gets resized and reset
-        if (context->mainWindow->init && context->tab->init && type == VIEW_ANALYSIS && active == false && context->rideNavigator->geometry().width() != 100)
-            context->rideNavigator->setWidth(context->rideNavigator->geometry().width());
+        notifyViewSidebarChanged();
+
         setUpdatesEnabled(true);
 
     } else sidebar_->hide();
@@ -738,11 +715,10 @@ AbstractView::setPerspectives(QComboBox *perspectiveSelector, bool selectChart)
         loaded = true;
 
         // generally we just go to the first perspective
-        // but on analysis view they get selected on the basis
-        // of the currently selected ride
-        RideItem *notconst = (RideItem*)context->currentRideItem();
         perspectiveSelected(0);
-        if (type == VIEW_ANALYSIS && notconst != NULL) setRide(notconst);
+
+        // allow views to override the default perspective (if required)
+        setViewSpecificPerspective();
 
         // due to visibility optimisation we need to force the first tab to be selected in tab mode
         if (perspective_->currentStyle == 0 && perspective_->charts.count()) perspective_->tabSelected(0);

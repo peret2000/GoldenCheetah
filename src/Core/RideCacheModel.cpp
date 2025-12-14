@@ -22,6 +22,7 @@
 #include "RideCache.h"
 #include "AthleteTab.h"
 #include "AbstractView.h"
+#include "SpecialFields.h"
 
 #include "RideCacheModel.h"
 
@@ -75,7 +76,7 @@ RideCacheModel::data(const QModelIndex &index, int role) const
         case 2 : return item->dateTime;
         case 3 : return item->present;
         case 4 : return item->color.name();
-        case 5 : return item->isRun;
+        case 5 : return item->planned;
 
         default:
         {
@@ -195,7 +196,7 @@ RideCacheModel::configChanged(qint32)
     // 2    QDateTime dateTime;
     // 3    QString present;
     // 4    QColor color;
-    // 5    bool isRun;
+    // 5    bool planned;
 
     columns_ = 5 + factory->metricCount() + metadata.count();
     headings_.clear();
@@ -208,7 +209,7 @@ RideCacheModel::configChanged(qint32)
             case 2 : headings_<< QString("ride_date"); break;
             case 3 : headings_<< QString("Data"); break;
             case 4 : headings_<< QString("color"); break;
-            case 5 : headings_<< QString("isRun"); break;
+            case 5 : headings_<< QString("planned"); break;
 
             default:
             {
@@ -224,7 +225,7 @@ RideCacheModel::configChanged(qint32)
 
                     // is a metadata
                     int i= section -5 - factory->metricCount();
-                    headings_<< QString("%1").arg(GlobalContext::context()->specialFields.makeTechName(metadata[i].name));
+                    headings_<< QString("%1").arg(SpecialFields::getInstance().makeTechName(metadata[i].name));
                 }
             }
             break;

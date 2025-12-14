@@ -401,8 +401,12 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     lodcount = 0;
     wbalr = wbal = 0;
     load_msecs = total_msecs = lap_msecs = 0;
+    displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    wheelsize = 0.0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
+    displayElevationGain = 0;
+    first_sample = true;
     displaySMO2 = displayTHB = displayO2HB = displayHHB = 0;
     displayLRBalance = RideFile::NA;
     displayLTE = displayRTE = displayLPS = displayRPS = 0;
@@ -1667,6 +1671,10 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     lap_elapsed_msec = 0;
     lap_time.restart();
     displayWorkoutDistance = displayDistance = 0;
+    displayElevationGain = 0;
+    first_sample = true;
+    displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    wheelsize = 0.0;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
     displayAltitude = 0;
@@ -1994,6 +2002,10 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     maintainLapDistanceState();
                 }
 
+                //  'Clone' of variables used below, to avoid modifications of original code. They are used later
+                bool fAltitudeSet4compass = false;
+                geolocation currentgeoloc;
+
                 rtData.setDistance(displayDistance);
                 rtData.setRouteDistance(displayWorkoutDistance);
                 rtData.setLapDistance(displayLapDistance);
@@ -2025,8 +2037,10 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                                     rtData.setLongitude(displayLongitude);
                                 }
                                 fAltitudeSet = true;
+                                currentgeoloc = geoloc;
                             }
                         }
+                        fAltitudeSet4compass = fAltitudeSet;
 
                         if (ergFile->strictGradient() || !fAltitudeSet) {
                             slope = ergFileQueryAdapter.gradientAt(displayWorkoutDistance * 1000, curLap);
@@ -2049,6 +2063,62 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     rtData.setAltitude(displayAltitude);
                 }
 
+                {
+                    //  Bearing (for the compass)
+                    if (fAltitudeSet4compass) {
+                        int lap;
+                        double gradient;
+                        geolocation geoloc2seconds;
+                        double dist2seconds = rtData.getSpeed() / 3.6 * 2;
+                        ergFileQueryAdapter.locationAt(displayWorkoutDistance * 1000. + dist2seconds, lap, geoloc2seconds, gradient);
+                        double displayBearing = currentgeoloc.BearingTo(geoloc2seconds);
+                        displayBearing = displayBearing/3.1415924536*180 + (displayBearing>0?0:360);
+                        rtData.setBearing(displayBearing);
+                    }
+
+                }
+
+                if (ergFile->hasGradient()) {
+                    // Average slope in 10 seconds (taking into account current speed)
+
+                    int lap;
+                    geolocation geoloc;
+                    double diffSlope;
+                    double gradient;
+                    double dist10seconds = rtData.getSpeed() / 3.6 * 10.0;
+                    ergFileQueryAdapter.locationAt(displayWorkoutDistance * 1000. + dist10seconds, lap, geoloc, gradient);
+                    double alt2 = geoloc.Alt();
+                    double alt = displayAltitude;
+                    double deltaSlope = (alt2 - alt) / dist10seconds * 100.0;
+
+                    //diffSlope = gradient - this->gradientValue;
+                    displayDeltaSlope = deltaSlope - rtData.getSlope();
+                    rtData.setDeltaSlope(displayDeltaSlope);
+                }
+                else
+                   rtData.setDeltaSlope(0.0);
+
+                    // Elevation Gain
+                {
+                    double alt = displayAltitude;
+                    // hysteresis can be configured, we default to 3.0
+                    double hysteresis = appsettings->value(NULL, GC_ELEVATION_HYSTERESIS).toDouble();
+                    if (hysteresis <= 0.1) hysteresis = 3.00;
+
+                    if (!first_sample) {
+                        if (alt > prevElevation + hysteresis) {
+                            displayElevationGain += alt - prevElevation;
+                            prevElevation = alt;
+                        } else if (alt < prevElevation - hysteresis) {
+                            prevElevation = alt;
+                        }
+                    } else {
+                        first_sample = false;
+                        prevElevation = alt;
+                    }
+                    rtData.setElevationGain(displayElevationGain);
+                }
+
                 // time
                 total_msecs = session_elapsed_msec + session_time.elapsed();
                 lap_msecs = lap_elapsed_msec + lap_time.elapsed();
@@ -2063,6 +2133,21 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 long ergTimeRemaining;
                 if (ergFile) ergTimeRemaining = ergFileQueryAdapter.currentTime() - load_msecs;
                 else ergTimeRemaining = 0;
+
+                // Average Watts and Energy
+
+                double watts = rtData.value(RealtimeData::Watts);
+                displayJoules += watts;
+                pwrcount++;
+                displayAvgWatts += watts;
+                rtData.setJoules(displayJoules / 5000); // 5 times per second (???), then converted to kilojoules
+                rtData.setAvgWatts(displayAvgWatts / pwrcount);
+
+                // Average Speed
+
+                displayAvgSpeed += rtData.getSpeed();
+                spdcount++;
+                rtData.setAvgSpeed(displayAvgSpeed / spdcount);
 
                 double lapPosition = status & RT_MODE_ERGO ? load_msecs : displayWorkoutDistance * 1000;
 
@@ -2089,6 +2174,21 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
 #else
                         QSound::play(":audio/lap.wav");
 #endif
+                    }
+                }
+
+                // Gear
+                {
+                    double watts = rtData.value(RealtimeData::Watts);
+                    double cadence = rtData.getCadence();
+                    if (wheelsize == 0.0)   // Not computed yet
+                        wheelsize = appsettings->cvalue(context->athlete->cyclist, GC_WHEELSIZE, 2100).toDouble() / 1000.0;
+
+                    if (watts >0.0 && cadence > 0.0 && wheelsize != 0.0) {
+                        rtData.setGear(1000.0 * rtData.getSpeed() / (cadence * 60.0 * wheelsize));
+                    }
+                    else {
+                        rtData.setGear(0.0);
                     }
                 }
 
@@ -2303,11 +2403,8 @@ void TrainSidebar::diskUpdate()
                          << "," << displayLatitude;
     }
 
-    QString slopeStr = (status&RT_MODE_SLOPE)?QString::number(slope):QString("");
-    QString loadStr = (status&RT_MODE_ERGO)?QString::number(load):QString("");
-
     recordFileStream    << "," // headwind
-                        << "," << slopeStr
+                        << "," << slope
                         << "," << displayTemp
                         << "," << displayWorkoutLap
                         << "," << displayLRBalance
@@ -2319,7 +2416,7 @@ void TrainSidebar::diskUpdate()
                         << "," << displayTHB
                         << "," << displayO2HB
                         << "," << displayHHB
-                        << "," << loadStr
+                        << "," << load
                         << "," << displayRppb
                         << "," << displayRppe
                         << "," << displayRpppb

@@ -57,7 +57,7 @@
 #include "ConfigDialog.h"
 #include "AthleteConfigDialog.h"
 #include "DownloadRideDialog.h"
-#include "ManualRideDialog.h"
+#include "ManualActivityWizard.h"
 #include "RideImportWizard.h"
 #include "EstimateCPDialog.h"
 #include "SolveCPDialog.h"
@@ -525,6 +525,11 @@ MainWindow::MainWindow(const QDir &home)
     rideMenu->addAction(tr("&Download from device..."), this, SLOT(downloadRide()), QKeySequence("Ctrl+D"));
     rideMenu->addAction(tr("&Import from file..."), this, SLOT (importFile()), QKeySequence("Ctrl+I"));
     rideMenu->addAction(tr("&Manual entry..."), this, SLOT(manualRide()), QKeySequence("Ctrl+M"));
+    QAction *actionPlan = new QAction(tr("&Plan activity..."));
+    connect(context, &Context::start, this, [=]() { actionPlan->setEnabled(false); }); // The dialog can change the contexts workout
+    connect(context, &Context::stop, this, [=]() { actionPlan->setEnabled(true); });   // temporarily which might cause unwanted effects
+    connect(actionPlan, &QAction::triggered, this, [=]() { planActivity(); });
+    rideMenu->addAction(actionPlan);
     rideMenu->addSeparator ();
     rideMenu->addAction(tr("&Export..."), this, SLOT(exportRide()), QKeySequence("Ctrl+E"));
     rideMenu->addAction(tr("&Batch Processing..."), this, SLOT(batchProcessing()), QKeySequence("Ctrl+B"));
@@ -923,7 +928,7 @@ MainWindow::importPerspective()
     }
 
     // import a new perspective from a file
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Select Perspective file to export"), "", tr("GoldenCheetah Perspective Files (*.gchartset)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select Perspective file to import"), "", tr("GoldenCheetah Perspective Files (*.gchartset)"));
     if (fileName.isEmpty()) {
         QMessageBox::critical(this, tr("Import Perspective"), tr("No perspective file selected!"));
     } else {
@@ -1672,7 +1677,16 @@ MainWindow::downloadRide()
 void
 MainWindow::manualRide()
 {
-    (new ManualRideDialog(currentAthleteTab->context))->show();
+    ManualActivityWizard wizard(currentAthleteTab->context);
+    wizard.exec();
+}
+
+
+void
+MainWindow::planActivity()
+{
+    ManualActivityWizard wizard(currentAthleteTab->context, true);
+    wizard.exec();
 }
 
 void

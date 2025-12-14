@@ -29,6 +29,7 @@
 
 #include "PMCData.h"
 #include "RideMetadata.h"
+#include "SpecialFields.h"
 
 #include "DataFilter.h"
 #include "Utils.h"
@@ -823,10 +824,6 @@ MetricOverviewItem::MetricOverviewItem(ChartSpace *parent, QString name, QString
     this->type = OverviewItemType::METRIC;
     this->symbol = symbol;
 
-    RideMetricFactory &factory = RideMetricFactory::instance();
-    this->metric = const_cast<RideMetric*>(factory.rideMetric(symbol));
-    if (metric) units = metric->units(GlobalContext::context()->useMetricUnits);
-
     // prepare the gold, silver and bronze medal
     gold = colouredPixmapFromPNG(":/images/medal.png", QColor(249,166,2)).scaledToWidth(ROWHEIGHT*2);
     silver = colouredPixmapFromPNG(":/images/medal.png", QColor(192,192,192)).scaledToWidth(ROWHEIGHT*2);
@@ -838,11 +835,63 @@ MetricOverviewItem::MetricOverviewItem(ChartSpace *parent, QString name, QString
 
     configwidget = new OverviewItemConfig(this);
     configwidget->hide();
+
+    configChanged(0);
 }
 
 MetricOverviewItem::~MetricOverviewItem()
 {
     delete sparkline;
+}
+
+void
+MetricOverviewItem::configChanged(qint32) {
+
+    RideMetricFactory& factory = RideMetricFactory::instance();
+    metric = factory.rideMetric(symbol);
+
+    // Only display the override option for metrics that exist.
+    setShowEdit(metric != nullptr);
+    units = (metric) ? metric->units(GlobalContext::context()->useMetricUnits) : "";
+
+    // Update the value and override status
+    if (rideItem) {
+        value = rideItem->getStringForSymbol(symbol, GlobalContext::context()->useMetricUnits);
+        overridden = rideItem->ride() ? (rideItem->ride()->metricOverrides.contains(symbol)) : false;
+    }
+}
+
+void MetricOverviewItem::displayTileEditMenu(const QPoint& pos) {
+
+    RideMetricFactory& factory = RideMetricFactory::instance();
+    metric = factory.rideMetric(symbol);
+
+    // Only display the Metric Override Dialog for metrics that exist.
+    if (metric && rideItem) {
+
+        double editValue = rideItem->getForSymbol(symbol, GlobalContext::context()->useMetricUnits);
+        MetricOverrideDialog* metricOverrideDialog = new MetricOverrideDialog(parent->context, metric->internalName(), editValue, pos);
+        connect(metricOverrideDialog, SIGNAL(finished(int)), this, SLOT(updateTile(int)));
+        metricOverrideDialog->show(); // configured for delete on close
+    }
+}
+
+void MetricOverviewItem::updateTile(int ret) {
+
+    // Ensure tile contents are updated
+    if (rideItem && (ret == QDialog::Accepted)) {
+        setData(rideItem);
+        update();
+    }
+}
+
+void MetricOverviewItem::metadataChanged() {
+
+    // Ensure when metadata is edited in the details tab it is updated on the tile.
+    if (rideItem) {
+        setData(rideItem);
+        update();
+    }
 }
 
 TopNOverviewItem::TopNOverviewItem(ChartSpace *parent, QString name, QString symbol) : ChartSpaceItem(parent, name)
@@ -904,7 +953,7 @@ MetaOverviewItem::MetaOverviewItem(ChartSpace *parent, QString name, QString sym
 void
 MetaOverviewItem::configChanged(qint32)
 {
-    SpecialFields specialFields;
+    SpecialFields& sp = SpecialFields::getInstance();
 
     //  Get the field type
     fieldtype = -1;
@@ -915,13 +964,13 @@ MetaOverviewItem::configChanged(qint32)
             // display the edit icon for relevant metadata fields
             setShowEdit((p.name != "Interval Goal") && // cannot specify which interval
                         (p.name != "Interval Notes") && // cannot specify which interval
-                        specialFields.isUser(p.name)); // user mutable metadata fields
+                        sp.isUser(p.name)); // user mutable metadata fields
             break;
          }
     }
 
     // Update the value
-    if (rideItem) value = rideItem->getText(symbol, "");
+    value = rideItem ? rideItem->getText(symbol, "") : "";
 
     // sparkline if are we numeric?
     if (fieldtype == FIELD_INTEGER || fieldtype == FIELD_DOUBLE) {
@@ -945,13 +994,13 @@ void MetaOverviewItem::updateTile(int ret)
 {
     // Ensure tile contents are updated
     if (ret == QDialog::Accepted) {
-        if (rideItem) value = rideItem->getText(symbol, "");
+        value = rideItem ? rideItem->getText(symbol, "") : "";
         update();
     }
 }
 
-void MetaOverviewItem::metadataChanged() {
-
+void MetaOverviewItem::metadataChanged()
+{
     // Ensure when metadata is edited in the details tab it
     // is updated on the tile.
     if (rideItem) {
@@ -1439,7 +1488,14 @@ RPEOverviewItem::setData(RideItem *item)
 void
 MetricOverviewItem::setData(RideItem *item)
 {
+    if (rideItem) disconnect(rideItem, SIGNAL(rideMetadataChanged()), this, SLOT(metadataChanged()));
+    if (item) connect(item, SIGNAL(rideMetadataChanged()), this, SLOT(metadataChanged()));
+
+    rideItem = item;
+
     if (item == NULL || item->ride() == NULL) return;
+
+    overridden = (rideItem->ride()->metricOverrides.contains(symbol));
 
     // get last 30 days, if they exist
     QList<QPointF> points;
@@ -3294,6 +3350,8 @@ MetricOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem 
     if (geometry().height() > (ROWHEIGHT*6)) mid=((ROWHEIGHT*1.5f) + (ROWHEIGHT*3) / 2.0f) - (addy/2);
 
     // we align centre and mid
+    bool prevItalic = parent->bigfont.italic();
+    parent->bigfont.setItalic(overridden);
     QFontMetrics fm(parent->bigfont);
     QRectF rect = QFontMetrics(parent->bigfont, parent->device()).boundingRect(value);
 
@@ -3301,8 +3359,7 @@ MetricOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem 
     painter->setFont(parent->bigfont);
     painter->drawText(QPointF((geometry().width() - rect.width()) / 2.0f,
                               mid + (fm.ascent() / 3.0f)), value); // divided by 3 to account for "gap" at top of font
-    painter->drawText(QPointF((geometry().width() - rect.width()) / 2.0f,
-                              mid + (fm.ascent() / 3.0f)), value); // divided by 3 to account for "gap" at top of font
+    parent->bigfont.setItalic(prevItalic);
 
     // now units
     if (units != "" && addy > 0) {
@@ -3748,10 +3805,6 @@ void DonutOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsI
 //
 // OverviewItem Configuration Widget
 //
-static bool insensitiveLessThan(const QString &a, const QString &b)
-{
-    return a.toLower() < b.toLower();
-}
 OverviewItemConfig::OverviewItemConfig(ChartSpaceItem *item) : QWidget(NULL), item(item), block(false)
 {
     QVBoxLayout *main = new QVBoxLayout(this);
@@ -3854,89 +3907,13 @@ OverviewItemConfig::OverviewItemConfig(ChartSpaceItem *item) : QWidget(NULL), it
 
     if (item->type == OverviewItemType::KPI || item->type == OverviewItemType::DATATABLE) {
 
-        //
-        // Program editor... bit of a faff needs refactoring!!
-        //
-        QList<QString> list;
-        QString last;
-        SpecialFields sp;
-
-        // get sorted list
-        QStringList names = item->parent->context->rideNavigator->logicalHeadings;
-
-        // start with just a list of functions
-        list = DataFilter::builtins(item->parent->context);
-
-        // ridefile data series symbols
-        list += RideFile::symbols();
-
-        // add special functions (older code needs fixing !)
-        list << "config(cranklength)";
-        list << "config(cp)";
-        list << "config(aetp)";
-        list << "config(ftp)";
-        list << "config(w')";
-        list << "config(pmax)";
-        list << "config(cv)";
-        list << "config(aetv)";
-        list << "config(sex)";
-        list << "config(dob)";
-        list << "config(height)";
-        list << "config(weight)";
-        list << "config(lthr)";
-        list << "config(aethr)";
-        list << "config(maxhr)";
-        list << "config(rhr)";
-        list << "config(units)";
-        list << "const(e)";
-        list << "const(pi)";
-        list << "daterange(start)";
-        list << "daterange(stop)";
-        list << "ctl";
-        list << "tsb";
-        list << "atl";
-        list << "sb(BikeStress)";
-        list << "lts(BikeStress)";
-        list << "sts(BikeStress)";
-        list << "rr(BikeStress)";
-        list << "tiz(power, 1)";
-        list << "tiz(hr, 1)";
-        list << "best(power, 3600)";
-        list << "best(hr, 3600)";
-        list << "best(cadence, 3600)";
-        list << "best(speed, 3600)";
-        list << "best(torque, 3600)";
-        list << "best(isopower, 3600)";
-        list << "best(xpower, 3600)";
-        list << "best(vam, 3600)";
-        list << "best(wpk, 3600)";
-
-        std::sort(names.begin(), names.end(), insensitiveLessThan);
-
-        foreach(QString name, names) {
-
-            // handle dups
-            if (last == name) continue;
-            last = name;
-
-            // Handle bikescore tm
-            if (name.startsWith("BikeScore")) name = QString("BikeScore");
-
-            //  Always use the "internalNames" in Filter expressions
-            name = sp.internalName(name);
-
-            // we do very little to the name, just space to _ and lower case it for now...
-            name.replace(' ', '_');
-            list << name;
-        }
-
         // program editor
         QVBoxLayout *pl= new QVBoxLayout();
         editor = new DataFilterEdit(this, item->parent->context);
         editor->setMinimumHeight(250 * dpiXFactor); // give me some space!
         editor->setMinimumWidth(450 * dpiXFactor); // give me some space!
         editor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        DataFilterCompleter *completer = new DataFilterCompleter(list, this);
+        DataFilterCompleter *completer = new DataFilterCompleter(DataFilter::completerList(item->parent->context, item->parent->scope & OverviewScope::ANALYSIS), this);
         editor->setCompleter(completer);
         errors = new QLabel(this);
         errors->setWordWrap(true);
@@ -4861,13 +4838,11 @@ BubbleViz::paint(QPainter*painter, const QStyleOptionGraphicsItem *, QWidget*)
     } else {
 
         // when transition is -1 we are rescaling the axes first
-        int index=0;
         foreach(BPointF point, oldpoints) {
 
             if (point.x < minx || point.x > maxx ||
                 point.y < miny || point.y > maxy ||
                 !std::isfinite(point.z) || std::isnan(point.z)) {
-                index++;
                 continue;
             }
 
@@ -4886,8 +4861,6 @@ BubbleViz::paint(QPainter*painter, const QStyleOptionGraphicsItem *, QWidget*)
 
             double radius = sqrt(size/3.1415927f);
             painter->drawEllipse(center, radius, radius);
-
-            index++;
         }
 
     }
@@ -5199,7 +5172,6 @@ Routeline::setData(RideItem *item)
     int div = item->ride()->dataPoints().count() / ROUTEPOINTS;
     int count=0;
     height = geom.width() * aspectratio;
-    int lines=0;
     foreach(RideFilePoint *p, item->ride()->dataPoints()){
 
         // ignore zero values and out of bounds
@@ -5224,7 +5196,6 @@ Routeline::setData(RideItem *item)
             path.lineTo((geom.width() / (xdiff / (p->lon - minlon))),
                         (height-(height / (ydiff / (mercator_projection(p->lat) - minlat)))));
             count=div;
-            lines++;
 
         }
     }

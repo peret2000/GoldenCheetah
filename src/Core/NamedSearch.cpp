@@ -90,6 +90,12 @@ NamedSearches::read()
     if (list.isEmpty()) {
         NamedSearch namedSearch;
         namedSearch.type = NamedSearch::filter;
+        namedSearch.name = tr("Planned");
+        namedSearch.text = "Planned";
+        list.append(namedSearch);
+        namedSearch.name = tr("Actual");
+        namedSearch.text = "!Planned";
+        list.append(namedSearch);
         namedSearch.name = tr("Swim");
         namedSearch.text = "isSwim";
         list.append(namedSearch);
@@ -238,9 +244,9 @@ EditNamedSearches::EditNamedSearches(QWidget *parent, Context *context) : QDialo
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowModality(Qt::NonModal);
 #ifdef Q_OS_MAC
-    setFixedSize(350,400);
+    setMinimumSize(350*dpiXFactor,400*dpiYFactor);
 #else
-    setFixedSize(450*dpiXFactor,400*dpiYFactor);
+    setMinimumSize(450*dpiXFactor,400*dpiYFactor);
 #endif
 
     QVBoxLayout *layout = new QVBoxLayout(this);

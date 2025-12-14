@@ -40,6 +40,7 @@
 #include "WPrime.h" // for LR when copying CP chart filtering mechanism
 #include "FastKmeans.h" // for kmeans(...)
 #include "Season.h" // for events(...)
+#include "SpecialFields.h"
 
 #ifdef GC_HAVE_SAMPLERATE
 // we have libsamplerate
@@ -114,11 +115,11 @@ static struct {
     { "min", 0 },
     { "count", 0 },
 
-    // PMC functions
-    { "lts", 1 },
-    { "sts", 1 },
-    { "sb", 1 },
-    { "rr", 1 },
+    // PMC functions: name(expr [,actual|planned|expected])
+    { "lts", 0 },
+    { "sts", 0 },
+    { "sb", 0 },
+    { "rr", 0 },
 
     // estimate
     { "estimate", 2 }, // estimate(model, (cp|ftp|w'|pmax|x))
@@ -192,7 +193,7 @@ static struct {
                       // because the returned vector is at 1s resolution the data is interpolated using linear interpolation
                       // and resampled to 1s samples.
 
-    { "pmc", 2 },  // pmc(symbol, stress|lts|sts|sb|rr|date) - get a vector of PMC series for the metric in symbol for the current date range.
+    { "pmc", 0 },  // pmc(symbol, stress|lts|sts|sb|rr|date [,actual|planned|expected) - get a vector of PMC series for the metric in symbol for the current date range.
 
     { "sapply", 2 }, // sapply(vector, expr) - returns a vector where expr has been applied to every element. x and i
                      // are both available in the expr for element value and index position.
@@ -438,17 +439,103 @@ static Qt::PenStyle linestyle(QString name)
     return Qt::NoPen; // not known
 }
 
+static bool insensitiveLessThan(const QString &a, const QString &b)
+{
+    return a.toLower() < b.toLower();
+}
+
+QStringList
+DataFilter::completerList(Context *context, bool withSymbols)
+{
+    QList<QString> list;
+    QString last;
+
+    // start with just a list of functions
+    list = builtins(context);
+
+    // add ridefile data series and symbols for use in activities contexts
+    if (withSymbols) {
+        list += RideFile::symbols();
+        list << "RECINTSECS";
+        list << "NA";
+    }
+
+    // get sorted list of metrics and metadata fields
+    QStringList names = context->rideNavigator->logicalHeadings;
+
+    std::sort(names.begin(), names.end(), insensitiveLessThan);
+
+    SpecialFields& sp = SpecialFields::getInstance();
+
+    // add them replacing blanks by underscores and avoiding duplicates
+    foreach(QString name, names) {
+
+        // handle dups
+        if (last == name || name.contains("_") || name == "*") continue;
+        last = name;
+
+        // Handle bikescore tm
+        if (name.startsWith("BikeScore")) name = QString("BikeScore");
+
+        //  Always use the "internalNames" in Filter expressions
+        name = sp.internalName(name);
+
+        // we do very little to the name, just space to _ and lower case it for now...
+        name.replace(' ', '_');
+        list << name;
+    }
+
+    return list;
+}
+
 QStringList
 DataFilter::builtins(Context *context)
 {
     QStringList returning;
 
-    // add special functions
-    returning <<"isRide"<<"isSwim"<<"isXtrain"; // isRun is included in RideNavigator
+    // add special/old functions
+    returning <<"isRun"<<"isRide"<<"isSwim"<<"isXtrain";
+    returning << "ctl" << "tsb" << "atl";
+    returning << "config(cranklength)";
+    returning << "config(cp)";
+    returning << "config(aetp)";
+    returning << "config(ftp)";
+    returning << "config(w')";
+    returning << "config(pmax)";
+    returning << "config(cv)";
+    returning << "config(aetv)";
+    returning << "config(sex)";
+    returning << "config(dob)";
+    returning << "config(height)";
+    returning << "config(weight)";
+    returning << "config(lthr)";
+    returning << "config(aethr)";
+    returning << "config(maxhr)";
+    returning << "config(rhr)";
+    returning << "config(units)";
+    returning << "const(e)";
+    returning << "const(pi)";
+    returning << "daterange(start)";
+    returning << "daterange(stop)";
+    returning << "tiz(power, 1)";
+    returning << "tiz(hr, 1)";
+    returning << "best(power, 3600)";
+    returning << "best(hr, 3600)";
+    returning << "best(cadence, 3600)";
+    returning << "best(speed, 3600)";
+    returning << "best(torque, 3600)";
+    returning << "best(isopower, 3600)";
+    returning << "best(xpower, 3600)";
+    returning << "best(vam, 3600)";
+    returning << "best(wpk, 3600)";
 
+    // add new functions
     for(int i=0; DataFilterFunctions[i].parameters != -1; i++) {
 
-        if (i == 30 || i == 95) { // special case 'estimate' and 'estimates' we describe it
+        if (i >= 26 && i <= 29) { // pmc functions: lts/sts/sb/rr
+            returning <<QString("%1(expr [,actual|planned|estimated])").arg(DataFilterFunctions[i].name);
+
+        } else if (i == 30 || i == 95) { // special case 'estimate' and 'estimates' we describe it
 
             if (i==30) { foreach(QString model, pdmodels(context)) returning << "estimate(" + model + ", cp|ftp|w'|pmax|x)"; }
             if (i==95) { foreach(QString model, pdmodels(context)) returning << "estimates(" + model + ", cp|ftp|w'|pmax|x|date)"; }
@@ -546,7 +633,7 @@ DataFilter::builtins(Context *context)
         } else if (i == 59) {
 
             // pmc
-            returning << "pmc(metric, stress|lts|sts|sb|rr|date)";
+            returning << "pmc(metric, stress|lts|sts|sb|rr|date [,actual|planned|expected])";
 
         } else if (i == 60) {
 
@@ -866,6 +953,7 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
                 // isRun isa special, we may add more later (e.g. date)
                 if (!sym.compare("Date", Qt::CaseInsensitive) ||
                     !sym.compare("Time", Qt::CaseInsensitive) ||
+                    !sym.compare("Planned", Qt::CaseInsensitive) ||
                     !sym.compare("banister", Qt::CaseInsensitive) ||
                     !sym.compare("best", Qt::CaseInsensitive) ||
                     !sym.compare("tiz", Qt::CaseInsensitive) ||
@@ -1627,6 +1715,7 @@ bool Leaf::isNumber(DataFilterRuntime *df, Leaf *leaf)
             if (symbol == "x" || symbol == "i") return true;
             else if (!symbol.compare("Date", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Time", Qt::CaseInsensitive)) return true;
+            else if (!symbol.compare("Planned", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Today", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Current", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("RECINTSECS", Qt::CaseInsensitive)) return true;
@@ -1725,6 +1814,7 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                 // isRun isa special, we may add more later (e.g. date)
                 if (symbol.compare("Date", Qt::CaseInsensitive) &&
                     symbol.compare("Time", Qt::CaseInsensitive) &&
+                    symbol.compare("Planned", Qt::CaseInsensitive) &&
                     symbol.compare("x", Qt::CaseInsensitive) && // used by which and [lexpr]
                     symbol.compare("i", Qt::CaseInsensitive) && // used by which and [lexpr]
                     symbol.compare("Today", Qt::CaseInsensitive) &&
@@ -1779,6 +1869,7 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
             QRegExp constValidSymbols("^(e|pi)$", Qt::CaseInsensitive); // just do basics for now
             QRegExp dateRangeValidSymbols("^(start|stop)$", Qt::CaseInsensitive); // date range
             QRegExp pmcValidSymbols("^(stress|lts|sts|sb|rr|date)$", Qt::CaseInsensitive);
+            QRegExp pmcValidTypes("^(actual|planned|expected)$", Qt::CaseInsensitive);
             QRegExp smoothAlgos("^(sma|ewma)$", Qt::CaseInsensitive);
             QRegExp annotateTypes("^(label|lr|hline|vline|voronoi)$", Qt::CaseInsensitive);
             QRegExp curveData("^(x|y|z|d|t)$", Qt::CaseInsensitive);
@@ -2785,7 +2876,7 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                     if (leaf->fparms.count() < 2 || leaf->fparms[1]->type != Leaf::Symbol) {
 
                        leaf->inerror = true;
-                       DataFiltererrors << QString(tr("pmc(metric, stress|lts|sts|sb|rr|date), need to specify a metric and series."));
+                       DataFiltererrors << QString(tr("pmc(metric, stress|lts|sts|sb|rr|date [,actual|planned|expected}), need to specify a metric and series."));
 
                     } else {
 
@@ -2796,6 +2887,35 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                         if (!pmcValidSymbols.exactMatch(symbol)) {
                             leaf->inerror = true;
                             DataFiltererrors << QString(tr("invalid PMC series '%1'").arg(symbol));
+                        }
+
+                        if (leaf->fparms.count() == 3) {
+                            QString type=*(leaf->fparms[2]->lvalue.n);
+                            if (!pmcValidTypes.exactMatch(type)) {
+                                leaf->inerror = true;
+                                DataFiltererrors << QString(tr("invalid PMC type '%1'").arg(type));
+                            }
+                        }
+                    }
+
+                } else if (leaf->function == "lts" || leaf->function == "sts" || leaf->function == "sb" || leaf->function == "rr") {
+
+                    if (leaf->fparms.count() < 1 || (leaf->fparms.count() >= 2 && leaf->fparms[1]->type != Leaf::Symbol)) {
+
+                       leaf->inerror = true;
+                       DataFiltererrors << QString(tr("pmc(metric, stress|lts|sts|sb|rr|date [,actual|planned|expected}), need to specify a metric and series."));
+
+                    } else {
+
+                        // expression good?
+                        validateFilter(context, df, leaf->fparms[0]);
+
+                        if (leaf->fparms.count() >= 2) {
+                            QString type=*(leaf->fparms[1]->lvalue.n);
+                            if (!pmcValidTypes.exactMatch(type)) {
+                                leaf->inerror = true;
+                                DataFiltererrors << QString(tr("invalid PMC type '%1'").arg(type));
+                            }
                         }
                     }
 
@@ -2915,6 +3035,7 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                             //  some specials are not allowed
                             if (!symbol.compare("Date", Qt::CaseInsensitive) ||
                                 !symbol.compare("Time", Qt::CaseInsensitive) ||
+                                !symbol.compare("Planned", Qt::CaseInsensitive) ||
                                 !symbol.compare("x", Qt::CaseInsensitive) || // used by which
                                 !symbol.compare("i", Qt::CaseInsensitive) || // used by which
                                 !symbol.compare("Today", Qt::CaseInsensitive) ||
@@ -3394,14 +3515,16 @@ void DataFilter::configChanged(qint32)
         rt.lookupType.insert(name.replace(" ","_"), true);
     }
 
+    SpecialFields& sp = SpecialFields::getInstance();
+
     // now add the ride metadata fields -- should be the same generally
     foreach(FieldDefinition field, GlobalContext::context()->rideMetadata->getFields()) {
             QString underscored = field.name;
-            if (!GlobalContext::context()->specialFields.isMetric(underscored)) {
+            if (!sp.isMetric(underscored)) {
 
                 // translate to internal name if name has non Latin1 characters
-                underscored = GlobalContext::context()->specialFields.internalName(underscored);
-                field.name = GlobalContext::context()->specialFields.internalName((field.name));
+                underscored = sp.internalName(underscored);
+                field.name = sp.internalName((field.name));
 
                 rt.lookupMap.insert(underscored.replace(" ","_"), field.name);
                 rt.lookupType.insert(underscored.replace(" ","_"), (field.type > 2)); // true if is number
@@ -6489,6 +6612,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
             if (d.from==QDate() || d.to==QDate()) return Result(0);
 
             QString series = *(leaf->fparms[1]->lvalue.n);
+            QString type = (leaf->fparms.count() == 3) ?  *(leaf->fparms[2]->lvalue.n) : "actual";
             QDateTime earliest(QDate(1900,01,01),QTime(0,0,0));
             PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df); // use default days
             Result returning(0);
@@ -6501,11 +6625,25 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     // lets copy into our array
                     if (series == "date") value = earliest.daysTo(QDateTime(date, QTime(0,0,0)));
-                    if (series == "lts") value = pmcData->lts()[si];
-                    if (series == "stress") value = pmcData->stress()[si];
-                    if (series == "sts") value = pmcData->sts()[si];
-                    if (series == "rr") value = pmcData->rr()[si];
-                    if (series == "sb") value = pmcData->sb()[si];
+                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0) {
+                        if (series == "lts") value = pmcData->plannedLts()[si];
+                        if (series == "stress") value = pmcData->plannedStress()[si];
+                        if (series == "sts") value = pmcData->plannedSts()[si];
+                        if (series == "rr") value = pmcData->plannedRr()[si];
+                        if (series == "sb") value = pmcData->plannedSb()[si];
+		    } else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0) {
+                        if (series == "lts") value = pmcData->expectedLts()[si];
+                        if (series == "stress") value = pmcData->expectedStress()[si];
+                        if (series == "sts") value = pmcData->expectedSts()[si];
+                        if (series == "rr") value = pmcData->expectedRr()[si];
+                        if (series == "sb") value = pmcData->expectedSb()[si];
+                    } else {
+                        if (series == "lts") value = pmcData->lts()[si];
+                        if (series == "stress") value = pmcData->stress()[si];
+                        if (series == "sts") value = pmcData->sts()[si];
+                        if (series == "rr") value = pmcData->rr()[si];
+                        if (series == "sb") value = pmcData->sb()[si];
+                    }
 
                     returning.asNumeric() << value;
                     returning.number() += value;
@@ -6973,7 +7111,13 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                     if (m == NULL) return Result(0); // no ride then no context
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
-                    return Result(pmcData->lts(m->dateTime.date()));
+                    QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
+                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->plannedLts(m->dateTime.date()));
+                    else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->expectedLts(m->dateTime.date()));
+                    else
+                        return Result(pmcData->lts(m->dateTime.date()));
                   }
                   break;
 
@@ -6982,7 +7126,13 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                     if (m == NULL) return Result(0); // no ride then no context
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
-                    return Result(pmcData->sts(m->dateTime.date()));
+                    QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
+                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->plannedSts(m->dateTime.date()));
+                    else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->expectedSts(m->dateTime.date()));
+                    else
+                        return Result(pmcData->sts(m->dateTime.date()));
                   }
                   break;
 
@@ -6991,7 +7141,13 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                     if (m == NULL) return Result(0); // no ride then no context
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
-                    return Result(pmcData->sb(m->dateTime.date()));
+                    QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
+                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->plannedSb(m->dateTime.date()));
+                    else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->expectedSb(m->dateTime.date()));
+                    else
+                        return Result(pmcData->sb(m->dateTime.date()));
                   }
                   break;
 
@@ -7000,7 +7156,13 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
                     if (m == NULL) return Result(0); // no ride then no context
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
-                    return Result(pmcData->rr(m->dateTime.date()));
+                    QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
+                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->plannedRr(m->dateTime.date()));
+                    else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
+                        return Result(pmcData->expectedRr(m->dateTime.date()));
+                    else
+                        return Result(pmcData->rr(m->dateTime.date()));
                   }
                   break;
 
@@ -7749,6 +7911,11 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
         } else if (!symbol.compare("Time", Qt::CaseInsensitive)) {
 
             lhsdouble = QTime(0,0,0).secsTo(m->dateTime.time());
+            lhsisNumber = true;
+
+        } else if (!symbol.compare("Planned", Qt::CaseInsensitive)) {
+
+            lhsdouble = m->planned;
             lhsisNumber = true;
 
         } else if (isCoggan(symbol)) {

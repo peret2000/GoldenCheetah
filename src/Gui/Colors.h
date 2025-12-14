@@ -33,6 +33,7 @@
 // A selection of distinct colours, user can adjust also
 extern QIcon colouredIconFromPNG(QString filename, QColor color);
 extern QPixmap colouredPixmapFromPNG(QString filename, QColor color);
+extern QPixmap svgAsColoredPixmap(const QString &file, const QSize &size, int margin, const QColor &color);
 
 // dialog scaling
 extern double dpiXFactor, dpiYFactor;
@@ -192,7 +193,7 @@ class ColorEngine : public QObject
 #define GColor(x) GCColor::getColor(x)
 
 // Define how many cconfigurable metric colors are available
-#define CNUMOFCFGCOLORS       110
+#define CNUMOFCFGCOLORS       113
 
 #define CPLOTBACKGROUND       0
 #define CRIDEPLOTBACKGROUND   1
@@ -304,4 +305,7 @@ class ColorEngine : public QObject
 #define CCARDBACKGROUND3      107
 #define MAPROUTELINE          108
 #define COLORRR               109
+#define CSKINTEMP             110
+#define CHEATSTRAIN           111
+#define CHEATLOAD             112
 #endif

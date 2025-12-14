@@ -212,8 +212,9 @@ LTMTool::LTMTool(Context *context, LTMSettings *settings) : QWidget(context->mai
        metrics.append(m);
     }
 
+    SpecialFields& sp = SpecialFields::getInstance();
+
     // metadata metrics
-    SpecialFields sp;
     foreach (FieldDefinition field, GlobalContext::context()->rideMetadata->getFields()) {
         if (!sp.isMetric(field.name) && (field.type == 3 || field.type == 4)) {
             MetricDetail metametric;
@@ -1600,11 +1601,6 @@ EditMetricDetailDialog::measureGroupChanged()
  * EDIT METRIC DETAIL DIALOG
  *--------------------------------------------------------------------*/
 
-static bool insensitiveLessThan(const QString &a, const QString &b)
-{
-    return a.toLower() < b.toLower();
-}
-
 EditMetricDetailDialog::EditMetricDetailDialog(Context *context, LTMTool *ltmTool, MetricDetail *metricDetail) :
     QDialog(context->mainWindow, Qt::Dialog), context(context), ltmTool(ltmTool), metricDetail(metricDetail)
 {
@@ -1863,83 +1859,8 @@ EditMetricDetailDialog::EditMetricDetailDialog(Context *context, LTMTool *ltmToo
     weeklyPerfCheck->setChecked(metricDetail->perfs);
     submaxWeeklyPerfCheck->setChecked(metricDetail->submax);
 
-    // get suitably formated list
-    QList<QString> list;
-    QString last;
-    SpecialFields sp;
-
-    // get sorted list
-    QStringList names = context->rideNavigator->logicalHeadings;
-
-    // start with just a list of functions
-    list = DataFilter::builtins(context);
-
-    // ridefile data series symbols
-    list += RideFile::symbols();
-
-    // add special functions (older code needs fixing !)
-    list << "config(cranklength)";
-    list << "config(cp)";
-    list << "config(aetp)";
-    list << "config(ftp)";
-    list << "config(w')";
-    list << "config(pmax)";
-    list << "config(cv)";
-    list << "config(aetv)";
-    list << "config(sex)";
-    list << "config(dob)";
-    list << "config(height)";
-    list << "config(weight)";
-    list << "config(lthr)";
-    list << "config(aethr)";
-    list << "config(maxhr)";
-    list << "config(rhr)";
-    list << "config(units)";
-    list << "const(e)";
-    list << "const(pi)";
-    list << "daterange(start)";
-    list << "daterange(stop)";
-    list << "ctl";
-    list << "tsb";
-    list << "atl";
-    list << "sb(BikeStress)";
-    list << "lts(BikeStress)";
-    list << "sts(BikeStress)";
-    list << "rr(BikeStress)";
-    list << "tiz(power, 1)";
-    list << "tiz(hr, 1)";
-    list << "best(power, 3600)";
-    list << "best(hr, 3600)";
-    list << "best(cadence, 3600)";
-    list << "best(speed, 3600)";
-    list << "best(torque, 3600)";
-    list << "best(isopower, 3600)";
-    list << "best(xpower, 3600)";
-    list << "best(vam, 3600)";
-    list << "best(wpk, 3600)";
-
-    std::sort(names.begin(), names.end(), insensitiveLessThan);
-
-    foreach(QString name, names) {
-
-        // handle dups
-        if (last == name) continue;
-        last = name;
-
-        // Handle bikescore tm
-        if (name.startsWith("BikeScore")) name = QString("BikeScore");
-
-        //  Always use the "internalNames" in Filter expressions
-        name = sp.internalName(name);
-
-        // we do very little to the name, just space to _ and lower case it for now...
-        name.replace(' ', '_');
-        list << name;
-    }
-
-    // set new list
-    // create an empty completer, configchanged will fix it
-    DataFilterCompleter *completer = new DataFilterCompleter(list, this);
+    // create completer
+    DataFilterCompleter *completer = new DataFilterCompleter(DataFilter::completerList(context, false), this);
     formulaEdit->setCompleter(completer);
 
     // stress selection
@@ -1948,6 +1869,14 @@ EditMetricDetailDialog::EditMetricDetailDialog(Context *context, LTMTool *ltmToo
     stressTypeSelect->addItem(tr("Long Term Stress  (LTS/CTL)"), STRESS_LTS);
     stressTypeSelect->addItem(tr("Stress Balance    (SB/TSB)"),  STRESS_SB);
     stressTypeSelect->addItem(tr("Stress Ramp Rate  (RR)"),      STRESS_RR);
+    stressTypeSelect->addItem(tr("Planned Short Term Stress (Planned STS/ATL)"), STRESS_PLANNED_STS);
+    stressTypeSelect->addItem(tr("Planned Long Term Stress  (Planned LTS/CTL)"), STRESS_PLANNED_LTS);
+    stressTypeSelect->addItem(tr("Planned Stress Balance    (Planned SB/TSB)"),  STRESS_PLANNED_SB);
+    stressTypeSelect->addItem(tr("Planned Stress Ramp Rate  (Planned RR)"),      STRESS_PLANNED_RR);
+    stressTypeSelect->addItem(tr("Expected Short Term Stress (Expected STS/ATL)"), STRESS_EXPECTED_STS);
+    stressTypeSelect->addItem(tr("Expected Long Term Stress  (Expected LTS/CTL)"), STRESS_EXPECTED_LTS);
+    stressTypeSelect->addItem(tr("Expected Stress Balance    (Expected SB/TSB)"),  STRESS_EXPECTED_SB);
+    stressTypeSelect->addItem(tr("Expected Stress Ramp Rate  (Expected RR)"),      STRESS_EXPECTED_RR);
     stressTypeSelect->setCurrentIndex(metricDetail->stressType);
 
     stressWidget = new QWidget(this);

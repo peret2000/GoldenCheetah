@@ -26,6 +26,7 @@
 #include "RideNavigatorProxy.h"
 #include "SearchFilterBox.h"
 #include "AbstractView.h"
+#include "SpecialFields.h"
 #include "HelpWhatsThis.h"
 
 #include <QtGui>
@@ -281,7 +282,7 @@ RideNavigator::resetView()
     }
 
     // add metadata fields...
-    SpecialFields sp; // all the special fields are in here...
+    SpecialFields& sp = SpecialFields::getInstance(); // all the special fields are in here...
     foreach(FieldDefinition field, GlobalContext::context()->rideMetadata->getFields()) {
         if (!sp.isMetric(field.name) && (field.type < 5 || field.type == 7)) {
             nameMap.insert(QString("%1").arg(sp.makeTechName(field.name)), sp.displayName(field.name));
@@ -1094,7 +1095,7 @@ void NavigatorCellDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
     bool hover = false; //disable this, its annoying option.state & QStyle::State_MouseOver;
     bool selected = option.state & QStyle::State_Selected;
     bool focus = option.state & QStyle::State_HasFocus;
-    //bool isRun = rideNavigator->tableView->model()->data(index, Qt::UserRole+2).toBool();
+    bool planned = rideNavigator->tableView->model()->data(index, Qt::UserRole+2).toBool();
 
     // format the cell depending upon what it is...
     QString columnName = rideNavigator->tableView->model()->headerData(index.column(), Qt::Horizontal).toString();
@@ -1157,11 +1158,11 @@ void NavigatorCellDelegate::paint(QPainter *painter, const QStyleOptionViewItem 
     // basic background
     QBrush background = QBrush(GColor(CPLOTBACKGROUND));
 
-    // runs are darker
-    //if (isRun) {
-        //background.setColor(background.color().darker(150));
-        //userColor = userColor.darker(150);
-    //}
+    // planned activities are darker
+    if (planned) {
+        background.setColor(background.color().darker(150));
+        userColor = userColor.darker(150);
+    }
 
     if (columnName != "*") {
 
