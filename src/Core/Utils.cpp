@@ -16,6 +16,11 @@
  * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+// For preventing sleep mode during Train
+#include <QDBusInterface>
+#include <QDBusReply>
+
+
 #include "Utils.h"
 #include <math.h>
 #include <QTextEdit>
@@ -636,6 +641,28 @@ bool isImage(QString filename)
         if (lowername.endsWith(ext)) return true;
     }
     return false;
+}
+
+
+void preventSleep() {
+    QDBusInterface powerManager("org.freedesktop.ScreenSaver",
+                                 "/org/freedesktop/ScreenSaver",
+                                 "org.freedesktop.ScreenSaver",
+                                 QDBusConnection::sessionBus());
+    if (powerManager.isValid()) {
+        powerManager.call("Inhibit", "GoldenCheetah", "Previene suspensión");
+    }
+}
+
+// It is not working
+void allowSleep() {
+    QDBusInterface powerManager("org.freedesktop.ScreenSaver",
+                                 "/org/freedesktop/ScreenSaver",
+                                 "org.freedesktop.ScreenSaver",
+                                 QDBusConnection::sessionBus());
+    if (powerManager.isValid()) {
+        powerManager.call("UnInhibit", "GoldenCheetah");
+    }
 }
 
 // used std::sort, std::lower_bound et al

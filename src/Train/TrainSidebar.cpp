@@ -1315,7 +1315,7 @@ void TrainSidebar::Start()       // when start button is pressed
         // tell the world
         context->notifyUnPause();
 
-        emit setNotification(tr("Resuming.."), 2);
+        context->notifySetNotification(tr("Resuming.."), 2);
 
     } else if (status&RT_RUNNING) {
 
@@ -1342,7 +1342,7 @@ void TrainSidebar::Start()       // when start button is pressed
         // tell the world
         context->notifyPause();
 
-        emit setNotification(tr("Paused.."), 2);
+        context->notifySetNotification(tr("Paused.."), 2);
 
     } else if (status&RT_CONNECTED) {
 
@@ -1353,7 +1353,7 @@ void TrainSidebar::Start()       // when start button is pressed
             secs_to_start--;
         }
         if (secs_to_start > 0) {
-            emit setNotification(tr("Starting in %1").arg(secs_to_start), 1);
+            context->notifySetNotification(tr("Starting in %1").arg(secs_to_start), 1);
             start_timer->start(1000);
             return;
         }
@@ -1471,7 +1471,7 @@ void TrainSidebar::Start()       // when start button is pressed
         }
         gui_timer->start(REFRESHRATE);      // start recording
 
-        emit setNotification(tr("Starting.."), 2);
+        context->notifySetNotification(tr("Starting.."), 2);
     }
 }
 
@@ -1683,7 +1683,7 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     ergFileQueryAdapter.resetQueryState();
     guiUpdate();
 
-    emit setNotification(tr("Stopped.."), 2);
+    context->notifySetNotification(tr("Stopped.."), 2);
 
     return;
 }
@@ -1770,12 +1770,12 @@ void TrainSidebar::Connect()
 
         Devices[dev].controller->start();
         Devices[dev].controller->resetCalibrationState();
-        connect(Devices[dev].controller, &RealtimeController::setNotification, this, &TrainSidebar::setNotification);
+        connect(Devices[dev].controller, &RealtimeController::setNotification, context, &Context::setNotification);
     }
     setStatusFlags(RT_CONNECTED);
     gui_timer->start(REFRESHRATE);
 
-    emit setNotification(tr("Connected.."), 2);
+    context->notifySetNotification(tr("Connected.."), 2);
 }
 
 void TrainSidebar::Disconnect()
@@ -1792,14 +1792,14 @@ void TrainSidebar::Disconnect()
     qDebug() << "disconnecting..";
 
     foreach(int dev, activeDevices) {
-        disconnect(Devices[dev].controller, &RealtimeController::setNotification, this, &TrainSidebar::setNotification);
+        disconnect(Devices[dev].controller, &RealtimeController::setNotification, context, &Context::setNotification);
         Devices[dev].controller->stop();
     }
     clearStatusFlags(RT_CONNECTED);
 
     gui_timer->stop();
 
-    emit setNotification(tr("Disconnected.."), 2);
+    context->notifySetNotification(tr("Disconnected.."), 2);
 }
 
 //----------------------------------------------------------------------
@@ -2205,7 +2205,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     if (ergFileQueryAdapter.textsInRange(lapPosition, searchRange, rangeStart, rangeEnd)) {
                         for (int idx = rangeStart; idx <= rangeEnd; idx++) {
                             ErgFileText cue = ergFile->Texts.at(idx);
-                            emit setNotification(cue.text, cue.duration);
+                            context->notifySetNotification(cue.text, cue.duration);
                         }
                         textPositionEmitted = lapPosition + searchRange;
                     }
@@ -2312,8 +2312,7 @@ void TrainSidebar::newLap()
         ergFileQueryAdapter.addNewLap(displayWorkoutDistance * 1000.) >= 0) {
 
         context->notifyNewLap();
-
-        emit setNotification(tr("New lap.."), 2);
+        context->notifySetNotification(tr("New lap.."), 2);
     }
 }
 
@@ -2340,7 +2339,7 @@ void TrainSidebar::resetTextAudioEmitTracking()
 void TrainSidebar::steerScroll(int scrollAmount)
 {
     if (scrollAmount == 0)
-        emit setNotification(tr("Recalibrating steering.."), 10);
+        context->notifySetNotification(tr("Recalibrating steering.."), 10);
     else
         context->notifySteerScroll(scrollAmount);
 }
@@ -2594,7 +2593,7 @@ void TrainSidebar::updateCalibration()
 
         // leaving calibration, clear any notification text
         status = QString(tr("Exiting calibration.."));
-        emit setNotification(status,3);
+        context->notifySetNotification(status,3);
 
     } else {
 
@@ -2859,7 +2858,7 @@ void TrainSidebar::updateCalibration()
         lastState = calibrationState;
 
         // set notification text, no timeout
-        emit setNotification(status, 0);
+        context->notifySetNotification(status, 0);
     }
 }
 
@@ -2890,7 +2889,7 @@ void TrainSidebar::FFwd()
 
     maintainLapDistanceState();
 
-    emit setNotification(tr("Fast forward.."), 2);
+    context->notifySetNotification(tr("Fast forward.."), 2);
 }
 
 void TrainSidebar::Rewind()
@@ -2923,7 +2922,7 @@ void TrainSidebar::Rewind()
 
     maintainLapDistanceState();
 
-    emit setNotification(tr("Rewind.."), 2);
+    context->notifySetNotification(tr("Rewind.."), 2);
 }
 
 
@@ -2953,7 +2952,7 @@ void TrainSidebar::FFwdLap()
 
     maintainLapDistanceState();    
 
-    if (lapmarker >= 0) emit setNotification(tr("Next Lap.."), 2);
+    if (lapmarker >= 0) context->notifySetNotification(tr("Next Lap.."), 2);
 }
 
 // jump to next Lap marker (if there is one?)
@@ -2986,7 +2985,7 @@ void TrainSidebar::RewindLap()
 
     maintainLapDistanceState();
 
-    if (lapmarker >= 0) emit setNotification(tr("Back Lap.."), 2);
+    if (lapmarker >= 0) context->notifySetNotification(tr("Back Lap.."), 2);
 }
 
 
@@ -3012,7 +3011,7 @@ void TrainSidebar::Higher()
             foreach(int dev, activeDevices) Devices[dev].controller->setGradient(slope);
     }
 
-    emit setNotification(tr("Increasing intensity.."), 2);
+    context->notifySetNotification(tr("Increasing intensity.."), 2);
 }
 
 // lower load/gradient
@@ -3038,7 +3037,7 @@ void TrainSidebar::Lower()
             foreach(int dev, activeDevices) Devices[dev].controller->setGradient(slope);
     }
 
-    emit setNotification(tr("Decreasing intensity.."), 2);
+    context->notifySetNotification(tr("Decreasing intensity.."), 2);
 }
 
 void TrainSidebar::setLabels()

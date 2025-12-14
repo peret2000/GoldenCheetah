@@ -148,6 +148,29 @@ AbstractView::resizeEvent(QResizeEvent *)
 }
 
 void
+AbstractView::notifyViewStateRestored()
+{
+    // lets select the first ride if it has not been set,
+    // currently required to use DataFilter in any view.
+    if (context->ride == nullptr) {
+
+        // lets select the first ride
+        QDateTime now = QDateTime::currentDateTime();
+        for (int i = context->athlete->rideCache->rides().count(); i > 0; --i) {
+            if (context->athlete->rideCache->rides()[i - 1]->dateTime <= now) {
+                context->athlete->selectRideFile(context->athlete->rideCache->rides()[i - 1]->fileName);
+                return;
+            }
+        }
+
+       // otherwise just select the latest ride
+       if (context->athlete->rideCache->rides().count() != 0) {
+           context->athlete->selectRideFile(context->athlete->rideCache->rides().last()->fileName);
+       }
+   }
+}
+
+void
 AbstractView::notifyViewPerspectiveAdded(Perspective* page)
 {
     page->styleChanged(0);
@@ -157,7 +180,12 @@ void
 AbstractView::setSidebar(QWidget *sidebar)
 {
     sidebar_ = sidebar;
-    splitter->insertWidget(0, sidebar);
+
+    if (sidebar) {
+        // if the sidebar widget is already attached to another view's splitter,
+        // it is moved to the new position within this view's splitter
+        splitter->insertWidget(0, sidebar);
+    } 
 
     configChanged(CONFIG_APPEARANCE);
 }
@@ -353,7 +381,7 @@ AbstractView::restoreState(bool useDefault)
         // except when useDefault is requested
         if (!finfo.exists() && !useDefault) {
             filename = context->athlete->home->config().canonicalPath() + "/" + view + "-layout.xml";
-            legacy = true;
+
             QFile file(filename);
             if (file.open(QIODevice::ReadOnly)) {
                 content = file.readAll();
@@ -362,6 +390,9 @@ AbstractView::restoreState(bool useDefault)
             if (content != "") {
                 // whilst this happens don't show user
                 setUpdatesEnabled(false);
+
+                // Legacy perspective name only applies to -layout.xml files
+                legacy = true;
 
                 // setup the handler
                 QXmlInputSource source;
@@ -412,10 +443,14 @@ AbstractView::restoreState(bool useDefault)
 
         setUpdatesEnabled(true);
     }
-    if (legacy && restored.count() >= 1) restored[0]->title_ = "Legacy";
 
-    // MUST have at least one
-    if (restored.count() == 0)  restored << new Perspective(context, "empty", type);
+    if (restored.count()) {
+        // if we have restored the perspectives from legacy format -layout.xml files
+        if (legacy) restored[0]->title_ = "Legacy";
+
+    } else { // MUST have at least one perspective
+        restored << new Perspective(context, "Empty", type);
+    }
 
     // initialise them
     foreach(Perspective *page, restored) appendPerspective(page);
@@ -714,11 +749,9 @@ AbstractView::setPerspectives(QComboBox *perspectiveSelector, bool selectChart)
     if (!loaded || selectChart) {
         loaded = true;
 
-        // generally we just go to the first perspective
-        perspectiveSelected(0);
-
-        // allow views to override the default perspective (if required)
-        setViewSpecificPerspective();
+        // generally we just go to the first perspective, but we allow
+        // the views to override the default perspective (if required)
+        perspectiveSelected(getViewSpecificPerspective());
 
         // due to visibility optimisation we need to force the first tab to be selected in tab mode
         if (perspective_->currentStyle == 0 && perspective_->charts.count()) perspective_->tabSelected(0);

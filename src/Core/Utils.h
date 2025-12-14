@@ -65,6 +65,10 @@ namespace Utils
     // media
     bool isImage(QString);
 
+    // energy saving in Train view
+    void preventSleep();
+    void allowSleep();
+
     // used std::sort, std::lower_bound et al
     struct comparedouble { bool operator()(const double p1, const double p2) { return p1 < p2; } };
     struct compareqstring { bool operator()(const QString p1, const QString p2) { return p1 < p2; } };

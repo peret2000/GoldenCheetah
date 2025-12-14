@@ -45,6 +45,13 @@ greaterThan(QT_MAJOR_VERSION, 5) {
 }
 CONFIG += c++11
 
+###==========================
+### PRECOMPILED HEADER
+###==========================
+PRECOMPILED_HEADER = stable.h
+CONFIG += precompile_header
+
+
 
 ###=======================================================================
 ### Directory Structure - Split into subdirs to be more manageable
@@ -155,6 +162,10 @@ macx {
     HEADERS += Train/VideoWindow.h
     SOURCES += Train/VideoWindow.cpp
 
+    # PCH crashes clang if we have multiple -arch flags (universal binary)
+    message("Disabling Precompiled Headers on macOS to avoid multi-arch Clang errors.")
+    CONFIG -= precompile_header
+
 } else {
 
     # not on mac we need our own full screen support and segment control button
@@ -164,6 +175,8 @@ macx {
     HEADERS += Train/VideoWindow.h
     SOURCES += Train/VideoWindow.cpp
 }
+
+
 
 # X11
 if (defined(GC_WANT_X11)) {
@@ -344,7 +357,7 @@ contains(DEFINES, "GC_WANT_R") {
     INCLUDEPATH += $${ICAL_INCLUDE}
     LIBS        += $${ICAL_LIBS}
 
-    # add caldav and diary functions
+    # add caldav and calendar functions
     HEADERS     += Core/ICalendar.h Cloud/CalDAV.h Cloud/CalDAVCloud.h
     SOURCES     += Core/ICalendar.cpp Cloud/CalDAV.cpp Cloud/CalDAVCloud.cpp
 }
@@ -557,6 +570,9 @@ SOURCES += Train/VMProConfigurator.cpp Train/VMProWidget.cpp
 SOURCES += Train/Ftms.cpp
 HEADERS += Train/Ftms.h
 
+# For Utils::preventSleep() and Utils::allowSleep()
+QT += dbus
+
 QT += charts opengl
 
 QT += websockets
@@ -569,9 +585,12 @@ SOURCES += Gui/ChartSpace.cpp Charts/OverviewItems.cpp Charts/Overview.cpp
 # generic chart
 DEFINES += GC_HAVE_GENERIC
 HEADERS += Charts/UserChartWindow.h Charts/UserChartOverviewItem.h Charts/UserChart.h Charts/UserChartData.h \
-           Charts/GenericChart.h Charts/GenericPlot.h Charts/GenericSelectTool.h Charts/GenericLegend.h Charts/GenericAnnotations.h
+           Charts/GenericChart.h Charts/GenericPlot.h Charts/GenericSelectTool.h Charts/GenericLegend.h \
+	   Charts/GenericAnnotations.h Charts/SeriesIterator.h
+
 SOURCES += Charts/UserChartWindow.cpp Charts/UserChartOverviewItem.cpp Charts/UserChart.cpp Charts/UserChartData.cpp \
-           Charts/GenericChart.cpp Charts/GenericPlot.cpp Charts/GenericSelectTool.cpp Charts/GenericLegend.cpp Charts/GenericAnnotations.cpp
+           Charts/GenericChart.cpp Charts/GenericPlot.cpp Charts/GenericSelectTool.cpp Charts/GenericLegend.cpp \
+	   Charts/GenericAnnotations.cpp
 
 ###=====================
 ### LEX AND YACC SOURCES
@@ -588,6 +607,9 @@ LEXSOURCES  += Core/DataFilter.l \
                Core/RideDB.l \
                Train/WorkoutFilter.l \
                Train/TrainerDayAPIQuery.l
+
+# Fix parallel build races (YACC headers must exist before LEX runs)
+compiler_lex_make_all.depends += compiler_yacc_decl_make_all
 
 
 ###=========================================
@@ -608,7 +630,7 @@ HEADERS += Charts/Aerolab.h Charts/AerolabWindow.h Charts/AllPlot.h Charts/AllPl
            Charts/MetadataWindow.h Charts/MUPlot.h Charts/MUPool.h Charts/MUWidget.h Charts/PfPvPlot.h Charts/PfPvWindow.h \
            Charts/PowerHist.h Charts/ReferenceLineDialog.h Charts/RideEditor.h Charts/RideMapWindow.h \
            Charts/ScatterPlot.h Charts/ScatterWindow.h Charts/SmallPlot.h Charts/TreeMapPlot.h \
-           Charts/TreeMapWindow.h Charts/ZoneScaleDraw.h Charts/PlanningCalendarWindow.h
+           Charts/TreeMapWindow.h Charts/ZoneScaleDraw.h Charts/CalendarWindow.h Charts/AgendaWindow.h
 
 # cloud services
 HEADERS += Cloud/CalendarDownload.h Cloud/CloudService.h \
@@ -643,7 +665,7 @@ HEADERS += FileIO/ArchiveFile.h FileIO/AthleteBackup.h  FileIO/Bin2RideFile.h Fi
 
 # GUI components
 HEADERS += Gui/AboutDialog.h Gui/AddIntervalDialog.h Gui/AnalysisSidebar.h Gui/ChooseCyclistDialog.h Gui/ColorButton.h \
-           Gui/Colors.h Gui/CompareDateRange.h Gui/CompareInterval.h Gui/ComparePane.h Gui/ConfigDialog.h Gui/DiarySidebar.h \
+           Gui/Colors.h Gui/CompareDateRange.h Gui/CompareInterval.h Gui/ComparePane.h Gui/ConfigDialog.h Gui/MiniCalendar.h \
            Gui/DragBar.h Gui/EstimateCPDialog.h Gui/GcCrashDialog.h Gui/GcSideBarItem.h Gui/GcToolBar.h Gui/GcWindowLayout.h \
            Gui/GcWindowRegistry.h Gui/GenerateHeatMapDialog.h Gui/HelpWhatsThis.h Gui/HelpWindow.h \
            Gui/IntervalTreeView.h Gui/LTMSidebar.h Gui/MainWindow.h Gui/NewAthleteWizard.h Gui/Pages.h Gui/RideNavigator.h Gui/RideNavigatorProxy.h \
@@ -653,8 +675,8 @@ HEADERS += Gui/AboutDialog.h Gui/AddIntervalDialog.h Gui/AnalysisSidebar.h Gui/C
            Gui/AddTileWizard.h Gui/NavigationModel.h Gui/AthleteView.h Gui/AthleteConfigDialog.h Gui/AthletePages.h Gui/Perspective.h \
            Gui/PerspectiveDialog.h Gui/SplashScreen.h Gui/StyledItemDelegates.h Gui/MetadataDialog.h Gui/ActionButtonBox.h \
            Gui/MetricOverrideDialog.h Gui/RepeatScheduleWizard.h \
-           Gui/Calendar.h Gui/CalendarData.h Gui/CalendarItemDelegates.h \
-           Gui/IconManager.h
+           Gui/Calendar.h Gui/Agenda.h Gui/CalendarData.h Gui/CalendarItemDelegates.h \
+           Gui/IconManager.h Gui/Qt5Compatibility.h
 
 # metrics and models
 HEADERS += Metrics/Banister.h Metrics/CPSolver.h Metrics/Estimator.h Metrics/ExtendedCriticalPower.h Metrics/HrZones.h Metrics/PaceZones.h \
@@ -718,7 +740,7 @@ SOURCES += Charts/Aerolab.cpp Charts/AerolabWindow.cpp Charts/AllPlot.cpp Charts
            Charts/MetadataWindow.cpp Charts/MUPlot.cpp Charts/MUWidget.cpp Charts/PfPvPlot.cpp Charts/PfPvWindow.cpp \
            Charts/PowerHist.cpp Charts/ReferenceLineDialog.cpp Charts/RideEditor.cpp Charts/RideMapWindow.cpp \
            Charts/ScatterPlot.cpp Charts/ScatterWindow.cpp Charts/SmallPlot.cpp Charts/TreeMapPlot.cpp \
-           Charts/TreeMapWindow.cpp Charts/PlanningCalendarWindow.cpp
+           Charts/TreeMapWindow.cpp Charts/CalendarWindow.cpp Charts/AgendaWindow.cpp
 
 ## Cloud Services / Web resources
 SOURCES += Cloud/CalendarDownload.cpp Cloud/CloudService.cpp \
@@ -756,7 +778,7 @@ SOURCES += FileIO/ArchiveFile.cpp FileIO/AthleteBackup.cpp FileIO/Bin2RideFile.c
 
 ## GUI Elements and Dialogs
 SOURCES += Gui/AboutDialog.cpp Gui/AddIntervalDialog.cpp Gui/AnalysisSidebar.cpp Gui/ChooseCyclistDialog.cpp Gui/ColorButton.cpp \
-           Gui/Colors.cpp Gui/CompareDateRange.cpp Gui/CompareInterval.cpp Gui/ComparePane.cpp Gui/ConfigDialog.cpp Gui/DiarySidebar.cpp \
+           Gui/Colors.cpp Gui/CompareDateRange.cpp Gui/CompareInterval.cpp Gui/ComparePane.cpp Gui/ConfigDialog.cpp Gui/MiniCalendar.cpp \
            Gui/DragBar.cpp Gui/EstimateCPDialog.cpp Gui/GcCrashDialog.cpp Gui/GcSideBarItem.cpp Gui/GcToolBar.cpp Gui/GcWindowLayout.cpp \
            Gui/GcWindowRegistry.cpp Gui/GenerateHeatMapDialog.cpp Gui/HelpWhatsThis.cpp Gui/HelpWindow.cpp \
            Gui/IntervalTreeView.cpp Gui/LTMSidebar.cpp Gui/MainWindow.cpp Gui/NewAthleteWizard.cpp Gui/Pages.cpp Gui/RideNavigator.cpp Gui/SaveDialogs.cpp \
@@ -766,7 +788,7 @@ SOURCES += Gui/AboutDialog.cpp Gui/AddIntervalDialog.cpp Gui/AnalysisSidebar.cpp
            Gui/AddTileWizard.cpp Gui/NavigationModel.cpp Gui/AthleteView.cpp Gui/AthleteConfigDialog.cpp Gui/AthletePages.cpp Gui/Perspective.cpp \
            Gui/PerspectiveDialog.cpp Gui/SplashScreen.cpp Gui/StyledItemDelegates.cpp Gui/MetadataDialog.cpp Gui/ActionButtonBox.cpp \
            Gui/MetricOverrideDialog.cpp Gui/RepeatScheduleWizard.cpp \
-           Gui/Calendar.cpp Gui/CalendarItemDelegates.cpp \
+           Gui/Calendar.cpp Gui/Agenda.cpp Gui/CalendarData.cpp Gui/CalendarItemDelegates.cpp \
            Gui/IconManager.cpp
 
 ## Models and Metrics
@@ -831,4 +853,18 @@ DEFERRES += Core/RouteWindow.h Core/RouteWindow.cpp Core/RouteItem.h Core/RouteI
 ###====================
 
 OTHER_FILES +=   Resources/python/library.py Python/SIP/goldencheetah.sip
+
+
+###============================================================================
+### FIX: Disable Precompiled Header for C files
+### The PCH contains C++ specific headers (Qt, STL) which causes compilation errors
+### when the PCH is forced upon C files by gcc.
+###============================================================================
+
+for(src, SOURCES) {
+    contains(src, .*\.c$) {
+        eval($${src}.CONFIG -= precompile_header)
+    }
+}
+
 

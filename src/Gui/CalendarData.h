@@ -1,10 +1,32 @@
+/*
+ * Copyright (c) 2025 Joachim Kohlhammer (joachim.kohlhammer@gmx.de)
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
 #ifndef CALENDARDATA_H
 #define CALENDARDATA_H
 
+#include <QMetaType>
 #include <QDate>
 #include <QTime>
 #include <QList>
 #include <QHash>
+#include <QMap>
+#include <QColor>
+#include <utility>
 
 #define ENTRY_TYPE_ACTIVITY 0
 #define ENTRY_TYPE_PLANNED_ACTIVITY 1
@@ -13,21 +35,11 @@
 #define ENTRY_TYPE_OTHER 99
 
 
-struct CalendarEvent {
-    QString name;
-    QDate date;
-};
-
-struct CalendarPhase {
-    QString name;
-    QDate start;
-    QDate end;
-};
-
 struct CalendarEntry {
     QString primary;
     QString secondary;
     QString secondaryMetric;
+    QString tertiary;
     QString iconFile;
     QColor color;
     QString reference;
@@ -40,9 +52,21 @@ struct CalendarEntry {
     QDate spanEnd = QDate();
 };
 
+struct CalendarEntryLayout {
+    int entryIdx;
+    int columnIndex;
+    int columnCount;
+};
+
+enum class DayDimLevel {
+    None,
+    Full,
+    Partial
+};
+
 struct CalendarDay {
     QDate date;
-    bool isDimmed;
+    DayDimLevel isDimmed;
     QList<CalendarEntry> entries = QList<CalendarEntry>();
     QList<CalendarEntry> headlineEntries = QList<CalendarEntry>();
 };
@@ -52,7 +76,20 @@ struct CalendarSummary {
 };
 
 Q_DECLARE_METATYPE(CalendarEntry)
+Q_DECLARE_METATYPE(CalendarEntryLayout)
 Q_DECLARE_METATYPE(CalendarDay)
 Q_DECLARE_METATYPE(CalendarSummary)
+
+
+class CalendarEntryLayouter {
+public:
+    explicit CalendarEntryLayouter();
+
+    QList<CalendarEntryLayout> layout(const QList<CalendarEntry> &entries);
+
+private:
+    QList<QList<int>> groupOverlapping(const QList<CalendarEntry> &entries) const;
+    QList<CalendarEntryLayout> assignColumns(const QList<int> &cluster, const QList<CalendarEntry> &entries) const;
+};
 
 #endif
