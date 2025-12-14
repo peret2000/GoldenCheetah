@@ -850,8 +850,10 @@ MetricOverviewItem::configChanged(qint32) {
     RideMetricFactory& factory = RideMetricFactory::instance();
     metric = factory.rideMetric(symbol);
 
-    // Only display the override option for metrics that exist.
-    setShowEdit(metric != nullptr);
+    // Only display the override option for metrics that exist, and those related to specific activities.
+    // It doesn't make sense to overide metrics related to multiple activities, date ranges and/or filters.
+    setShowEdit((metric != nullptr) && (parent->scope == OverviewScope::ANALYSIS));
+
     units = (metric) ? metric->units(GlobalContext::context()->useMetricUnits) : "";
 
     // Update the value and override status
@@ -956,7 +958,7 @@ MetaOverviewItem::configChanged(qint32)
     SpecialFields& sp = SpecialFields::getInstance();
 
     //  Get the field type
-    fieldtype = -1;
+    fieldtype = GcFieldType::NO_FIELD_SET;
     foreach(FieldDefinition p, GlobalContext::context()->rideMetadata->getFields()) {
         if (p.name == symbol) {
             fieldtype = p.type;
@@ -973,7 +975,7 @@ MetaOverviewItem::configChanged(qint32)
     value = rideItem ? rideItem->getText(symbol, "") : "";
 
     // sparkline if are we numeric?
-    if (fieldtype == FIELD_INTEGER || fieldtype == FIELD_DOUBLE) {
+    if (fieldtype == GcFieldType::FIELD_INTEGER || fieldtype == GcFieldType::FIELD_DOUBLE) {
         if (sparkline == NULL) sparkline = new Sparkline(this, name);
     } else {
         if (sparkline) {
@@ -1847,7 +1849,7 @@ MetaOverviewItem::setData(RideItem *item)
 
         // get the metadata value
         value = item->getText(symbol, "0");
-        if (fieldtype == FIELD_DOUBLE) v = value.toDouble();
+        if (fieldtype == GcFieldType::FIELD_DOUBLE) v = value.toDouble();
         else v = value.toInt();
         if (std::isinf(v) || std::isnan(v)) v=0;
         points << QPointF(SPARKDAYS, v);
@@ -1873,7 +1875,7 @@ MetaOverviewItem::setData(RideItem *item)
 
                 double v;
 
-                if (fieldtype == FIELD_DOUBLE)  v = prior->getText(symbol, "").toDouble();
+                if (fieldtype == GcFieldType::FIELD_DOUBLE)  v = prior->getText(symbol, "").toDouble();
                 else v = prior->getText(symbol, "").toInt();
 
                 if (std::isinf(v) || std::isnan(v)) v=0;
@@ -2555,15 +2557,8 @@ IntervalOverviewItem::setData(RideItem *item, bool animate)
 
 
     // set scale
-#if 0 // not clear why this is here or what it is supposed to do
-      // but it results in items being filtered out.
-    double ydiff = (maxy-miny) / 10.0f;
-    if (miny >= 0 && ydiff > miny) miny = ydiff;
-    double xdiff = (maxx-minx) / 10.0f;
-    if (minx >= 0 && xdiff > minx) minx = xdiff;
-#endif
-    maxx=round(maxx); minx=round(minx);
-    maxy=round(maxy); miny=round(miny);
+    maxx=ceil(maxx); minx=floor(minx);
+    maxy=ceil(maxy); miny=floor(miny);
 
     // set range before points to filter
     bubble->setPoints(points, minx,maxx,miny,maxy, animate);
@@ -3574,7 +3569,7 @@ TopNOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *,
 void
 MetaOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
 
-    if (!sparkline && fieldtype >= 0) { // textual metadata field
+    if (!sparkline && fieldtype != GcFieldType::NO_FIELD_SET) { // textual metadata field
 
         // mid is slightly higher to account for space around title, move mid up
         double mid = (ROWHEIGHT*1.5f) + ((geometry().height() - (ROWHEIGHT*2)) / 2.0f);
@@ -3582,7 +3577,7 @@ MetaOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *,
         // we align centre and mid
         QFontMetrics fm(parent->bigfont);
 
-        if (fieldtype == FIELD_TEXTBOX) {
+        if (fieldtype == GcFieldType::FIELD_TEXTBOX) {
             // long texts need to be formatted into a smaller font an word wrapped
             painter->setPen(QColor(150,150,150));
             painter->setFont(parent->smallfont);
@@ -3599,10 +3594,10 @@ MetaOverviewItem::itemPaint(QPainter *painter, const QStyleOptionGraphicsItem *,
             painter->setFont(parent->bigfont);
 
             QString displayValue(value);
-            if ((fieldtype == FIELD_DATE) && (symbol == "Start Date")) {
+            if ((fieldtype == GcFieldType::FIELD_DATE) && (symbol == "Start Date")) {
                 displayValue = (QDate(1900, 1, 1).addDays(value.toInt())).toString("dd/MM/yyyy");
 
-            } else if ((fieldtype == FIELD_TIME) && (symbol == "Start Time")) {
+            } else if ((fieldtype == GcFieldType::FIELD_TIME) && (symbol == "Start Time")) {
                 displayValue = (QTime(0, 0).addSecs(value.toInt())).toString("hh:mm:ss");
             }
 
@@ -4630,8 +4625,8 @@ BubbleViz::setPoints(QList<BPointF> p, double minx, double maxx, double miny, do
     this->points.clear();
     foreach(BPointF point, p) {
 
-        if (point.x < minx || point.x > maxx || !std::isfinite(point.x) || std::isnan(point.x) || point.x == 0 ||
-            point.y < miny || point.y > maxy || !std::isfinite(point.y) || std::isnan(point.y) || point.y == 0 ||
+        if (point.x < minx || point.x > maxx || !std::isfinite(point.x) || std::isnan(point.x) ||
+            point.y < miny || point.y > maxy || !std::isfinite(point.y) || std::isnan(point.y) ||
             point.z == 0 || !std::isfinite(point.z) || std::isnan(point.z)) continue;
 
         this->points << point;

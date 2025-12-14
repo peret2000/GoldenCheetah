@@ -237,6 +237,8 @@
 #define TRAIN_COALESCE_SECTIONS         "<global-trainmode>train/coalesceSections"
 #define TRAIN_TOOLTIPS                  "<global-trainmode>train/tooltips"
 #define TRAIN_TELEMETRY_FONT_SCALING    "<global-trainmode>train/telemetryFontScaling"
+#define TRAIN_QDMYOS_USEWEBSOCKETSRVIP  "<global-trainmode>train/useqdomyoswebsockets"
+#define TRAIN_QDMYOS_WEBSOCKETSRVIP     "<global-trainmode>train/qdomyoswebsocketsrvip"
 #define GC_REMOTE_START                 "<global-trainmode>remote/start"
 #define GC_REMOTE_STOP                  "<global-trainmode>remote/stop"
 #define GC_REMOTE_LAP                   "<global-trainmode>remote/lap"

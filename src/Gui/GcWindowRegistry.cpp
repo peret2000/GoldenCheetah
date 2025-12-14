@@ -24,9 +24,6 @@
 #include "AerolabWindow.h"
 #include "AllPlotWindow.h"
 #include "CriticalPowerWindow.h"
-#ifdef GC_HAVE_ICAL
-#include "DiaryWindow.h"
-#endif
 #include "HistogramWindow.h"
 #include "LTMWindow.h"
 #include "VideoWindow.h"
@@ -46,6 +43,7 @@
 #include "WorkoutWindow.h"
 #include "WebPageWindow.h"
 #include "LiveMapWebPageWindow.h"
+#include "PlanningCalendarWindow.h"
 #ifdef GC_WANT_R
 #include "RChart.h"
 #endif
@@ -66,7 +64,7 @@ GcWindowRegistry* GcWindows;
 void
 GcWindowRegistry::initialize()
 {
-  static GcWindowRegistry GcWindowsInit[35] = {
+  static GcWindowRegistry GcWindowsInit[36] = {
     // name                     GcWinID
     { VIEW_TRENDS|VIEW_DIARY, tr("Season Overview"),GcWindowTypes::OverviewTrends },
     { VIEW_TRENDS|VIEW_DIARY, tr("Blank Overview "),GcWindowTypes::OverviewTrendsBlank },
@@ -98,7 +96,7 @@ GcWindowRegistry::initialize()
     //{ VIEW_ANALYSIS, tr("Bing Map"),GcWindowTypes::BingMap },
     { VIEW_ANALYSIS, tr("Scatter"),GcWindowTypes::Scatter },
     { VIEW_ANALYSIS, tr("Aerolab"),GcWindowTypes::Aerolab },
-    { VIEW_TRENDS|VIEW_DIARY, tr("Calendar"),GcWindowTypes::Diary },
+    //{ VIEW_TRENDS|VIEW_DIARY, tr("Calendar"),GcWindowTypes::Diary },
     { VIEW_TRENDS|VIEW_DIARY, tr("Navigator"), GcWindowTypes::ActivityNavigator },
     //{ VIEW_DIARY|VIEW_TRENDS, tr("Summary "), GcWindowTypes::DateRangeSummary }, // DEPRECATED IN V3.6
     { VIEW_TRAIN, tr("Telemetry"),GcWindowTypes::DialWindow },
@@ -110,6 +108,7 @@ GcWindowRegistry::initialize()
     { VIEW_TRAIN, tr("Live Map"),GcWindowTypes::LiveMapWebPageWindow },
     { VIEW_TRAIN, tr("Elevation Chart"),GcWindowTypes::ElevationChart },
     { VIEW_ANALYSIS|VIEW_TRENDS|VIEW_TRAIN, tr("Web page"),GcWindowTypes::WebPageWindow },
+    { VIEW_TRENDS, tr("Planning Calendar"),GcWindowTypes::Calendar },
     { 0, "", GcWindowTypes::None }};
   // initialize the global registry
   GcWindows = GcWindowsInit;
@@ -158,11 +157,6 @@ GcWindowRegistry::newGcWindow(GcWinID id, Context *context)
     case GcWindowTypes::AllPlot: returning = new AllPlotWindow(context); break;
     case GcWindowTypes::CriticalPower: returning = new CriticalPowerWindow(context, false); break;
     case GcWindowTypes::CriticalPowerSummary: returning = new CriticalPowerWindow(context, true); break;
-#ifdef GC_HAVE_ICAL
-    case GcWindowTypes::Diary: returning = new DiaryWindow(context); break;
-#else
-    case GcWindowTypes::Diary: returning = new GcChartWindow(context); break;
-#endif
     case GcWindowTypes::Histogram: returning = new HistogramWindow(context); break;
 #ifdef GC_WANT_R
     case GcWindowTypes::RConsole: returning = new RChart(context, true); break;
@@ -254,6 +248,8 @@ GcWindowRegistry::newGcWindow(GcWinID id, Context *context)
     case GcWindowTypes::SeasonPlan: returning = new PlanningWindow(context); break;
     case GcWindowTypes::UserAnalysis: returning = new UserChartWindow(context, false); break;
     case GcWindowTypes::UserTrends: returning = new UserChartWindow(context, true); break;
+    case GcWindowTypes::Diary:
+    case GcWindowTypes::Calendar: returning = new PlanningCalendarWindow(context); break;
     default: return NULL; break;
     }
     if (returning) returning->setProperty("type", QVariant::fromValue<GcWinID>(id));

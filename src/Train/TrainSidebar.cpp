@@ -362,6 +362,7 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
 #endif //GC_VIDEO_NONE
     connect(context, SIGNAL(configChanged(qint32)), this, SLOT(configChanged(qint32)));
     connect(context, SIGNAL(selectWorkout(QString)), this, SLOT(selectWorkout(QString)));
+    connect(context, SIGNAL(selectWorkout(int)), this, SLOT(selectWorkout(int)));
     connect(trainDB, SIGNAL(dataChanged()), this, SLOT(refresh()));
 
     connect(workoutTree->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), this, SLOT(workoutTreeWidgetSelectionChanged()));
@@ -1888,6 +1889,8 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
 
             double distanceTick = 0;
 
+            // If any of the active devices is a footpod, simulated speed will not be used, as it is a treadmill
+            bool deviceIsFootpod = false;
             // fetch the right data from each device...
             foreach(int dev, activeDevices) {
 
@@ -1960,12 +1963,15 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                     rtData.setTrainerConfigRequired(local.getTrainerConfigRequired());
                     rtData.setTrainerBrakeFault(local.getTrainerBrakeFault());
                 }
+                if (Devices[dev].type == DEV_ANTLOCAL && Devices[dev].deviceProfile.contains("o")) {
+                    deviceIsFootpod = true;
+                }
             }
 
             // If simulated speed is *not* checked then you get speed reported by
             // trainer which in ergo mode will be dictated by your gear and cadence,
             // and in slope mode is whatever the trainer happens to implement.
-            if (useSimulatedSpeed) {
+            if (useSimulatedSpeed && !deviceIsFootpod) {
                 BicycleSimState newState(rtData);
                 SpeedDistance ret = bicycle.SampleSpeed(newState);
 
@@ -3359,6 +3365,12 @@ TrainSidebar::selectWorkout(QString fullpath)
             break;
         }
     }
+}
+
+void
+TrainSidebar::selectWorkout(int idx)
+{
+    workoutTree->setCurrentIndex(workoutTree->model()->index(idx, TdbWorkoutModelIdx::filepath));
 }
 
 // got a remote control command

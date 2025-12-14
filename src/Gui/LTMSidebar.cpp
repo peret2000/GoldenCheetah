@@ -405,10 +405,16 @@ LTMSidebar::dateRangeTreeWidgetSelectionChanged()
     }
 
     // Let the view know its changed....
-    if (phase) emit dateRangeChanged(DateRange(phase->getStart(), phase->getEnd(), dateRange->getName() + "/" + phase->getName()));
-    else if (dateRange) emit dateRangeChanged(DateRange(dateRange->getStart(), dateRange->getEnd(), dateRange->getName()));
-    else emit dateRangeChanged(DateRange());
-
+    if (phase) {
+        emit dateRangeChanged(DateRange(phase->getStart(), phase->getEnd(), dateRange->getName() + "/" + phase->getName()));
+        context->notifySeasonChanged(phase);
+    } else if (dateRange) {
+        emit dateRangeChanged(DateRange(dateRange->getStart(), dateRange->getEnd(), dateRange->getName()));
+        context->notifySeasonChanged(dateRange);
+    } else {
+        emit dateRangeChanged(DateRange());
+        context->notifySeasonChanged(nullptr);
+    }
 }
 
 /*----------------------------------------------------------------------
@@ -745,7 +751,7 @@ LTMSidebar::setAutoFilterMenu()
     SpecialFields& sp = SpecialFields::getInstance();
     foreach(FieldDefinition field, GlobalContext::context()->rideMetadata->getFields()) {
 
-        if (field.tab != "" && (field.type == 0 || field.type == 2)) { // we only do text or shorttext fields
+        if (field.tab != "" && (field.type == GcFieldType::FIELD_TEXT || field.type == GcFieldType::FIELD_SHORTTEXT)) { // we only do text or shorttext fields
 
             QAction *action = new QAction(sp.displayName(field.name), this);
             action->setCheckable(true);
