@@ -177,6 +177,7 @@ void TextMeterWidget::paintEvent(QPaintEvent* paintevent)
     MeterWidget::paintEvent(paintevent);
 
     m_MainBrush = QBrush(m_MainColor);
+    m_BackgroundBrush = QBrush(m_BackgroundColor);
     m_OutlinePen = QPen(m_OutlineColor);
     m_OutlinePen.setWidth(1);
     m_OutlinePen.setStyle(Qt::SolidLine);
@@ -212,6 +213,11 @@ void TextMeterWidget::paintEvent(QPaintEvent* paintevent)
         translationX += (m_Width/fontscale - ValueBoundingRct.width());
 
     painter.translate(translationX, -ValueBoundingRct.y()+(m_Height/fontscale - ValueBoundingRct.height())/2);
+
+    // Draw background
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(m_BackgroundBrush);
+    painter.drawRect(ValueBoundingRct);
 
     // Write Value
     painter.setPen(m_OutlinePen);
@@ -650,13 +656,13 @@ void LiveMapWidget::initLiveMap(Context* context)
 }
 
 // Show route or move the marker at the next location
-void LiveMapWidget::plotNewLatLng(double dLat, double dLon)
+void LiveMapWidget::plotNewLatLng(double dLat, double dLon, double bearing)
 {
     QString code = "";
     // these values need extended precision or place marker jumps around.
     QString sLat = QString::number(dLat, 'g', 10);
     QString sLon = QString::number(dLon, 'g', 10);
-    QString sMapZoom = QString::number(m_Zoom);
+    QString sDirection = QString::number(bearing);
 
     if (!routeInitialized)
     {
@@ -665,7 +671,7 @@ void LiveMapWidget::plotNewLatLng(double dLat, double dLon)
         routeInitialized = true;
     }
     else {
-        code += QString("moveMarker(" + sLat + " , " + sLon + ");");
+        code += QString("moveMarker(" + sLat + " , " + sLon + "," + sDirection + ");");
         liveMapView->page()->runJavaScript(code);
     }
 }
@@ -700,22 +706,26 @@ void LiveMapWidget::createHtml(QString sBaseUrl, QString autoRunJS)
         "integrity=\"sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==\" crossorigin=\"\"/>\n"
         "<script src=\"https://unpkg.com/leaflet@1.6.0/dist/leaflet.js\"\n"
         "integrity=\"sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==\" crossorigin=\"\"></script>\n"
-        "<style>#mapid {height:100%;width:100%}</style></head>\n"
+        "<style>#mapid {height:100%;width:100%} .custom-marker .arrow {width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 18px solid rgb(4, 142, 189);}</style></head>\n"
         "<body><div id=\"mapid\"></div>\n"
         "<script type=\"text/javascript\">\n"
         "var mapOptions, mymap, mylayer, mymarker, latlng, myscale, routepolyline\n"
-        "function moveMarker(myLat, myLon) {\n"
+        "function moveMarker(myLat, myLon, direction) {\n"
         "    mymap.panTo(new L.LatLng(myLat, myLon));\n"
         "    mymarker.setLatLng(new L.latLng(myLat, myLon));\n"
+        "    mymarker.setIcon(L.divIcon({\n"
+        "        className: 'custom-marker',\n"
+        "        html: '<div class=\"arrow\" style=\"transform: rotate(' + direction + 'deg);\"></div>'\n"
+        "    }));\n"
         "}\n"
         "function initMap(myLat, myLon, myZoom) {\n"
         "    mapOptions = {\n"
         "    center: [myLat, myLon],\n"
         "    zoom : myZoom,\n"
         "    zoomControl : true,\n"
-        "    scrollWheelZoom : false,\n"
-        "    dragging : false,\n"
-        "    doubleClickZoom : false }\n"
+        "    scrollWheelZoom : true,\n"
+        "    dragging : true,\n"
+        "    doubleClickZoom : true }\n"
         "    mymap = L.map('mapid', mapOptions);\n"
         "    myscale = L.control.scale().addTo(mymap);\n"
         "    mylayer = new L.tileLayer('" + sBaseUrl + "');\n"
