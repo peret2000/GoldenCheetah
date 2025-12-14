@@ -41,6 +41,7 @@
 #include "SpinScanPlotWindow.h"
 #include "WorkoutPlotWindow.h"
 #include "WorkoutWindow.h"
+#include "GeoLocationChartWindow.h"
 #include "WebPageWindow.h"
 #include "LiveMapWebPageWindow.h"
 #include "CalendarWindow.h"
@@ -109,6 +110,7 @@ GcWindowRegistry::initialize()
     { VIEW_TRAIN, tr("Pedal Stroke"),GcWindowTypes::SpinScanPlot },
     { VIEW_TRAIN, tr("Video Player"),GcWindowTypes::VideoPlayer },
     { VIEW_TRAIN, tr("Workout Editor"),GcWindowTypes::WorkoutWindow },
+    { VIEW_TRAIN, tr("Geolocation Chart"),GcWindowTypes::GeoLocationChart },
     { VIEW_TRAIN, tr("Live Map"),GcWindowTypes::LiveMapWebPageWindow },
     { VIEW_TRAIN, tr("Elevation Chart"),GcWindowTypes::ElevationChart },
     { VIEW_ANALYSIS|VIEW_TRENDS|VIEW_TRAIN, tr("Web page"),GcWindowTypes::WebPageWindow },
@@ -215,6 +217,7 @@ GcWindowRegistry::newGcWindow(GcWinID id, Context *context)
     case GcWindowTypes::SpinScanPlot: returning = new SpinScanPlotWindow(context); break;
     case GcWindowTypes::WorkoutPlot: returning = new WorkoutPlotWindow(context); break;
     case GcWindowTypes::MapWindow:
+    case GcWindowTypes::GeoLocationChart: returning = new GeoLocationChartWindow(context); break;
     case GcWindowTypes::StreetViewWindow:
         returning = new GcChartWindow(context); break;
     // old maps (GoogleMap and BingMap) replaced by RideMapWindow

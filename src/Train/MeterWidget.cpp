@@ -15,6 +15,9 @@
  * with this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+
+#include "GeolocationManager.h"
+
 #include <QtGui>
 #include <QGraphicsPathItem>
 #include <qwt_compass_rose.h>
@@ -223,6 +226,41 @@ void TextMeterWidget::paintEvent(QPaintEvent* paintevent)
     painter.setPen(m_OutlinePen);
     painter.setBrush(m_MainBrush);
     painter.drawPath(my_painterPath);
+}
+
+GeolocMeterWidget::GeolocMeterWidget(QString Name, QWidget *parent, QString Source) : TextMeterWidget(Name, parent, Source)
+{
+    forceSquareRatio = false;
+
+    m_geolocationManager = new GeolocationManager;
+}
+
+void GeolocMeterWidget::showEvent(QShowEvent *event)
+{
+    TextMeterWidget::showEvent(event);
+    m_geolocationManager->enable(10000);
+}
+
+void GeolocMeterWidget::hideEvent(QHideEvent *event)
+{
+    TextMeterWidget::hideEvent(event);
+    m_geolocationManager->disable();
+}
+
+void GeolocMeterWidget::paintEvent(QPaintEvent* paintevent)
+{
+    Text = m_geolocationManager->getAddress();
+    TextMeterWidget::paintEvent(paintevent);
+}
+
+void GeolocMeterWidget::updateLatitude(double latitude)
+{
+    m_geolocationManager->setLatitude(latitude);
+}
+
+void GeolocMeterWidget::updateLongitude(double longitude)
+{
+    m_geolocationManager->setLongitude(longitude);
 }
 
 CircularIndicatorMeterWidget::CircularIndicatorMeterWidget(QString Name, QWidget *parent, QString Source) : MeterWidget(Name, parent, Source)
