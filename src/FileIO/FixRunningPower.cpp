@@ -182,13 +182,22 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
     }
 
     // if not a run do nothing !
-    if (!ride->isRun()) return false;
+    if (!(ride->isRun() || ride->sport()==QString("Walk") || ride->sport()==QString("Hike"))) return false;
 
     // if called automatically and power already present, do nothing !
     if (!config && ride->areDataPresent()->watts) return false;
 
-    // no dice if we don't have alt and speed
-    if (!ride->areDataPresent()->alt || !ride->areDataPresent()->kph) return false;
+    //  If in treadmill, maybe there are neither altitude nor slope (they must be hardcoded)
+    bool bIsTreadmill = false;
+    double treadmillSlope = 0.0;
+    if (!ride->areDataPresent()->alt && !ride->areDataPresent()->lat && !ride->areDataPresent()->slope) {
+        bIsTreadmill = true;
+        //  If treadmill, we try to fetch the slope
+        treadmillSlope = ride->getTag("InclCinta","0").toDouble();
+    }
+
+    // no dice if we don't have speed (maybe we do not have alt, as it is done in the treadmill)
+    if (!ride->areDataPresent()->kph) return false;
 
     // Power Estimation Constants (mostly constants...)
     double H = ride->getHeight(); //Height in m
@@ -205,12 +214,13 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
     // apply the change
     ride->command->startLUW("Estimate Running Power");
 
-    if (ride->areDataPresent()->slope) {
+    if (ride->areDataPresent()->slope || bIsTreadmill) {
+        double Vprev = 0.0;
         for (int i=0; i<ride->dataPoints().count(); i++) {
             RideFilePoint *p = ride->dataPoints()[i];
 
             // compute bearing in order to calculate headwind
-            if (i>=1)
+            if (i>=1 && !bIsTreadmill)
             {
                 RideFilePoint *prevPoint = ride->dataPoints()[i-1];
 
@@ -240,20 +250,36 @@ FixRunningPower::postProcess(RideFile *ride, DataProcessorConfig *config=0, QStr
             // if the file has temperature, use it
             if (ride->areDataPresent()->temp) T = p->temp;
             // Air Density based on altitude and temperature
-            double rho = 353 * exp(-p->alt * .0001253) / (273 + T);
+            double rho = 353 * exp(-(!bIsTreadmill ? p->alt : 700) * .0001253) / (273 + T);
             double vw=V+W; // Wind speed against runner = speed + wind speed
-            double Slope = atan(p->slope * .01);
+                // this is the really important effect when in treadmill: wind is not considered
+            if (bIsTreadmill)
+                vw = 0.0;
+
+            // Smoothing the speed and acceleration: instead of using monitored speed, it is using increase in distance in 10 samples
+            double accel = p->kphd;
+            RideFilePoint *prev = ride->dataPoints()[(i-10)>0 ? i-10 : 0];
+            if (p->secs - prev->secs > 0.0) {
+                V = (p->km - prev->km) * 1000.0 / (p->secs - prev->secs);
+                accel = (V - Vprev);
+                Vprev = V;
+                }
+            double Slope = atan((!bIsTreadmill ? p->slope : treadmillSlope) * .01);
             double forw = Cr * Mtotal * eff * V;
             double aero = 0.5 * rho * Cx * FA * DraftM * (vw*vw) * V;
             double grav = 9.81 * Mtotal * sin(Slope) * V;
-            double chgV = (p->kphd > 1 ? 1 : p->kphd) * Mtotal * V;
+            double chgV = (accel > 1 ? 1 : accel) * Mtotal * V;
 
             // Power = moving forward + aerodynamic + gravity + change of speed
             double watts = forw + aero + grav + chgV;
             ride->command->setPointValue(i, RideFile::watts, watts > 0 ? (watts > 1000 ? 1000 : watts) : 0);
         }
 
-        int smoothPoints = 3;
+        int smoothPoints = 3;   // If not specified by environment variable
+        char *envvalue = getenv("smoothPoints");
+        if (envvalue != NULL) {
+            smoothPoints = (int)strtol(envvalue, NULL, 0);
+        }
         // initialise rolling average
         double rtot = 0;
         for (int i=smoothPoints; i>0 && ride->dataPoints().count()-i >=0; i--) {
