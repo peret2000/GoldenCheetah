@@ -163,10 +163,7 @@ if $MERGECODE; then
 	###git fetch paulj49457
         ###merge paulj49457/origin-equipment-management-feature
 
-### De momento se quita este merge porque da conflictos con:
-# 4488b6e4f -> Rebrand Diary View to Plan View (#4690)
-#	merge origin/tmp-equipment-management-feature
-###
+	merge origin/tmp-equipment-management-feature
 
 fi	# if $MERGECODE; then
 
