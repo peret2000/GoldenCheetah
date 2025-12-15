@@ -86,6 +86,11 @@ class GlobalContext : public QObject
         static GlobalContext *context();
         void notifyConfigChanged(qint32);
 
+        // equipment management
+        void notifyEqRecalculationComplete() { emit eqRecalculationComplete(); }  // equipment recalculation complete
+        void requestEqRecalculation(const QString& reason) { emit eqRecalculation(reason); }  // request equipment cache recalculation
+        void requestEqItemRecalculation(const QUuid& equipmentRef, const QString& reason) { emit eqItemRecalculation(equipmentRef, reason); }  // request equipment item recalculated
+
         // metadata etc
         RideMetadata *rideMetadata;
         ColorEngine *colorEngine;
@@ -100,6 +105,10 @@ class GlobalContext : public QObject
     signals:
         void configChanged(qint32); // for global widgets that aren't athlete specific
 
+        // equipment management
+        void eqRecalculationComplete(); // equipment realculation complete
+        void eqRecalculation(const QString& reason); // request equipment cache recalculation
+        void eqItemRecalculation(const QUuid& equipmentRef, const QString& reason); // request equipment item recalculated
 };
 
 class RideNavigator;
@@ -180,6 +189,7 @@ class Context : public QObject
         void notifyLoadCompleted(QString folder, Context *context) { emit loadCompleted(folder,context); } // Athlete loaded
         void notifyAthleteClose(QString folder, Context *context) { emit athleteClose(folder,context); }
         void notifyLoadDone(QString folder, Context *context) { emit loadDone(folder, context); } // MainWindow finished
+        void notifyBatchImportComplete(int numImported) { emit batchImportComplete(numImported); } // Batch importing finished
 
         // preset charts
         void notifyPresetsChanged() { emit presetsChanged(); }
@@ -284,6 +294,7 @@ class Context : public QObject
         void loadCompleted(QString, Context*);
         void loadDone(QString, Context*);
         void athleteClose(QString, Context*);
+        void batchImportComplete(int);
 
         // global filter changed
         void filterChanged();

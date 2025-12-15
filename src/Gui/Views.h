@@ -1,6 +1,10 @@
 /*
  * Copyright (c) 2013 Mark Liversedge (liversedge@gmail.com)
+<<<<<<< HEAD
  * LTMSidebarView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
+=======
+ * EquipmentView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
+>>>>>>> 93139adf7 (XML Equipment Management Feature)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -62,8 +66,19 @@ class LTMSidebarView : public AbstractView
 
     private:
 
+        int type_; // view type
+
         // each athlete has their own LTMSidebar shared by the plan & trends views.
         static QMap<Context*, LTMSidebar*> LTMSidebars_;
+};
+
+class AnalysisViewParser : public ViewParser {
+
+    public:
+        AnalysisViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class AnalysisView : public AbstractView
@@ -78,6 +93,8 @@ class AnalysisView : public AbstractView
         void setRide(RideItem*ride) override;
         void addIntervals();
 
+        int viewType() const override { return VIEW_ANALYSIS; }
+
         RideNavigator *rideNavigator();
         AnalysisSidebar *analSidebar;
 
@@ -87,6 +104,8 @@ class AnalysisView : public AbstractView
         void compareChanged(bool);
 
     protected:
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
 
         void notifyViewSidebarChanged() override;
         int getViewSpecificPerspective() override;
@@ -95,6 +114,15 @@ class AnalysisView : public AbstractView
     private:
 
         int findRidesPerspective(RideItem* ride);
+};
+
+class PlanViewParser : public ViewParser {
+
+    public:
+        PlanViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class PlanView : public LTMSidebarView
@@ -106,9 +134,25 @@ class PlanView : public LTMSidebarView
         PlanView(Context *context, QStackedWidget *controls);
         virtual ~PlanView();
 
+        int viewType() const override { return VIEW_PLAN; }
+
     public slots:
 
         bool isBlank() override;
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+};
+
+class TrainViewParser : public ViewParser {
+
+    public:
+        TrainViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class TrainView : public AbstractView
@@ -121,6 +165,8 @@ class TrainView : public AbstractView
         virtual ~TrainView();
         void close() override;
 
+        int viewType() const override { return VIEW_TRAIN; }
+
     public slots:
 
         bool isBlank() override;
@@ -129,6 +175,8 @@ class TrainView : public AbstractView
     protected:
 
         void notifyViewPerspectiveAdded(Perspective* page) override;
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
 
     private:
 
@@ -136,7 +184,17 @@ class TrainView : public AbstractView
         TrainBottom *trainBottom;
 
     private slots:
+
         void onAutoHideChanged(bool enabled);
+};
+
+class TrendsViewParser : public ViewParser {
+
+    public:
+        TrendsViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class TrendsView : public LTMSidebarView
@@ -149,11 +207,59 @@ class TrendsView : public LTMSidebarView
         virtual ~TrendsView();
 
         int countActivities(Perspective *, DateRange dr);
+        int viewType() const override { return VIEW_TRENDS; }
 
     public slots:
 
         bool isBlank() override;
         void compareChanged(bool);
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+
+};
+
+class EquipmentViewParser : public ViewParser {
+
+    public:
+        EquipmentViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
+};
+
+class EquipmentView : public AbstractView
+{  
+    Q_OBJECT
+
+    public:
+
+        EquipmentView(Context *context, QStackedWidget *controls);
+        ~EquipmentView();
+
+        int viewType() const override { return VIEW_EQUIPMENT; }
+
+        // Don't want the base class behaviour for this...
+        virtual void setRide(RideItem*) override {}
+
+        // Need to modify the behaviour
+        virtual void selectionChanged() override;
+
+        ChartSettings* chartsettings;
+
+    public slots:
+
+        bool isBlank() override;
+        void addChart(GcWinID id) override;
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+
+    private:
 };
 
 #endif // _GC_Views_h

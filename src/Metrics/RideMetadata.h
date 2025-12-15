@@ -71,6 +71,9 @@ class FieldDefinition
         QStringList values; // autocomplete 'defaults'
         QString expression; // expression to evaluate, if true field is available
 
+        // check the metadata value is one of the field's autocomplete 'defaults' values
+        static bool isCompleterValue(const QString& fieldName, const QString& fieldValue);
+
         bool isTextField() const { return type == GcFieldType::FIELD_TEXT || type == GcFieldType::FIELD_TEXTBOX || type == GcFieldType::FIELD_SHORTTEXT; }
         bool isNumericField() const { return !isTextField() && type != GcFieldType::NO_FIELD_SET; }
 

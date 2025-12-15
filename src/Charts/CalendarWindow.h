@@ -48,6 +48,7 @@ class CalendarWindow : public GcChartWindow
     Q_PROPERTY(QString primaryMainField READ getPrimaryMainField WRITE setPrimaryMainField USER true)
     Q_PROPERTY(QString primaryFallbackField READ getPrimaryFallbackField WRITE setPrimaryFallbackField USER true)
     Q_PROPERTY(QString secondaryMetric READ getSecondaryMetric WRITE setSecondaryMetric USER true)
+    Q_PROPERTY(bool showSecondaryLabel READ isShowSecondaryLabel WRITE setShowSecondaryLabel USER true)
     Q_PROPERTY(QString tertiaryField READ getTertiaryField WRITE setTertiaryField USER true)
     Q_PROPERTY(QString summaryMetrics READ getSummaryMetrics WRITE setSummaryMetrics USER true)
 
@@ -67,6 +68,7 @@ class CalendarWindow : public GcChartWindow
         QString getPrimaryMainField() const;
         QString getPrimaryFallbackField() const;
         QString getSecondaryMetric() const;
+        bool isShowSecondaryLabel() const;
         QString getTertiaryField() const;
         QString getSummaryMetrics() const;
         QStringList getSummaryMetricsList() const;
@@ -82,6 +84,7 @@ class CalendarWindow : public GcChartWindow
         void setPrimaryMainField(const QString &name);
         void setPrimaryFallbackField(const QString &name);
         void setSecondaryMetric(const QString &name);
+        void setShowSecondaryLabel(bool showSecondaryLabel);
         void setTertiaryField(const QString &name);
         void setSummaryMetrics(const QString &summaryMetrics);
         void setSummaryMetrics(const QStringList &summaryMetrics);
@@ -106,6 +109,7 @@ class CalendarWindow : public GcChartWindow
         QComboBox *primaryMainCombo;
         QComboBox *primaryFallbackCombo;
         QComboBox *secondaryCombo;
+        QCheckBox *showSecondaryLabelCheck;
         QComboBox *tertiaryCombo;
         MultiMetricSelector *multiMetricSelector;
         Calendar *calendar = nullptr;
@@ -123,6 +127,12 @@ class CalendarWindow : public GcChartWindow
         void updateActivitiesIfInRange(RideItem *rideItem);
         void updateSeason(Season const *season, bool allowKeepMonth = false);
         bool movePlannedActivity(RideItem *rideItem, const QDate &destDay, const QTime &destTime = QTime());
+        void addEvent(const QDate &date);
+        void editEvent(const CalendarEntry &entry);
+        void delEvent(const CalendarEntry &entry);
+        void addPhase(const QDate &date);
+        void editPhase(const CalendarEntry &entry);
+        void delPhase(const CalendarEntry &entry);
 };
 
 #endif
