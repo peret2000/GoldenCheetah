@@ -232,6 +232,9 @@ class TrainSidebar : public GcWindow
         // watch keyboard events.
         bool eventFilter(QObject *object, QEvent *e);
 
+        // helper to tag Stop() with a reason before invoking it
+        void stopWithReason(const QString &reason, int status = 0);
+
         GcSplitter   *trainSplitter;
         GcSplitterItem *deviceItem,
                        *workoutItem,
@@ -288,6 +291,7 @@ class TrainSidebar : public GcWindow
         int pwrcount, cadcount, hrcount, spdcount, lodcount, grdcount; // for NZ average calc
         int status;
         int displaymode;
+        QString stopReasonHint; // last known reason before Stop() is invoked
 
         QString codeWorkoutKey;     // traindb-key of the workout in the case of a code-workout; empty otherwise
         QString codeWorkoutTitle;   // title of the workout in the case of a code-workout; empty otherwise
