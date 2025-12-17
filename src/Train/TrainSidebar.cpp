@@ -2099,7 +2099,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
 
                 }
 
-                if (ergFile->hasGradient()) {
+                if (ergFile && ergFile->hasGradient()) {
                     // Average slope in 10 seconds (taking into account current speed)
 
                     int lap;
