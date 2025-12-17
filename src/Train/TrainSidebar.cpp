@@ -3011,7 +3011,8 @@ void TrainSidebar::Higher()
 
     if (context->currentErgFile()) {
         // adjust the workout IF
-        adjustIntensity(lastAppliedIntensity+5);
+        // In case of power based ERG file, increase by 1%
+        adjustIntensity(lastAppliedIntensity+(status&RT_MODE_ERGO ? 1 : 5));
 
     } else {
         if (status&RT_MODE_ERGO) load += 5;
@@ -3036,7 +3037,8 @@ void TrainSidebar::Lower()
 
     if (context->currentErgFile()) {
         // adjust the workout IF
-        adjustIntensity(std::max<int>(5, lastAppliedIntensity - 5));
+	int change = (status&RT_MODE_ERGO ? 1 : 5);
+        adjustIntensity(std::max<int>(change, lastAppliedIntensity - change));
 
     } else {
 
