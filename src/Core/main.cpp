@@ -53,6 +53,9 @@
 #endif
 
 #include <QStandardPaths>
+#include <QRegularExpression>
+#include <QDir>
+#include <QFileInfo>
 
 #include <gsl/gsl_errno.h>
 
@@ -150,6 +153,7 @@ void sigabort(int x)
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
 
 #ifdef WIN32
 #include <windows.h>
@@ -158,18 +162,118 @@ void sigabort(int x)
 #include <unistd.h>
 #endif
 
+// Default maximum total size for all log files: 50 MB
+#define GC_LOG_MAX_TOTAL_SIZE_MB 50
+
+//
+// Rotate log files and manage total size limit
+// Renames existing numbered log files (e.g., goldencheetah.1.log -> goldencheetah.2.log)
+// and removes old files if total size exceeds the limit
+//
+void rotateLogFiles(const QString &baseFilePath)
+{
+    QFileInfo fileInfo(baseFilePath);
+    QString dir = fileInfo.absolutePath();
+    QString baseName = fileInfo.completeBaseName(); // e.g., "goldencheetah"
+    QString extension = fileInfo.suffix(); // e.g., "log"
+    
+    // Find all existing numbered log files
+    QDir logDir(dir);
+    QStringList filters;
+    filters << QString("%1.*.%2").arg(baseName).arg(extension);
+    QFileInfoList logFiles = logDir.entryInfoList(filters, QDir::Files, QDir::Name);
+    
+    // Build a list of numbered log files sorted by number (descending)
+    QMap<int, QString> numberedLogs;
+    QRegularExpression re(QString("%1\\.(\\d+)\\.%2").arg(QRegularExpression::escape(baseName)).arg(extension));
+    
+    for (const QFileInfo &info : logFiles) {
+        QRegularExpressionMatch match = re.match(info.fileName());
+        if (match.hasMatch()) {
+            int number = match.captured(1).toInt();
+            numberedLogs[number] = info.absoluteFilePath();
+        }
+    }
+    
+    // Rotate existing files (rename in reverse order to avoid conflicts)
+    QList<int> numbers = numberedLogs.keys();
+    std::sort(numbers.begin(), numbers.end(), std::greater<int>());
+    
+    for (int num : numbers) {
+        QString oldPath = numberedLogs[num];
+        QString newPath = QString("%1/%2.%3.%4").arg(dir).arg(baseName).arg(num + 1).arg(extension);
+        QFile::rename(oldPath, newPath);
+    }
+    
+    // Calculate total size of all log files after rotation
+    qint64 totalSize = 0;
+    QStringList allFilters;
+    allFilters << QString("%1.*.%2").arg(baseName).arg(extension);
+    QFileInfoList allLogFiles = logDir.entryInfoList(allFilters, QDir::Files, QDir::Name);
+    
+    // Build sorted list by number (descending, so oldest files are processed first)
+    QMap<int, QFileInfo> sortedLogs;
+    for (const QFileInfo &info : allLogFiles) {
+        QRegularExpressionMatch match = re.match(info.fileName());
+        if (match.hasMatch()) {
+            int number = match.captured(1).toInt();
+            sortedLogs[number] = info;
+        }
+    }
+    
+    // Calculate total size and remove old files if needed
+    qint64 maxTotalSize = GC_LOG_MAX_TOTAL_SIZE_MB * 1024 * 1024;
+    QList<int> logNumbers = sortedLogs.keys();
+    std::sort(logNumbers.begin(), logNumbers.end(), std::greater<int>());
+    
+    for (int num : logNumbers) {
+        QFileInfo info = sortedLogs[num];
+        qint64 fileSize = info.size();
+        
+        // If this single file is larger than the limit, keep it anyway (don't truncate)
+        if (fileSize >= maxTotalSize && totalSize == 0) {
+            qDebug() << "GoldenCheetah: keeping large log file" << info.fileName() 
+                     << "(" << (fileSize / (1024.0 * 1024.0)) << "MB) even though it exceeds size limit";
+            totalSize += fileSize;
+            continue;
+        }
+        
+        // If adding this file would exceed the limit, remove it and all older files
+        if (totalSize + fileSize > maxTotalSize) {
+            qDebug() << "GoldenCheetah: removing old log file" << info.fileName() 
+                     << "to stay within size limit";
+            QFile::remove(info.absoluteFilePath());
+        } else {
+            totalSize += fileSize;
+        }
+    }
+    
+    qDebug() << "GoldenCheetah: total log files size after rotation:" 
+             << (totalSize / (1024.0 * 1024.0)) << "MB";
+}
+
 void nostderr(QString file)
 {
     int fd;
     int fd_stderr = 2;
     FILE *fp;
+    
+    // Rotate existing log files before creating new one
+    rotateLogFiles(file);
+    
+    // Convert the base filename to a numbered format (e.g., goldencheetah.log -> goldencheetah.1.log)
+    QFileInfo fileInfo(file);
+    QString numberedFile = QString("%1/%2.1.%3")
+        .arg(fileInfo.absolutePath())
+        .arg(fileInfo.completeBaseName())
+        .arg(fileInfo.suffix());
 
     // On Windows, stderr is not connected to fd_stderr = 2
     // freopen seems the only function available to redirect stderr
-    qDebug() << "GoldenCheetah: redirecting log messages (stderr) to file " << file;
-    fp = freopen(file.toLocal8Bit(), "w", stderr);
+    qDebug() << "GoldenCheetah: redirecting log messages (stderr) to file " << numberedFile;
+    fp = freopen(numberedFile.toLocal8Bit(), "w", stderr);
     if (fp == NULL) {
-        qDebug() << "GoldenCheetah: cannot redirect stderr, unable to open file " << file;
+        qDebug() << "GoldenCheetah: cannot redirect stderr, unable to open file " << numberedFile;
         return;
     }
 
