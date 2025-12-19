@@ -393,6 +393,8 @@ main(int argc, char *argv[])
             fprintf(stderr, "--debug             to direct diagnostic messages to the terminal instead of goldencheetah.log\n");
 #endif
             fprintf(stderr, "--debug-file file   to direct diagnostic messages to file\n");
+            fprintf(stderr, "                    Log files are rotated per session (goldencheetah.1.log, goldencheetah.2.log, etc.)\n");
+            fprintf(stderr, "                    with a total size limit of 50 MB. Oldest files are removed when limit is exceeded.\n");
             fprintf(stderr, "--debug-rules \"rules\" to specify which diagnostic messages to output, using the same syntax as QT_LOGGING_RULES\n");
             fprintf(stderr, "--debug-format \"format\" to specify the format of diagnostic messages, using the same syntax as QT_MESSAGE_PATTERN\n");
 
