@@ -53,6 +53,9 @@
 #endif
 
 #include <QStandardPaths>
+#include <QRegularExpression>
+#include <QDir>
+#include <QFileInfo>
 
 #include <gsl/gsl_errno.h>
 
@@ -155,6 +158,7 @@ void sigabort(int x)
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
 
 #ifdef WIN32
 #include <windows.h>
@@ -163,18 +167,122 @@ void sigabort(int x)
 #include <unistd.h>
 #endif
 
+// Default maximum total size for all log files: 50 MB
+#define GC_LOG_MAX_TOTAL_SIZE_MB 50
+
+//
+// Helper function to find numbered log files matching the pattern
+// Returns a map of log numbers to their file info
+//
+static QMap<int, QFileInfo> findNumberedLogFiles(const QString &dir, const QString &baseName, const QString &extension)
+{
+    QMap<int, QFileInfo> result;
+    QDir logDir(dir);
+    QStringList filters;
+    filters << QString("%1.*.%2").arg(baseName).arg(extension);
+    QFileInfoList logFiles = logDir.entryInfoList(filters, QDir::Files, QDir::Name);
+    
+    // Build regex to match numbered log files - escape both baseName and extension
+    QRegularExpression re(QString("%1\\.(\\d+)\\.%2")
+                          .arg(QRegularExpression::escape(baseName))
+                          .arg(QRegularExpression::escape(extension)));
+    
+    for (const QFileInfo &info : logFiles) {
+        QRegularExpressionMatch match = re.match(info.fileName());
+        if (match.hasMatch()) {
+            int number = match.captured(1).toInt();
+            result[number] = info;
+        }
+    }
+    
+    return result;
+}
+
+//
+// Rotate log files and manage total size limit
+// Renames existing numbered log files (e.g., goldencheetah.1.log -> goldencheetah.2.log)
+// and removes old files if total size exceeds the limit
+//
+void rotateLogFiles(const QString &baseFilePath)
+{
+    const qint64 MB_TO_BYTES = 1024 * 1024;
+    
+    QFileInfo fileInfo(baseFilePath);
+    QString dir = fileInfo.absolutePath();
+    QString baseName = fileInfo.completeBaseName(); // e.g., "goldencheetah"
+    QString extension = fileInfo.suffix(); // e.g., "log"
+    
+    // Find all existing numbered log files
+    QMap<int, QFileInfo> numberedLogs = findNumberedLogFiles(dir, baseName, extension);
+    
+    // Rotate existing files (rename in reverse order to avoid conflicts)
+    QList<int> numbers = numberedLogs.keys();
+    std::sort(numbers.begin(), numbers.end(), std::greater<int>());
+    
+    for (int num : numbers) {
+        QString oldPath = numberedLogs[num].absoluteFilePath();
+        QString newPath = QString("%1/%2.%3.%4").arg(dir).arg(baseName).arg(num + 1).arg(extension);
+        QFile::rename(oldPath, newPath);
+    }
+    
+    // Re-scan log files after rotation to get updated list
+    QMap<int, QFileInfo> sortedLogs = findNumberedLogFiles(dir, baseName, extension);
+    
+    // Calculate total size and remove old files if needed
+    qint64 maxTotalSize = GC_LOG_MAX_TOTAL_SIZE_MB * MB_TO_BYTES;
+    qint64 totalSize = 0;
+    QList<int> logNumbers = sortedLogs.keys();
+    std::sort(logNumbers.begin(), logNumbers.end(), std::greater<int>());
+    
+    for (int num : logNumbers) {
+        QFileInfo info = sortedLogs[num];
+        qint64 fileSize = info.size();
+        
+        // If this single file is larger than the limit, keep it anyway (don't truncate)
+        // This handles the case where individual log files exceed the total size limit
+        if (fileSize >= maxTotalSize) {
+            qDebug() << "GoldenCheetah: keeping large log file" << info.fileName() 
+                     << "(" << (fileSize / (double)MB_TO_BYTES) << "MB) even though it exceeds size limit";
+            totalSize += fileSize;
+            continue;
+        }
+        
+        // If adding this file would exceed the limit, remove it and all older files
+        if (totalSize + fileSize > maxTotalSize) {
+            qDebug() << "GoldenCheetah: removing old log file" << info.fileName() 
+                     << "to stay within size limit";
+            QFile::remove(info.absoluteFilePath());
+        } else {
+            totalSize += fileSize;
+        }
+    }
+    
+    qDebug() << "GoldenCheetah: total log files size after rotation:" 
+             << (totalSize / (double)MB_TO_BYTES) << "MB";
+}
+
 void nostderr(QString file)
 {
     int fd;
     int fd_stderr = 2;
     FILE *fp;
+    
+    // Rotate existing log files before creating new one
+    rotateLogFiles(file);
+    
+    // Convert the base filename to a numbered format (e.g., goldencheetah.log -> goldencheetah.1.log)
+    QFileInfo fileInfo(file);
+    QString numberedFile = QString("%1/%2.1.%3")
+        .arg(fileInfo.absolutePath())
+        .arg(fileInfo.completeBaseName())
+        .arg(fileInfo.suffix());
 
     // On Windows, stderr is not connected to fd_stderr = 2
     // freopen seems the only function available to redirect stderr
-    qDebug() << "GoldenCheetah: redirecting log messages (stderr) to file " << file;
-    fp = freopen(file.toLocal8Bit(), "w", stderr);
+    qDebug() << "GoldenCheetah: redirecting log messages (stderr) to file " << numberedFile;
+    fp = freopen(numberedFile.toLocal8Bit(), "w", stderr);
     if (fp == NULL) {
-        qDebug() << "GoldenCheetah: cannot redirect stderr, unable to open file " << file;
+        qDebug() << "GoldenCheetah: cannot redirect stderr, unable to open file " << numberedFile;
         return;
     }
 
@@ -291,6 +399,8 @@ main(int argc, char *argv[])
             fprintf(stderr, "--debug             to direct diagnostic messages to the terminal instead of goldencheetah.log\n");
 #endif
             fprintf(stderr, "--debug-file file   to direct diagnostic messages to file\n");
+            fprintf(stderr, "                    Log files are rotated per session (goldencheetah.1.log, goldencheetah.2.log, etc.)\n");
+            fprintf(stderr, "                    with a total size limit of 50 MB. Oldest files are removed when limit is exceeded.\n");
             fprintf(stderr, "--debug-rules \"rules\" to specify which diagnostic messages to output, using the same syntax as QT_LOGGING_RULES\n");
             fprintf(stderr, "--debug-format \"format\" to specify the format of diagnostic messages, using the same syntax as QT_MESSAGE_PATTERN\n");
 
