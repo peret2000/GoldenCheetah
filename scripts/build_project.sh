@@ -114,6 +114,7 @@ if $FROMSCRATCH; then
 	git checkout -- src/Resources/linux/MakeAppImageQt6.sh
 	git checkout -- scripts/script.sh
 	git checkout -- appveyor/linux/before_build.sh
+	git checkout -- src/Gui/GcCrashDialog.cpp
 
 	git checkout $BUILDBRANCH
 
@@ -128,6 +129,8 @@ git fetch --all
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
 COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
+# Actualizamos $BUILDBRANCH, si no lo estuviera, para la próxima vez
+git fetch origin $BUILDBRANCH:$BUILDBRANCH
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
 	echo "FAILED. $BUILDBRANCH NOT in last version." | tee -a $LOGFILE
 	salida $ERR
