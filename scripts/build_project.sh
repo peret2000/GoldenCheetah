@@ -140,7 +140,7 @@ if ! git checkout -B NightlyBuild; then
 	salida $ERR
 fi
 
-git merge $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
+git merge --no-edit $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 
 if $MERGECODE; then
 
