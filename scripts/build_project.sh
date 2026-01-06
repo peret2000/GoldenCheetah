@@ -129,10 +129,9 @@ git fetch --all
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
 COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
-# Actualizamos $BUILDBRANCH, si no lo estuviera, para la próxima vez
-git fetch origin $BUILDBRANCH:$BUILDBRANCH
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
-	echo "FAILED. $BUILDBRANCH NOT in last version." | tee -a $LOGFILE
+	echo "FAILED. $BUILDBRANCH NOT in last version. It is being updated for the next time" | tee -a $LOGFILE
+	nohup bash -c "sleep 5 && git fetch origin $BUILDBRANCH:$BUILDBRANCH" > /dev/null 2>&1 &
 	salida $ERR
 fi
 
