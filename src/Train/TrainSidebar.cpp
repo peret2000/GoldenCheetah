@@ -1693,6 +1693,9 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
 
     stopping = false;
 
+    // Disconnect devices, to avoid remote control sending commands after stopping
+    Disconnect();
+
     return;
 }
 
