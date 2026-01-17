@@ -2328,7 +2328,6 @@ void TrainSidebar::resetLapTimer()
     pwrcount  = 0;
     cadcount  = 0;
     hrcount   = 0;
-    spdcount  = 0;
     this->resetTextAudioEmitTracking();
     this->maintainLapDistanceState();
 }
