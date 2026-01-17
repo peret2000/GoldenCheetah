@@ -2306,6 +2306,9 @@ void TrainSidebar::resetLapTimer()
     lap_time.restart();
     lap_elapsed_msec = 0;
     displayLapDistance = 0;
+    pwrcount  = 0;
+    cadcount  = 0;
+    hrcount   = 0;
     this->resetTextAudioEmitTracking();
     this->maintainLapDistanceState();
 }
