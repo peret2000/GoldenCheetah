@@ -93,18 +93,6 @@ sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
 
-######## Cambios en scripts/script.sh
-
-# El make usa tantos procesos como procesadores físicos, salvo que se especifique
-# otra cosa con $NUMMAKETHREADS
-CPU_THREADS=$(lscpu -p | grep -v '^#' | sort -u -t, -k 2,4 | wc -l)
-if [[ -n "$NUMMAKETHREADS" && "$NUMMAKETHREADS" -gt 0 ]]; then
-    THREADS_VAL=$NUMMAKETHREADS
-else
-    THREADS_VAL=$CPU_THREADS
-fi
-sed -i "s/-j4/-j${THREADS_VAL}/" ./scripts/script.sh
-
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
 sed -i '
