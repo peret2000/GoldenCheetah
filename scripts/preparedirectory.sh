@@ -57,11 +57,14 @@ sed -i "s/__GC_TRAINERDAY_API_KEY__/"$GC_TRAINERDAY_API_KEY"/" src/Core/Secrets.
 
 
 # Directory where python3 is installed
-PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
-PYTHONVERS=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I$PYTHONDIR/include/python$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
-sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L$PYTHONDIR/lib -lpython$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
+# This is no longer necessary, as with adaptations for recent versions of SIP, $PYTHONINCLUDES and $PYTHONLIBS are filled in with data
+# given by python3-config (in src/gcconfig.pri.in)
+#PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
+#PYTHONVERS=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+#sed -i "s|.*PYTHONINCLUDES.*$|echo PYTHONINCLUDES = -I$PYTHONDIR/include/python$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
+#sed -i "s|.*PYTHONLIBS.*$|echo PYTHONLIBS = -L$PYTHONDIR/lib -lpython$PYTHONVERS >> src/gcconfig.pri|" appveyor/linux/before_build.sh
 appveyor/linux/before_build.sh || { ERR=$?; exit $ERR; }
+lupdate src/src.pro
 
 # In case the binary remains from previous compilations, it is removed
 rm -f src/GoldenCheetah
@@ -92,8 +95,15 @@ sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
 
 ######## Cambios en scripts/script.sh
 
-# El make usa tantos procesos como procesadores físicos
-sed -i "s/-j4/-j$(lscpu -p | egrep -v '^#' | sort -u -t, -k 2,4 | wc -l)/" ./scripts/script.sh
+# El make usa tantos procesos como procesadores físicos, salvo que se especifique
+# otra cosa con $NUMMAKETHREADS
+CPU_THREADS=$(lscpu -p | grep -v '^#' | sort -u -t, -k 2,4 | wc -l)
+if [[ -n "$NUMMAKETHREADS" && "$NUMMAKETHREADS" -gt 0 ]]; then
+    THREADS_VAL=$NUMMAKETHREADS
+else
+    THREADS_VAL=$CPU_THREADS
+fi
+sed -i "s/-j4/-j${THREADS_VAL}/" ./scripts/script.sh
 
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
