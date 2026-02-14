@@ -143,6 +143,7 @@ fi
 git merge --no-edit $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 
 if $MERGECODE; then
+	merge goldencheetah/master
 
 	merge origin/TrainButtons
 	merge origin/MyZEW
@@ -155,8 +156,6 @@ if $MERGECODE; then
 	merge origin/train_view_improvements
 	merge origin/activities_view_improvements
 	merge origin/train_geolocation_widget
-
-	merge goldencheetah/master
 
 	#### Merge temporal: Equipment management feature tiled
 	### Se deja de hacer merge con paulj49457/origin-equipment-management-feature
