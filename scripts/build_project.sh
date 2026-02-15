@@ -158,13 +158,10 @@ if $MERGECODE; then
 	merge origin/train_geolocation_widget
 
 	#### Merge temporal: Equipment management feature tiled
-	### Se deja de hacer merge con paulj49457/origin-equipment-management-feature
-	### La rama ha sido borrada para hacer otro diseño
-	###git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
-	###git fetch paulj49457
-        ###merge paulj49457/origin-equipment-management-feature
+	git remote add paulj49457 https://github.com/paulj49457/GoldenCheetah.git > /dev/null 2>&1
+	git fetch paulj49457
+        merge paulj49457/shared-xml-equipment-management-feature
 
-	merge origin/tmp-equipment-management-feature
 
 fi	# if $MERGECODE; then
 
