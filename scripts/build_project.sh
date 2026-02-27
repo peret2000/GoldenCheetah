@@ -82,9 +82,21 @@ done
 
 # $2 es opcional. Para hacer merge en una rama que no es la actual
 merge() {
-git merge --no-edit $1 $2 > /dev/null 2>&1 || {
-        ERR=$? ; echo "ERROR $ERR: merge $1 FAILED" | tee -a $LOGFILE ; salida $ERR
-        } && echo "merge $1 OK" | tee -a $LOGFILE
+if [[ -n "$2" ]]; then
+	git merge --no-edit "$1" "$2" > /dev/null 2>&1
+else
+	git merge --no-edit "$1" > /dev/null 2>&1
+fi
+ERR=$?
+
+if [[ $ERR -eq 0 ]]; then
+	echo "merge $1 OK" | tee -a $LOGFILE
+	MERGE_OK+=("$1")
+else
+	echo "ERROR $ERR: merge $1 FAILED. Skipping this branch and continuing." | tee -a $LOGFILE
+	git merge --abort > /dev/null 2>&1
+	MERGE_FAILED+=("$1")
+fi
 }
 
 echo ------------------------- | tee $LOGFILE $BUILDLOG
@@ -143,6 +155,9 @@ fi
 git merge --no-edit $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
 
 if $MERGECODE; then
+	MERGE_OK=()
+	MERGE_FAILED=()
+
 	merge goldencheetah/master
 
 	merge origin/TrainButtons
@@ -162,6 +177,22 @@ if $MERGECODE; then
 	git fetch paulj49457
         merge paulj49457/shared-xml-equipment-management-feature
 
+	echo "----- Merge summary -----" | tee -a $LOGFILE
+	echo "Merged branches: ${#MERGE_OK[@]}" | tee -a $LOGFILE
+	if [[ ${#MERGE_OK[@]} -gt 0 ]]; then
+		for branch in "${MERGE_OK[@]}"; do
+			echo "  OK: ${branch}" | tee -a $LOGFILE
+		done
+	fi
+
+	echo "Skipped branches: ${#MERGE_FAILED[@]}" | tee -a $LOGFILE
+	if [[ ${#MERGE_FAILED[@]} -gt 0 ]]; then
+		for branch in "${MERGE_FAILED[@]}"; do
+			echo "  FAILED: ${branch}" | tee -a $LOGFILE
+		done
+	fi
+
+	echo "-------------------------" | tee -a $LOGFILE
 
 fi	# if $MERGECODE; then
 
