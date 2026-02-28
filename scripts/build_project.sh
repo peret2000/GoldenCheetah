@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Parameters: [--appimage] [--updatecode] [--fromscratch] [--help|-h]
+# Parameters: [--appimage] [--updatecode] [--fromscratch] [--no-build] [--help|-h]
 
 # Check whether .bashrc has been loaded (for example, cron does not load it)
 if [[ -z "${ENV_LOADED}" ]]; then
@@ -26,6 +26,7 @@ export BUILDLOG=$SCRIPT_DIR/buildlog.txt
 APPIMAGE=false
 FROMSCRATCH=false
 MERGECODE=false	# Si es from scratch, se ignora
+NOBUILD=false
 DELIV_MODE=Release
 
 # Script command line help
@@ -40,6 +41,7 @@ mostrar_ayuda() {
     echo "  --appimage      Creates the appimage file"
     echo "  --fromscratch   Builds from scratch"
     echo "  --updatecode    If not from scratch, this option updates source from repository"
+    echo "  --no-build      Stops before build/deploy steps (ignores --appimage)"
     echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
     echo "  --help, -h      Shows this help message"
     echo ""
@@ -67,6 +69,10 @@ while [[ $# -gt 0 ]]; do
             ;;
 		--debug)
 			DELIV_MODE=Debug
+			shift
+			;;
+		--no-build)
+			NOBUILD=true
 			shift
 			;;
         --help|-h)
@@ -191,8 +197,6 @@ if $FROMSCRATCH; then
 	$SCRIPT_DIR/preparedirectory.sh $DELIV_MODE > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
 fi	# if $FROMSCRATCH; then
 
-echo Build: `date` | tee -a $LOGFILE
-
 # Modifica el código para poner la versión que se genera
 gcdialogfile=src/Gui/GcCrashDialog.cpp
 commit=$(git merge-base HEAD goldencheetah/master 2>/dev/null | cut -c -9)
@@ -204,6 +208,13 @@ else
 	sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\${desired_line}" ${gcdialogfile}
 	echo "GC_VERSION updated to: ${commit}" | tee -a $LOGFILE
 fi
+
+if $NOBUILD; then
+	echo "--no-build enabled: skipping build/deploy steps" | tee -a $LOGFILE
+	salida 0
+fi
+
+echo Build: `date` | tee -a $LOGFILE
 
 ./scripts/script.sh >> $BUILDLOG 2>&1 && { echo "Compile OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: Compile FAILED" | tee -a $LOGFILE; salida $ERR; }
 
