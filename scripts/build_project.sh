@@ -9,7 +9,9 @@ fi
 
 salida() {
 	[[ -n "$1" && "$1" != "0" ]] && echo ">>>EJECUCIÓN FALLIDA: $1" | tee -a $LOGFILE
-	$SCRIPT_DIR/pushover_end_compile.sh "$TEXT $HOSTNAME" $LOGFILE > /dev/null 2>&1
+	if $NOTIFEND; then
+		$SCRIPT_DIR/pushover_end_compile.sh "$TEXT $HOSTNAME" $LOGFILE > /dev/null 2>&1
+	fi
 	echo Termina: `date` | tee -a $LOGFILE
 	cat $LOGFILE >> $CUMLOGFILE
 	rm $LOGFILE
@@ -28,6 +30,7 @@ FROMSCRATCH=false
 MERGECODE=false	# Si es from scratch, se ignora
 NOBUILD=false
 DELIV_MODE=Release
+NOTIFEND=false
 
 # Script command line help
 mostrar_ayuda() {
@@ -42,6 +45,7 @@ mostrar_ayuda() {
     echo "  --fromscratch   Builds from scratch"
     echo "  --updatecode    If not from scratch, this option updates source from repository"
     echo "  --no-build      Stops before build/deploy steps (ignores --appimage)"
+	echo "  --notify-end    Sends a notification when the process ends (success or failure)"
     echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
     echo "  --help, -h      Shows this help message"
     echo ""
@@ -73,6 +77,10 @@ while [[ $# -gt 0 ]]; do
 			;;
 		--no-build)
 			NOBUILD=true
+			shift
+			;;
+		--notify-end)
+			NOTIFEND=true
 			shift
 			;;
         --help|-h)
