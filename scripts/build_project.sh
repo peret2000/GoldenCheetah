@@ -155,10 +155,15 @@ git fetch --all
 COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
 COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
 if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
-	CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-	echo "FAILED. $BUILDBRANCH NOT in last version. It is being updated for the next time" | tee -a $LOGFILE
-	nohup bash -c "sleep 5 && git fetch origin '${BUILDBRANCH}:${BUILDBRANCH}' && git checkout '${CURRENT_BRANCH}' && git merge --no-edit '${BUILDBRANCH}'" > /dev/null 2>&1 &
-	salida 1
+        echo "FAILED. $BUILDBRANCH NOT in last version. It is being updated for the next time" | tee -a $LOGFILE
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$CURRENT_BRANCH" = "$BUILDBRANCH" ]; then
+                UPDATE_CMD="sleep 5 && git pull origin '${BUILDBRANCH}' --no-edit"
+        else
+                UPDATE_CMD="sleep 5 && git fetch origin '${BUILDBRANCH}:${BUILDBRANCH}' && git checkout '${CURRENT_BRANCH}' && git merge --no-edit '${BUILDBRANCH}'"
+        fi
+        nohup bash -c "$UPDATE_CMD" > /dev/null 2>&1 &
+        salida 1
 fi
 
 if ! git checkout -B NightlyBuild; then
