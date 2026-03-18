@@ -1443,7 +1443,7 @@ MainWindow::resetPerspective(int view, bool force)
     static int lastview=-1;
 
     if (!force && lastview == view && lastathlete == currentAthleteTab) return;
-    if (lastView == 3 && view != 3)
+    if (lastview == 3 && view != 3)
         Utils::allowSleep();
 
     // remember who last updated it.
