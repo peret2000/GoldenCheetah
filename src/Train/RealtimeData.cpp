@@ -43,8 +43,7 @@ RealtimeData::RealtimeData()
     heatStrain = 0.0;
     latitude = longitude = altitude = 0.0;
     rf = rmv = vo2 = vco2 = tv = feo2 = 0.0;
-    routeDistance = distanceRemaining = deltaSlope = 0.0;
-    elevationGain = 0.0;
+    elevationGain = 0.0; deltaSlope = 0.0; calories = 0.0;
     routeDistance = distanceRemaining = 0.0;
     joules = 0;
     trainerStatusAvailable = false;
@@ -171,6 +170,11 @@ void RealtimeData::setDeltaSlope(double x)
 void RealtimeData::setElevationGain(double x)
 {
     this->elevationGain = x;
+}
+
+void RealtimeData::setCalories(double x)
+{
+    this->calories = x;
 }
 
 void RealtimeData::setLapDistance(double x)
@@ -314,6 +318,10 @@ double RealtimeData::getDeltaSlope() const
 double RealtimeData::getElevationGain() const
 {
     return elevationGain;
+}
+double RealtimeData::getCalories() const
+{
+    return calories;
 }
 long RealtimeData::getJoules() const
 {
@@ -498,6 +506,9 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case ElevationGain: return elevationGain;
+        break;
+
+    case Calories: return calories;
         break;
 
     case LapDistance: return lapDistance;
@@ -713,6 +724,7 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << DeltaSlope;
         seriesList << ElevationGain;
         seriesList << Gear;
+        seriesList << Calories;
     }
     return seriesList;
 }
@@ -783,6 +795,9 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
 
     case ElevationGain: return tr("Elevation Gain");
+        break;
+
+    case Calories: return tr("Calories");
         break;
 
     case AltWatts: return tr("Alternate Power");

@@ -51,7 +51,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining, Bearing, DeltaSlope, ElevationGain, Gear,
+                      DistanceRemaining, Bearing, DeltaSlope, ElevationGain, Gear, Calories,
                       RightPowerPhaseBegin, RightPowerPhaseEnd,
                       RightPowerPhasePeakBegin, RightPowerPhasePeakEnd,
                       Position, RightPCO, LeftPCO,
@@ -97,6 +97,7 @@ public:
     void setDistanceRemaining(double);
     void setDeltaSlope(double);
     void setElevationGain(double);
+    void setCalories(double);
     void setBikeScore(long);
     void setXPower(long);
     void setLap(long);
@@ -179,6 +180,7 @@ public:
     double getDistanceRemaining() const;
     double getDeltaSlope() const;
     double getElevationGain() const;
+    double getCalories() const;
     long getJoules() const;
     long getLap() const;
     double getLapDistance() const;
@@ -251,6 +253,7 @@ private:
     double distanceRemaining;
     double deltaSlope;
     double elevationGain;
+    double calories;
     double lapDistance;
     double lapDistanceRemaining;
     double avgWatts;
