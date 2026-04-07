@@ -396,6 +396,7 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     displayWorkoutLap = 0;
     load_msecs = total_msecs = lap_msecs = 0;
     displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    cum_hr = 0.0;
     wheelsize = 0.0;
     displayWorkoutDistance = displayDistance = displayPower = displayHeartRate =
     displaySpeed = displayCadence = slope = load = 0;
@@ -409,6 +410,22 @@ TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(contex
     displayRppb = displayRppe = displayRpppb = displayRpppe = 0.0;
     displayLppb = displayLppe = displayLpppb = displayLpppe = 0.0;
     displayCoreTemp = displaySkinTemp = displayHeatStrain = 0.0;
+
+    // Data needed by 'Calories'
+    QDate today = QDate::currentDate();
+    bool male = appsettings->cvalue(context->athlete->cyclist, GC_SEX).toInt() == 0;
+    double athlete_age = today.year() - appsettings->cvalue(context->athlete->cyclist, GC_DOB).toDate().year();
+    double athlete_weight = context->athlete->getWeight(today);
+    //Calories = (calories_constant + calories_avghr_multiplier * average_hr) / 4.184 * duration_minutes;
+    if (male) {
+        calories_avghr_multiplier = 0.6309;
+        calories_constant = -55.0969 + 0.1988 * athlete_weight + 0.2017 * athlete_age;
+    } else {
+        calories_avghr_multiplier = 0.4472;
+        calories_constant = -20.4022 + 0.1263 * athlete_weight + 0.074 * athlete_age;
+    }
+
+
 
     connect(gui_timer, SIGNAL(timeout()), this, SLOT(guiUpdate()));
     connect(disk_timer, SIGNAL(timeout()), this, SLOT(diskUpdate()));
@@ -1676,6 +1693,7 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     displayElevationGain = 0;
     first_sample = true;
     displayJoules = displayAvgWatts = displayAvgSpeed = 0.0;
+    cum_hr = 0.0;
     wheelsize = 0.0;
     displayLapDistance = 0;
     displayLapDistanceRemaining = -1;
@@ -2132,6 +2150,11 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 rtData.setMsecs(total_msecs);
                 rtData.setLapMsecs(lap_msecs);
 
+                cum_hr += rtData.getHr();
+                hrcount++;
+
+                rtData.setCalories((calories_constant + calories_avghr_multiplier * cum_hr / hrcount) / 4.184 * rtData.getMsecs() / 60000.0);
+
                 long lapTimeRemaining;
                 if (ergFile) lapTimeRemaining = ergFile->nextLap(load_msecs) - load_msecs;
                 else lapTimeRemaining = 0;
@@ -2308,7 +2331,6 @@ void TrainSidebar::resetLapTimer()
     displayLapDistance = 0;
     pwrcount  = 0;
     cadcount  = 0;
-    hrcount   = 0;
     this->resetTextAudioEmitTracking();
     this->maintainLapDistanceState();
 }

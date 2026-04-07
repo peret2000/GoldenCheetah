@@ -262,6 +262,7 @@ class TrainSidebar : public GcWindow
         // update() - from a push device (quarqd ANT+)
         // Device->getRealtimeData() - from a pull device (Computrainer)
         double displayPower, displayHeartRate, displayCadence, displaySpeed, displayAvgSpeed;
+        double cum_hr; // for average HR calculation
         double displayJoules;
         double displayAvgWatts;
         double wheelsize;
@@ -286,6 +287,10 @@ class TrainSidebar : public GcWindow
         double displayLppb, displayLppe, displayLpppb, displayLpppe;
         RealtimeData::riderPosition displayPosition; // rider position (seated = 0, transistionToSeated = 1, standing = 2, transitionToStanding=3, aero = 10, off = 11)
         double displayTemp;
+
+        // Specific for Calories series
+        double calories_avghr_multiplier;
+        double calories_constant;
 
         void maintainLapDistanceState();
 
