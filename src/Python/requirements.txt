@@ -1,0 +1,23 @@
+#### Packages for embedded Python ###
+#
+# Core Tools
+#
+sip == 6.15.1
+numpy
+pandas
+scipy
+lmfit
+plotly
+importlib_metadata
+python-dateutil
+geopy
+folium
+Pillow
+Jinja2
+#
+# Nice to have
+#
+# requests
+# scikit-learn
+# tensorflow
+# keras

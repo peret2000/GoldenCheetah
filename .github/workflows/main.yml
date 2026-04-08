@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Author'
+        required: true
+        default: 'peret2000'
+      comment:
+        description: 'Comment'
+        required: false
+      appimage:
+        description: 'Create AppImage?'
+        required: true
+        default: 0
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+
+      - name: Descarga repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Create D2XX directory
+        run: mkdir D2XX
+      - name: before_install.sh
+        run: travis/linux/before_install.sh
+      - name: before_script.sh
+        env:
+          GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          GC_CLOUD_DB_BASIC_AUTH: ${{ secrets.CLOUD_DB_BASIC_AUTH }}
+          GC_CLOUD_DB_APP_NAME: ${{ secrets.CLOUD_DB_APP_NAME }}
+        run: travis/linux/before_script.sh
+      - name: Añade GC_VERSION a src/gcconfig.pri
+        run: echo DEFINES += GC_VERSION=\"\\\\\\\"\\\\\(Release\\ `git log -1|sed -n 's/^commit *//p' | cut -c -7`\\\\\)\\\\\\\"\"  >> src/gcconfig.pri
+      - name: script.sh
+        run: travis/linux/script.sh
+      - name: Deploy
+        if: github.event.inputs.appimage != 0
+        run: travis/linux/after_success.sh
+      - name: Log version
+        run: |
+              export PATH=/opt/qt514/bin:$PATH
+              export LD_LIBRARY_PATH=/opt/qt514/lib/x86_64-linux-gnu:/opt/qt514/lib:$LD_LIBRARY_PATH
+              src/GoldenCheetah --version 2>GCversionLinux.txt
+              git log -1 >> GCversionLinux.txt
+      - name: Upload binary to artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: GoldenCheetah binary
+          path: |
+                src/GoldenCheetah
+                GCversionLinux.txt
+          retention-days: 5
+          if-no-files-found: 'warn'

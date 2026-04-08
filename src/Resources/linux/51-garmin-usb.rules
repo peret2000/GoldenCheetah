@@ -1,0 +1,8 @@
+# Garmin ANT+ - USB1
+ACTION!="remove", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0fcf", ATTRS{idProduct}=="1004", MODE="0660", TAG+="uaccess"
+# Garmin ANT+ - USB2
+ACTION!="remove", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0fcf", ATTRS{idProduct}=="1008", MODE="0660", TAG+="uaccess"
+# hLine USB2 ANT2
+ACTION!="remove", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0fcf", ATTRS{idProduct}=="1009", MODE="0660", TAG+="uaccess"
+
+
