@@ -31,6 +31,7 @@ MERGECODE=false	# Si es from scratch, se ignora
 NOBUILD=false
 DELIV_MODE=Release
 NOTIFEND=false
+BUILDBRANCH=MyBuildAdapt
 
 # Script command line help
 mostrar_ayuda() {
@@ -47,6 +48,7 @@ mostrar_ayuda() {
     echo "  --no-build      Stops before build/deploy steps (ignores --appimage)"
 	echo "  --notify-end    Sends a notification when the process ends (success or failure)"
     echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
+    echo "  --buildbranch <branch>  Specifies the branch to build from (default: MyBuildAdapt)"
     echo "  --help, -h      Shows this help message"
     echo ""
     exit 1
@@ -86,6 +88,14 @@ while [[ $# -gt 0 ]]; do
         --help|-h)
             mostrar_ayuda
             ;;
+		--buildbranch)
+			if [[ -z "$2" || "$2" == --* ]]; then
+				echo "ERROR: --buildbranch requires a branch name"
+				mostrar_ayuda
+			fi
+			BUILDBRANCH="$2"
+			shift 2
+			;;
         *)
             echo "Opción desconocida: $1"
             mostrar_ayuda
@@ -120,7 +130,13 @@ echo $TEXT | tee -a $LOGFILE
 
 cd $SCRIPT_DIR/..
 
-BUILDBRANCH=MyBuildAdapt
+# Siempre se actualiza la rama MyBuildAdapt. En caso de no estar en la última versión, se aborta el script
+git fetch --all
+
+if ! git rev-parse --verify --quiet "$BUILDBRANCH" > /dev/null 2>&1 && ! git rev-parse --verify --quiet "origin/$BUILDBRANCH" > /dev/null 2>&1; then
+	echo "FAILED. Branch '$BUILDBRANCH' does not exist" | tee -a $LOGFILE
+	salida 1
+fi
 
 if $FROMSCRATCH; then
 
@@ -147,9 +163,6 @@ if $FROMSCRATCH; then
 	git branch -D NightlyBuild
 
 fi	# if $FROMSCRATCH; then
-
-# Siempre se actualiza la rama MyBuildAdapt. En caso de no estar en la última versión, se aborta el script
-git fetch --all
 
 # Chequea que esté en la última versión
 COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
