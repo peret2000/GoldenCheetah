@@ -1,0 +1,312 @@
+                                 +++++++++++++++++++++++
+                                 LINUX BUILD WALKTHROUGH
+                                 +++++++++++++++++++++++
+
+                                     Mark Liversedge
+                                     John Ehrlinger
+                                     Ale Martinez
+
+                                        Mar 2025
+                                      Version 3.7
+
+A walkthrough of building GoldenCheetah from scratch on Ubuntu linux 22.04
+This walkthrough should be largely the same for any Debian derivative Linux
+distro, and very similar for others using their correspoing package manager.
+
+CONTENTS
+
+1. BASIC INSTALLATION WITH MANDATORY DEPENDENCIES
+   - git
+   - flex
+   - bison
+   - QT
+   - OpenGL
+   - gsl
+
+2. ADDING OPTIONAL DEPENDENCIES
+   - FTDI D2XX
+   - SRMIO
+   - liboauth
+   - Qt6 Video  - Video playback in training mode
+   - libical - Diary window and CalDAV support (external calendar integration)
+   - libusb  - If you want support for using USB2 sticks in Train View
+   - R       - If you want R charts
+   - Python  - If you want Python charts, scripts and data processors
+
+1. BASIC INSTALLATION WITH MANDATORY DEPENDENCIES
+=================================================
+
+Install the Linux distribution of choice on amd64 platform (Ubuntu 18.04 is used
+for this document). You will not need to do this if you already have a Linux
+distribution installed. Left this step in to highlight the Linux distribution
+the commands below were executed on.
+
+login and open a terminal to get a shell prompt
+
+Install Qt
+----------
+Download and install the Qt SDK from http://qt-project.org/
+You can use a browser to download and run the interactive installer and select
+a Qt version, in this case we used Qt 6.8.3, including at least the following modules:
+- Desktop gcc 64-bit
+- Additional Libraries
+- Qt WebEngine under Extensions
+Once this step is completed add the bin directory to PATH and test qmake is ok:
+$ qmake --version
+
+Install git
+-----------
+$ sudo apt-get install git
+
+Install FLEX and BISON
+----------------------
+You will need flex v2.5.9 or later
+$ sudo apt-get install bison
+$ sudo apt-get install flex
+
+Install Mesa OpenGL utility library
+-----------------------------------
+sudo apt-get install libglu1-mesa-dev
+
+Install GSL development libraries
+---------------------------------
+sudo apt-get -qq install libgsl-dev
+
+Get latest GOLDEN CHEETAH source files
+--------------------------------------
+$ mkdir -p ~/Projects
+$ cd ~/Projects
+$ git clone git://github.com/GoldenCheetah/GoldenCheetah.git
+$ cd GoldenCheetah
+
+Selecte the version to build
+----------------------------
+If you are wanting to build a particular release you need to checkout the release.
+To build a release you need to checkout the code at the tag for the release.
+
+A list of releases can be found at: https://github.com/GoldenCheetah/GoldenCheetah/tags
+
+$ git checkout V3.7
+$ ls
+
+Configure MANDATORY DEPENDENCIES
+--------------------------------
+$ cd qwt
+$ cp qwtconfig.pri.in qwtconfig.pri
+$ cd ../src
+$ cp gcconfig.pri.in gcconfig.pri
+$ vi gcconfig.pri
+
+Uncomment below and configure the location of the GNU scientific library, this is a mandatory dependency.
+
+#GSL_INCLUDES = /usr/include
+#GSL_LIBS = -lgsl -lgslcblas -lm
+
+Uncomment the following lines to use flex and bison:
+
+#QMAKE_LEX  = flex
+#QMAKE_YACC = bison
+
+and if you are using bison 3.7 or higher, make sure to also uncomment:
+
+#QMAKE_MOVE = cp
+
+To compile translation you need the QT tool lrelease
+If it is not found using the defaults in src/src.pro then set the full path and
+filename in gcconfig.pri, s.t.
+QMAKE_LRELEASE = /usr/bin/lrelease
+
+If your QT build doesn't include its own local compress libs then you should uncomment the lines below,
+and add the library path to LIBZ_INCLUDE =, you will need to have the compress libraries installed separately.
+#LIBZ_INCLUDE =
+#LIBZ_LIBS = -lz
+
+compiling with gcc -O3 (tree vectorization can have a significant impact)
+[or -Ofast]
+
+If so you might like to uncomment:
+
+QMAKE_CXXFLAGS += -O3
+
+Save and exit
+
+$ cd ..
+
+BUILD WITH BASIC CONFIGURATION
+------------------------------
+$ qmake -recursive
+$ make
+
+When build first time you get number of error messages on .qm files missing:
+"RCC: Error in 'Resources/application.qrc': Cannot find file 'translations/gc_fr.qm'"
+You can ignore these messages for your build. The .qm files will be created
+during the build at a later point in time via the "lrelease" command you
+configured in gcconfig.pri
+
+Congratulations you have now build a basic GoldenCheetah and can run this
+safely from src folder.
+
+See below for optional dependencies you can install to support other features.
+
+
+2. ADDING OPTIONAL DEPENDENCIES
+===============================
+
+D2XX - For Powertap downloads via USB
+-------------------------------------
+
+Download the FTDI drivers from http://www.ftdichip.com/Drivers/D2XX.htm and
+extract:
+
+$ cd ~/Projects
+$ wget http://www.ftdichip.com/Drivers/D2XX/Linux/libftd2xx-x86_64-1.3.6.tgz
+$ tar xf libftd2xx-x86_64-1.3.6.tgz
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment the D2XX_INCLUDE entry and make it match (my home is /home/markl)
+D2XX_INCLUDE = /home/markl/Projects/libftd2xx-x86_64-1.3.6
+
+Make clean is needed if you have previouslt built, since source files examine
+#defines before including this feature. You can skip it if you know why ;)
+$ make clean
+$ qmake
+$ make
+
+You now have D2XX support, for downloading from a PT via a USB cradle.
+
+SRMIO - For SRM powercontrol V downloads via Serial
+---------------------------------------------------
+
+$ cd ~/Projects
+$ git clone git://github.com/rclasen/srmio srmio
+$ cd srmio
+
+Get automake and tools, if you don't already have them (I didn't after a fresh install)
+$ sudo apt-get install automake
+$ sudo apt-get install libtool
+
+Generate the configure script, run it, build and install srmio
+$ sh genautomake.sh
+$ ./configure
+$ make
+$ sudo make install
+
+Lets go config GC and build with SRMIO
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment the SRMIO_INSTALL and replace with the target used from srmio install:
+SRMIO_INSTALL = /usr/local/
+
+At the bottom of gcconfig.pri you will see the include directory should
+reference from the base install location (/usr/local) make sure it says:
+
+SRMIO_INCLUDE = $${SRMIO_INSTALL}/include
+SRMIO_LIB = $${SRMIO_INSTALL}/lib/libsrmio.a
+
+Make clean is needed if you have previouslt built, since source files examine
+#defines before including this feature. You can skip it if you know why ;)
+$ make clean
+$ qmake
+$ make
+
+You now have SRM support built in.
+
+LIBICAL - Diary integration with Google or MobileMe calendars
+-------------------------------------------------------------
+
+$ sudo apt-get install libical-dev
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+ICAL_INSTALL = /usr
+ICAL_INCLUDE = /usr/include
+ICAL_LIBS    = -lical
+
+$ make clean
+$ qmake
+$ make
+
+You should now have diary functions.
+
+Qt6 Video - Video playback in Realtime
+--------------------------------------
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment the line
+#DEFINES += GC_VIDEO_QT6
+
+$ make clean
+$ qmake
+$ make
+
+LIBUSB - for using USB2 sticks in Train View on Linux or Windows
+----------------------------------------------------------------
+$ sudo apt-get install libusb-1.0-0-dev libudev-dev
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment or add the following lines:
+
+LIBUSB_USE_V_1 = true # don't use on Windows
+LIBUSB_INSTALL = /usr/local
+
+$ make clean
+$ qmake
+$ make
+
+R Embedding
+-----------
+
+Install R 4.0
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu bionic-cran40/"
+sudo apt-get update
+sudo apt-get install r-base-dev
+R --version
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment or add the following line:
+DEFINES += GC_WANT_R
+
+$ make clean
+$ qmake
+$ make
+
+Python Embedding
+----------------
+
+Install Python 3.11+
+
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.11 python3.11-dev
+python3.11 --version
+
+Install SIP and other dependencies
+pip install -r src/Python/requirements.txt
+
+$ cd ~/Projects/GoldenCheetah/src
+$ vi gcconfig.pri
+
+Uncomment or change the following line(s):
+DEFINES += GC_WANT_PYTHON
+Optionally configure includes & libraries, we try to auto configure them
+#PYTHONINCLUDES = -I/usr/include/python3.11/
+#PYTHONLIBS = -L/usr/lib/python3.11/config-3.11m-x86_64-linux-gnu -lpython3.11m
+
+$ make clean
+$ qmake
+$ make
+
+If you plan to use Cloud Services, you need to obtain the proper API keys for
+the service, a detailed example can be found in GoldenCheetah Developers Guide
+https://github.com/GoldenCheetah/GoldenCheetah/wiki/Strava-configuration

@@ -1,0 +1,267 @@
+#!/bin/bash
+
+# Parameters: [--appimage] [--updatecode] [--fromscratch] [--no-build] [--help|-h]
+
+# Check whether .bashrc has been loaded (for example, cron does not load it)
+if [[ -z "${ENV_LOADED}" ]]; then
+        source $HOME/.profile
+fi
+
+salida() {
+	[[ -n "$1" && "$1" != "0" ]] && echo ">>>EJECUCIÓN FALLIDA: $1" | tee -a $LOGFILE
+	if $NOTIFEND; then
+		$SCRIPT_DIR/pushover_end_compile.sh "$TEXT $HOSTNAME" $LOGFILE > /dev/null 2>&1
+	fi
+	echo Termina: `date` | tee -a $LOGFILE
+	cat $LOGFILE >> $CUMLOGFILE
+	rm $LOGFILE
+	exit $1
+}
+
+
+export SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+export LOGFILE=$SCRIPT_DIR/logtmp.txt
+export CUMLOGFILE=$SCRIPT_DIR/log.txt
+export BUILDLOG=$SCRIPT_DIR/buildlog.txt
+
+APPIMAGE=false
+FROMSCRATCH=false
+MERGECODE=false	# Si es from scratch, se ignora
+NOBUILD=false
+DELIV_MODE=Release
+NOTIFEND=false
+BUILDBRANCH=BORRAR_MyBuildAdapt_preError
+
+# Script command line help
+mostrar_ayuda() {
+    echo "Usage: $0 [options]"
+    echo ""
+    echo "With no options, it will just compile incrementally the project, without updating the source code."
+    echo "In order for the incremental build to work, the project must have been built from scratch at least once"
+    echo "(From scratch makes necessary changes)"
+    echo ""
+    echo "Options:"
+    echo "  --appimage      Creates the appimage file"
+    echo "  --fromscratch   Builds from scratch"
+    echo "  --updatecode    If not from scratch, this option updates source from repository"
+    echo "  --no-build      Stops before build/deploy steps (ignores --appimage)"
+	echo "  --notify-end    Sends a notification when the process ends (success or failure)"
+    echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
+    echo "  --buildbranch <branch>  Specifies the branch to build from (default: BORRAR_MyBuildAdapt_preError)"
+    echo "  --help, -h      Shows this help message"
+    echo ""
+    exit 1
+}
+
+TEXT="Compilación incremental de GoldenCheetah"
+
+# Procesamos los argumentos
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --appimage)
+            APPIMAGE=true
+            shift
+            ;;
+        --fromscratch)
+            FROMSCRATCH=true
+			MERGECODE=true
+			TEXT="Compilación completa"
+            shift
+            ;;
+		--updatecode)
+			MERGECODE=true
+            shift
+            ;;
+		--debug)
+			DELIV_MODE=Debug
+			shift
+			;;
+		--no-build)
+			NOBUILD=true
+			shift
+			;;
+		--notify-end)
+			NOTIFEND=true
+			shift
+			;;
+        --help|-h)
+            mostrar_ayuda
+            ;;
+		--buildbranch)
+			if [[ -z "$2" || "$2" == --* ]]; then
+				echo "ERROR: --buildbranch requires a branch name"
+				mostrar_ayuda
+			fi
+			BUILDBRANCH="$2"
+			shift 2
+			;;
+        *)
+            echo "Opción desconocida: $1"
+            mostrar_ayuda
+            ;;
+    esac
+done
+
+
+# $2 es opcional. Para hacer merge en una rama que no es la actual
+merge() {
+if [[ -n "$2" ]]; then
+	git merge --no-edit "$1" "$2" > /dev/null 2>&1
+else
+	git merge --no-edit "$1" > /dev/null 2>&1
+fi
+ERR=$?
+
+if [[ $ERR -eq 0 ]]; then
+	echo "merge $1 OK" | tee -a $LOGFILE
+else
+	echo "ERROR $ERR: merge $1 FAILED. Skipping this branch and continuing." | tee -a $LOGFILE
+	git merge --abort > /dev/null 2>&1
+	MERGE_FAILED+=("$1")
+fi
+}
+
+echo ------------------------- | tee $LOGFILE $BUILDLOG
+echo Comienzo: `date` | tee -a $LOGFILE $BUILDLOG
+echo $TEXT | tee -a $LOGFILE
+
+###cd $SCRIPT_DIR/../.. && git clone git@github.com:peret2000/GoldenCheetah.git GoldenCheetah
+
+cd $SCRIPT_DIR/..
+
+# Siempre se actualiza la rama MyBuildAdapt. En caso de no estar en la última versión, se aborta el script
+git fetch --all
+
+if ! git rev-parse --verify --quiet "$BUILDBRANCH" > /dev/null 2>&1 && ! git rev-parse --verify --quiet "origin/$BUILDBRANCH" > /dev/null 2>&1; then
+	echo "FAILED. Branch '$BUILDBRANCH' does not exist" | tee -a $LOGFILE
+	salida 1
+fi
+
+if $FROMSCRATCH; then
+
+	echo git fetch, merge, etc | tee -a $LOGFILE
+
+	###git remote add goldencheetah https://github.com/GoldenCheetah/GoldenCheetah.git
+
+	# Esto no debería ser necesario si se hace un git clone, partiendo de cero
+	# Es por si el repositorio se quedó con un merge a medias, por ejemplo, por un conflicto
+	# Si no había conflicto, dará un error que se puede ignorar
+	git merge --abort > /dev/null 2>&1
+
+	# Estos ficheros se modifican en la compilación y pueden dar problemas al hacer merge
+	git checkout -- src/Resources/translations/
+	git checkout -- src/Core/Secrets.h
+	git checkout -- src/Resources/linux/MakeAppImageQt6.sh
+	git checkout -- scripts/script.sh
+	git checkout -- appveyor/linux/before_build.sh
+	git checkout -- src/Gui/GcCrashDialog.cpp
+
+	git checkout $BUILDBRANCH
+
+	# Por si existe ya la rama, primero se elimina y luego se crea
+	git branch -D BORRAR_NightlyBuild_preError
+
+fi	# if $FROMSCRATCH; then
+
+if ! git checkout -B BORRAR_NightlyBuild_preError; then
+	echo "ERROR: Not able to switch to BORRAR_NightlyBuild_preError. Maybe not in previously built directory" | tee -a $LOGFILE
+	salida $ERR
+fi
+
+git merge --no-edit $BUILDBRANCH || { ERR=$?; echo "Unable to merge $BUILDBRANCH, Maybe branch has diverged. Process FAILED." | tee -a $LOGFILE; salida $ERR; }
+
+if $MERGECODE; then
+	MERGE_FAILED=()
+
+	merge BORRAR_master
+
+	merge origin/TrainButtons
+	merge origin/MyZEW
+	merge origin/VideoWidgets
+	merge origin/SmoothPowerEstim
+	merge origin/Strava
+	merge origin/PyAutomatedProcessors
+	merge origin/treadmill_qdomyos
+	merge BORRAR_utils_preError
+	merge origin/train_view_improvements
+	merge origin/activities_view_improvements
+	merge BORRAR_train_geolocation_widget_preError
+
+	merge BORRAR_shared-xml-equipment-management-feature
+
+	echo "----- Skipped branches: ${#MERGE_FAILED[@]} -----" | tee -a $LOGFILE
+	if [[ ${#MERGE_FAILED[@]} -gt 0 ]]; then
+		for branch in "${MERGE_FAILED[@]}"; do
+			echo "  FAILED: ${branch}" | tee -a $LOGFILE
+		done
+	fi
+
+	echo "-------------------------" | tee -a $LOGFILE
+
+fi	# if $MERGECODE; then
+
+if $FROMSCRATCH; then
+	echo preparedirectory.sh: `date` | tee -a $LOGFILE
+	$SCRIPT_DIR/preparedirectory.sh $DELIV_MODE > /dev/null 2>&1 && { echo "preparedirectory OK" | tee -a $LOGFILE; } || { ERR=$?; echo "preparedirectory FAILED" | tee -a $LOGFILE; salida $ERR; }
+fi	# if $FROMSCRATCH; then
+
+# Modifica el código para poner la versión que se genera
+gcdialogfile=src/Gui/GcCrashDialog.cpp
+commit=$(git merge-base HEAD BORRAR_compile 2>/dev/null | cut -c -9)
+desired_line="#define GC_VERSION \"(${DELIV_MODE} ${commit})\""
+if grep -q -F "${desired_line}" "${gcdialogfile}"; then
+    echo "GC_VERSION already up-to-date: ${commit}" | tee -a $LOGFILE
+else
+	sed -i '/^[[:space:]]*#define[[:space:]]\+GC_VERSION/ d' ${gcdialogfile}
+	sed -i "/^[[:space:]]*#ifdef[[:space:]]\+GC_VERSION[[:space:]]*$/i\\${desired_line}" ${gcdialogfile}
+	echo "GC_VERSION updated to: ${commit}" | tee -a $LOGFILE
+fi
+
+if $NOBUILD; then
+	echo "--no-build enabled: skipping build/deploy steps" | tee -a $LOGFILE
+	salida 0
+fi
+
+echo Build: `date` | tee -a $LOGFILE
+
+./scripts/script.sh >> $BUILDLOG 2>&1 && { echo "Compile OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: Compile FAILED" | tee -a $LOGFILE; salida $ERR; }
+
+echo ------------------------- >> $BUILDLOG
+echo Finalización: `date` >> $BUILDLOG
+
+[[ -d src/appdir ]] && rm -rf src/appdir
+
+if ! $APPIMAGE; then
+
+	echo genera binario con linuxdeployqt: `date` | tee -a $LOGFILE
+
+	# El binario linuxdeployqt ya debe estar en el path
+	cd src
+	mkdir -p appdir
+	cp -p GoldenCheetah appdir/
+	# Lightweight deploy
+	PYTHONDIR="$(dirname "$(dirname "$(command -v python3)")")"
+	export LD_LIBRARY_PATH=$PYTHONDIR/lib:$LD_LIBRARY_PATH
+	linuxdeployqt appdir/GoldenCheetah \
+		-verbose=2 -exclude-libs=libqsqlmysql,libqsqlpsql,libqsqlmimer,libqsqlodbc,libnss3,libnssutil3,libxcb-dri3.so.0 \
+		-unsupported-allow-new-glibc -no-translations -no-plugins -no-copy-copyright-files -no-strip
+	mkdir -p ../squashfs-root && mv appdir/GoldenCheetah ../squashfs-root/
+	rm -rf ./appdir
+
+else
+
+	# Generate the AppImage
+
+	echo MakeAppImageQt6.sh: `date` | tee -a $BUILDLOG | tee -a $LOGFILE
+
+	cd src
+	./Resources/linux/MakeAppImageQt6.sh >> $BUILDLOG 2>&1 && { echo "deploy OK" | tee -a $LOGFILE; } || { ERR=$?; echo "ERROR: deploy FAILED" | tee -a $LOGFILE; salida $ERR; }
+	cd ..
+	if [  -x src/GoldenCheetah_v3.7_x64Qt6.AppImage ]; then
+		src/GoldenCheetah_v3.7_x64Qt6.AppImage --appimage-extract > /dev/null 2>&1
+	fi
+
+fi
+
+salida 0

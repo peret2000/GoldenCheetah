@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2015 Mark Liversedge (liversedge@gmail.com)
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#ifndef _GC_UserMetricSettings_h
+#define _GC_UserMetricSettings_h 1
+#include "GoldenCheetah.h"
+
+// Edit dialog
+#include <QDialog>
+#include <QTextEdit>
+#include <QLineEdit>
+#include <QDoubleSpinBox>
+#include <QLabel>
+#include <QPushButton>
+#include <QComboBox>
+#include <QCheckBox>
+
+// defined in LTMTool
+class Context;
+class DataFilterEdit;
+
+// what version of user metric structure are we using?
+// Version      Date           Who               What
+// 1            10 Dec 2015    Mark Liversedge   Initial version created
+#define USER_METRICS_VERSION_NUMBER 1
+
+// This structure is used to pass config back and forth
+// and is "compiled" into a UserMetric at runtime
+class UserMetricSettings {
+
+    public:
+
+        qint16 getCRC() const {
+
+            // mostly used to see if it changed when editing
+            QByteArray ba = QString(this->symbol +
+                                    this->name +
+                                    this->description +
+                                    this->unitsMetric +
+                                    this->unitsImperial +
+                                    QString::number(this->type) +
+                                    QString::number(this->precision) +
+                                    QString::number(this->aggzero) +
+                                    QString::number(this->istime) +
+                                    QString::number(this->conversion) +
+                                    QString::number(this->conversionSum) +
+                                    this->program).toUtf8();
+
+            return qChecksum(ba);
+        }
+
+        QString symbol,
+                name,
+                description,
+                unitsMetric,
+                unitsImperial;
+
+        int type;
+        int precision;
+
+        bool aggzero, istime;
+
+        double  conversion,
+                conversionSum;
+
+        QString program,
+                fingerprint; // condensed form of program
+};
+
+class EditUserMetricDialog : public QDialog {
+
+    Q_OBJECT
+
+    public:
+
+        EditUserMetricDialog(QWidget *parent, Context *context, UserMetricSettings &here);
+
+    public slots:
+
+        // refresh the outputs (time to compute, value for
+        // the current ride, time to compute all rides)
+        void refreshStats();
+        void okClicked();
+        void enableOk();
+
+        void setErrors(QStringList&);
+
+    private:
+
+        bool validSettings();
+        void setSettings(UserMetricSettings &);
+
+        Context *context;
+        UserMetricSettings &settings;
+
+        QLineEdit *symbol,
+                  *name,
+                  *unitsMetric,
+                  *unitsImperial;
+
+        QComboBox *type;
+        QTextEdit *description;
+
+        QCheckBox *istime, *aggzero;
+
+        QDoubleSpinBox *conversion,
+                       *conversionSum,
+                       *precision;
+
+        DataFilterEdit *formulaEdit; // edit your formula
+        QLabel *errors; // for highlighting errors
+
+        QLabel *mValue, *iValue, *elapsed;
+
+        QPushButton *test, *okButton, *cancelButton;
+
+};
+#endif
