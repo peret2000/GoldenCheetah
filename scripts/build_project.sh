@@ -32,6 +32,7 @@ NOBUILD=false
 DELIV_MODE=Release
 NOTIFEND=false
 BUILDBRANCH=MyBuildAdapt
+BUILD_BRANCH_PARAM_USED=false
 
 # Script command line help
 mostrar_ayuda() {
@@ -48,7 +49,7 @@ mostrar_ayuda() {
     echo "  --no-build      Stops before build/deploy steps (ignores --appimage)"
 	echo "  --notify-end    Sends a notification when the process ends (success or failure)"
     echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
-    echo "  --buildbranch <branch>  Specifies the branch to build from (default: MyBuildAdapt)"
+    echo "  --buildbranch <branch>  Specifies the branch to build from (default: MyBuildAdapt). WARNING: The branch revision will not be checked with the remote"
     echo "  --help, -h      Shows this help message"
     echo ""
     exit 1
@@ -94,6 +95,7 @@ while [[ $# -gt 0 ]]; do
 				mostrar_ayuda
 			fi
 			BUILDBRANCH="$2"
+			BUILD_BRANCH_PARAM_USED=true
 			shift 2
 			;;
         *)
@@ -164,19 +166,23 @@ if $FROMSCRATCH; then
 
 fi	# if $FROMSCRATCH; then
 
-# Chequea que esté en la última versión
-COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
-COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
-if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
-        echo "FAILED. $BUILDBRANCH NOT in last version. It is being updated for the next time" | tee -a $LOGFILE
-        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-        if [ "$CURRENT_BRANCH" = "$BUILDBRANCH" ]; then
-                UPDATE_CMD="sleep 5 && git pull origin '${BUILDBRANCH}' --no-edit"
-        else
-                UPDATE_CMD="sleep 5 && git fetch origin '${BUILDBRANCH}:${BUILDBRANCH}' && git checkout '${CURRENT_BRANCH}' && git merge --no-edit '${BUILDBRANCH}'"
-        fi
-        nohup bash -c "$UPDATE_CMD" > /dev/null 2>&1 &
-        salida 1
+if $BUILD_BRANCH_PARAM_USED; then
+	echo "--buildbranch used: skipping latest revision check for branch '$BUILDBRANCH'" | tee -a $LOGFILE
+else
+	# Chequea que esté en la última versión
+	COMMIT_BEFORE=$(git rev-parse $BUILDBRANCH)
+	COMMIT_AFTER=$(git rev-parse origin/$BUILDBRANCH)
+	if [ "$COMMIT_BEFORE" != "$COMMIT_AFTER" ]; then
+	        echo "FAILED. $BUILDBRANCH NOT in last version. It is being updated for the next time" | tee -a $LOGFILE
+	        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+	        if [ "$CURRENT_BRANCH" = "$BUILDBRANCH" ]; then
+	                UPDATE_CMD="sleep 5 && git pull origin '${BUILDBRANCH}' --no-edit"
+	        else
+	                UPDATE_CMD="sleep 5 && git fetch origin '${BUILDBRANCH}:${BUILDBRANCH}' && git checkout '${CURRENT_BRANCH}' && git merge --no-edit '${BUILDBRANCH}'"
+	        fi
+	        nohup bash -c "$UPDATE_CMD" > /dev/null 2>&1 &
+	        salida 1
+	fi
 fi
 
 if ! git checkout -B NightlyBuild; then
