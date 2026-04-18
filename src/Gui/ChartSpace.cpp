@@ -34,9 +34,6 @@ double gl_major;
 static double gl_wheelscale = 6; // rate we scroll for wheel events
 static double gl_near = 20; // close to boundary in pixels (will be factored by dpiXFactor)
 
-static QIcon grayConfig, whiteConfig, accentConfig;
-static QIcon grayEdit, whiteEdit, accentEdit;
-
 ChartSpaceItemRegistry *ChartSpaceItemRegistry::_instance;
 
 ChartSpace::ChartSpace(Context *context, OverviewScope scope, GcWindow *window) :
@@ -49,6 +46,9 @@ ChartSpace::ChartSpace(Context *context, OverviewScope scope, GcWindow *window) 
     QHBoxLayout *main = new QHBoxLayout;
     main->setSpacing(0);
     main->setContentsMargins(0,0,0,0);
+
+    configIcon = ":images/configure.png";
+    editIcon = ":images/tile-edit.png";
 
     // add a view and scene and centre
     scene = new QGraphicsScene(this);
@@ -101,6 +101,21 @@ ChartSpace::ChartSpace(Context *context, OverviewScope scope, GcWindow *window) 
     currentRideItem=NULL;
 }
 
+void
+ChartSpace::adjustItemHeight(ChartSpaceItem* item, int heightInRows)
+{
+    state = YRESIZE;
+
+    stateData.yresize.item = item;
+    stateData.yresize.posy = 0;
+    stateData.yresize.item->deep = heightInRows;
+
+    updateGeometry();
+    updateView();
+
+    state = NONE;
+}
+
 // add the item
 void
 ChartSpace::addItem(int order, int column, int span, int deep, ChartSpaceItem *item)
@@ -126,6 +141,25 @@ ChartSpace::removeItem(ChartSpaceItem *item)
             return;
         }
     }
+}
+
+void
+ChartSpace::moveItem(ChartSpaceItem* item, ChartSpace* toChartSpace)
+{
+    // remove from existing chart space
+    scene->removeItem(item);
+    items.removeOne(item);
+    updateGeometry();
+    updateView();
+
+    // prepare for new chart space
+    item->onscene = false;
+    item->parent = toChartSpace;
+
+    // add to new chart space
+    toChartSpace->addItem(item->order, item->column, item->span, item->deep, item);
+    toChartSpace->updateGeometry();
+    toChartSpace->updateView();
 }
 
 // when a ride is selected we need to notify all the ChartSpaceItems
@@ -358,15 +392,15 @@ ChartSpaceItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt, QW
 
                 // draw the config button and make it more obvious
                 // when hovering over the card
-                painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, accentConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
+                painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, parent->accentConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
 
             } else {
 
                 // hover on card - make it more obvious there is a config button
-                painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, whiteConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
+                painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, parent->whiteConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
             }
 
-        } else painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, grayConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
+        } else painter->drawPixmap(geometry().width()-20-(ROWHEIGHT*1), 20, ROWHEIGHT*1, ROWHEIGHT*1, parent->grayConfig.pixmap(QSize(ROWHEIGHT*1, ROWHEIGHT*1)));
     }
 
     // edit icon
@@ -384,17 +418,17 @@ ChartSpaceItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt, QW
 
                 // draw the edit button and make it more obvious
                 // when hovering over the card
-                painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, accentEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
+                painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, parent->accentEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
 
             }
             else {
 
                 // hover on card - make it more obvious there is a edit button
-                painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, whiteEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
+                painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, parent->whiteEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
             }
 
         }
-        else painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, grayEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
+        else painter->drawPixmap(geometry().width()-60-(2*ROWHEIGHT), 20, ROWHEIGHT, ROWHEIGHT, parent->grayEdit.pixmap(QSize(ROWHEIGHT, ROWHEIGHT)));
     }
 
     // thin border
@@ -666,13 +700,13 @@ ChartSpace::updateGeometry()
 void
 ChartSpace::configChanged(qint32 why)
 {
-    grayConfig = colouredIconFromPNG(":images/configure.png", GColor(COVERVIEWBACKGROUND).lighter(75));
-    whiteConfig = colouredIconFromPNG(":images/configure.png", QColor(100,100,100));
-    accentConfig = colouredIconFromPNG(":images/configure.png", QColor(150,150,150));
+    grayConfig = colouredIconFromPNG(configIcon, GColor(COVERVIEWBACKGROUND).lighter(75));
+    whiteConfig = colouredIconFromPNG(configIcon, QColor(100,100,100));
+    accentConfig = colouredIconFromPNG(configIcon, QColor(150,150,150));
 
-    grayEdit = colouredIconFromPNG(":images/tile-edit.png", GColor(COVERVIEWBACKGROUND).lighter(75));
-    whiteEdit = colouredIconFromPNG(":images/tile-edit.png", QColor(100, 100, 100));
-    accentEdit = colouredIconFromPNG(":images/tile-edit.png", QColor(150, 150, 150));
+    grayEdit = colouredIconFromPNG(editIcon, GColor(COVERVIEWBACKGROUND).lighter(75));
+    whiteEdit = colouredIconFromPNG(editIcon, QColor(100, 100, 100));
+    accentEdit = colouredIconFromPNG(editIcon, QColor(150, 150, 150));
 
     // set fonts
     bigfont.setPixelSize(pixelSizeForFont(bigfont, ROWHEIGHT *2.5f));
