@@ -87,7 +87,8 @@ enum gcwinid {
         PlanAdherence = 57,
         HtmlTraining = 58,
         VideoHtml = 59,
-        HtmlActivities = 60
+        HtmlActivities = 60,
+        EquipmentOverview=99
 };
 };
 typedef enum GcWindowTypes::gcwinid GcWinID;
@@ -100,7 +101,8 @@ enum class GcViewType : unsigned int {
     VIEW_TRAIN =     0x01,
     VIEW_ANALYSIS =  0x02,
     VIEW_PLAN =      0x04,
-    VIEW_TRENDS =    0x08
+    VIEW_TRENDS =    0x08,
+    VIEW_EQUIPMENT = 0x80 // While in development, ensure it isn't changed when new views are added.
 };
 
 // support bitwise "|" and "&" operators for the GcViewType class

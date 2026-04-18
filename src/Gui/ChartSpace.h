@@ -51,7 +51,7 @@ class ChartSpace;
 class ChartSpaceItemFactory;
 
 // we need a scope for a chart space, one or more of
-enum class OverviewScope : unsigned int { NO_SCOPE_SET=0x00, ANALYSIS=0x01, TRENDS=0x02, ATHLETES=0x04, PLAN=0x08 };
+enum class OverviewScope : unsigned int { NO_SCOPE_SET=0x00, ANALYSIS=0x01, TRENDS=0x02, ATHLETES=0x04, PLAN=0x08, EQUIPMENT=0x80 };
 
 // support bitwise "|" and "&" operators for the OverviewScope class
 inline constexpr OverviewScope operator|(OverviewScope Lhs, OverviewScope Rhs) {
@@ -152,6 +152,7 @@ class ChartSpaceItem : public QGraphicsWidget
             // watch geom changes
             connect(this, SIGNAL(geometryChanged()), SLOT(geometryChanged()));
         }
+        virtual ~ChartSpaceItem() {};
 
         // watch mouse enter/leave
         bool sceneEvent(QEvent *event);
@@ -247,6 +248,9 @@ class ChartSpace : public QWidget
 
         QGraphicsView *view;
         QFont titlefont, bigfont, midfont, smallfont, tinyfont;
+        QString configIcon, editIcon;
+        QIcon grayConfig, whiteConfig, accentConfig;
+        QIcon grayEdit, whiteEdit, accentEdit;
 
         // the item we are currently showing
         RideItem *currentRideItem;
@@ -254,7 +258,7 @@ class ChartSpace : public QWidget
 
         // to get paint device
         QGraphicsView *device() { return view; }
-        const QList<ChartSpaceItem*> allItems() { return items; }
+        QList<ChartSpaceItem*> allItems() { return items; }
 
         // window we are rendered in
         GcWindow *window;
@@ -303,11 +307,17 @@ class ChartSpace : public QWidget
         // set scale, zoom etc appropriately
         void updateView();
 
+        // adjust the items height
+        void adjustItemHeight(ChartSpaceItem* item, int heightInRows);
+
         // add a ChartSpaceItem to the view
         void addItem(int row, int column, int span, int deep, ChartSpaceItem *item);
 
         // remove an item
         void removeItem(ChartSpaceItem *item);
+
+        // move an item between chart spaces
+        void moveItem(ChartSpaceItem* item, ChartSpace* toChartSpace);
 
         // mostly for athlete view, we just set a fixed
         // zoom width, so we don't get a massive athlete

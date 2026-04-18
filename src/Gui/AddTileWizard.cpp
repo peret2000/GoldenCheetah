@@ -164,11 +164,11 @@ AddTileConfig::~AddTileConfig()
 {
     // spare the config widget being destroyed
     if (wizard->config) {
+        wizard->added = wizard->item;
         wizard->config->hide();
         main->removeWidget(wizard->config);
         wizard->config->setParent(NULL);
         wizard->config = NULL;
-        wizard->added = wizard->item;
     }
 }
 

@@ -94,6 +94,8 @@ SpecialFields::reloadFields() {
     namesmap.insert("Spike Time", tr("Spike Time"));                 // Spike Time from FixSpikes DP
     namesmap.insert("Spikes", tr("Spikes"));                         // Spikes from FixSpikes DP
 
+    namesmap.insert("EquipmentLink", tr("EquipmentLink"));           // activity equipment link data
+
     // now add all the metric fields (for metric overrides)
     const RideMetricFactory &factory = RideMetricFactory::instance();
 

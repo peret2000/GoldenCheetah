@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Mark Liversedge (liversedge@gmail.com)
  * LTMSidebarView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
+ * EquipmentView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -51,7 +52,7 @@ class LTMSidebarView : public AbstractView
 
     protected:
 
-        LTMSidebarView(Context *context, GcViewType viewType, const QString& view, const QString& heading);
+        LTMSidebarView(Context *context, const QString& viewName, const QString& heading);
         virtual ~LTMSidebarView();
 
         void showEvent(QShowEvent*) override;
@@ -64,6 +65,15 @@ class LTMSidebarView : public AbstractView
 
         // each athlete has their own LTMSidebar shared by the plan & trends views.
         static QMap<Context*, LTMSidebar*> LTMSidebars_;
+};
+
+class AnalysisViewParser : public ViewParser {
+
+    public:
+        AnalysisViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class AnalysisView : public AbstractView
@@ -85,6 +95,8 @@ class AnalysisView : public AbstractView
         static constexpr const char* internalName = "analysis";
         QString viewsInternalName() const override { return internalName; }
 
+        GcViewType viewType() const override { return GcViewType::VIEW_ANALYSIS; }
+
         RideNavigator *rideNavigator();
         AnalysisSidebar *analSidebar;
 
@@ -94,6 +106,8 @@ class AnalysisView : public AbstractView
         void compareChanged(bool);
 
     protected:
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
 
         void notifyViewSidebarChanged() override;
         int getViewSpecificPerspective() override;
@@ -102,6 +116,15 @@ class AnalysisView : public AbstractView
     private:
 
         int findRidesPerspective(RideItem* ride);
+};
+
+class PlanViewParser : public ViewParser {
+
+    public:
+        PlanViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class PlanView : public LTMSidebarView
@@ -120,9 +143,25 @@ class PlanView : public LTMSidebarView
         static constexpr const char* internalName = "plan";
         QString viewsInternalName() const override { return internalName; }
 
+        GcViewType viewType() const override { return GcViewType::VIEW_PLAN; }
+
     public slots:
 
         bool isBlank() override;
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+};
+
+class TrainViewParser : public ViewParser {
+
+    public:
+        TrainViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class TrainView : public AbstractView
@@ -142,6 +181,8 @@ class TrainView : public AbstractView
         static constexpr const char* internalName = "train";
         QString viewsInternalName() const override { return internalName; }
 
+        GcViewType viewType() const override { return GcViewType::VIEW_TRAIN; }
+
     public slots:
 
         bool isBlank() override;
@@ -150,6 +191,8 @@ class TrainView : public AbstractView
     protected:
 
         void notifyViewPerspectiveAdded(Perspective* page) override;
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
 
     private:
 
@@ -157,7 +200,17 @@ class TrainView : public AbstractView
         TrainBottom *trainBottom;
 
     private slots:
+
         void onAutoHideChanged(bool enabled);
+};
+
+class TrendsViewParser : public ViewParser {
+
+    public:
+        TrendsViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
 };
 
 class TrendsView : public LTMSidebarView
@@ -176,12 +229,69 @@ class TrendsView : public LTMSidebarView
         static constexpr const char* internalName = "home";
         QString viewsInternalName() const override { return internalName; }
 
+        GcViewType viewType() const override { return GcViewType::VIEW_TRENDS; }
+
         int countActivities(Perspective *, DateRange dr);
+
 
     public slots:
 
         bool isBlank() override;
         void compareChanged(bool);
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+
+};
+
+class EquipmentViewParser : public ViewParser {
+
+    public:
+        EquipmentViewParser(Context* context, bool useDefault) : ViewParser(context, useDefault) {}
+
+    protected:
+        Perspective* getViewParsersPerspective(const QString& name) const override;
+};
+
+class EquipmentView : public AbstractView
+{  
+    Q_OBJECT
+
+    public:
+
+        EquipmentView(Context *context, QStackedWidget *controls);
+        ~EquipmentView();
+
+        // the view's user name must be translated for display
+        static constexpr const char* userName = "Equipment";
+        QString viewsUserName() const override { return userName; }
+
+        static constexpr const char* internalName = "equipment";
+        QString viewsInternalName() const override { return internalName; }
+
+        GcViewType viewType() const override { return GcViewType::VIEW_EQUIPMENT; }
+
+        // Don't want the base class behaviour for this...
+        virtual void setRide(RideItem*) override {}
+
+        // Need to modify the behaviour
+        virtual void selectionChanged() override;
+
+        ChartSettings* chartsettings;
+
+    public slots:
+
+        bool isBlank() override;
+        void addChart(GcWinID id) override;
+
+    protected:
+
+        Perspective* getViewsPerspective(const QString& name) const override;
+        ViewParser* getViewParser(Context* context, bool useDefault) const override;
+
+    private:
 };
 
 #endif // _GC_Views_h

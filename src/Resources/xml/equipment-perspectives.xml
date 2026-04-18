@@ -1,0 +1,16 @@
+<layouts>
+    <layout name="Equipment" style="0" type="128" expression="" trainswitch="0">
+        <chart id="99" name="" title="Equipment Overview" >
+            <property name="title" type="QString" value="Equipment Overview" />
+            <property name="subtitle" type="QString" value="" />
+            <property name="widthFactor" type="double" value="2" />
+            <property name="heightFactor" type="double" value="2" />
+            <property name="style" type="int" value="0" />
+            <property name="resizable" type="bool" value="0" />
+            <property name="config" type="QString" value="{\n  &quot;version&quot;:&quot;2.0&quot;,\n  &quot;widths&quot;:[ 1000, 1000, 1000, 1200, 1200, 1200, 1200, 1200, 1200, 1200 ],\n  &quot;CHARTS&quot;:[\n    { &quot;type&quot;:115,&quot;span&quot;:1,&quot;deep&quot;:12,&quot;column&quot;:0,&quot;order&quot;:5,&quot;color&quot;:&quot;#010161&quot;,&quot;equipmentRef&quot;:&quot;00000000-0000-0000-0000-000000000000&quot;,&quot;datafilter&quot;:&quot; &quot;,&quot;name&quot;:&quot;Bike1 Summary&quot; },\n    { &quot;type&quot;:116,&quot;span&quot;:1,&quot;deep&quot;:6,&quot;column&quot;:1,&quot;order&quot;:0,&quot;color&quot;:&quot;#010161&quot;,&quot;equipmentRef&quot;:&quot;00000000-0000-0000-0000-000000000000f&quot;,&quot;datafilter&quot;:&quot; &quot;,&quot;name&quot;:&quot;Notes&quot; },\n    { &quot;type&quot;:114,&quot;span&quot;:1,&quot;deep&quot;:15,&quot;column&quot;:2,&quot;order&quot;:10,&quot;color&quot;:&quot;#010161&quot;,&quot;equipmentRef&quot;:&quot;00000000-0000-0000-0000-000000000000&quot;,&quot;datafilter&quot;:&quot; &quot;,&quot;name&quot;:&quot;Wheelset&quot; },\n    { &quot;type&quot;:117,&quot;span&quot;:2,&quot;deep&quot;:8,&quot;column&quot;:0,&quot;order&quot;:4,&quot;color&quot;:&quot;#010161&quot;,&quot;equipmentRef&quot;:&quot;00000000-0000-0000-0000-000000000000&quot;,&quot;datafilter&quot;:&quot; &quot;,&quot;name&quot;:&quot;History&quot; }\n  ]\n}\n" />
+            <property name="minimumColumns" type="int" value="5" />
+        </chart>
+    </layout>
+</layouts>
+
+
