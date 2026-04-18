@@ -32,6 +32,7 @@ NOBUILD=false
 DELIV_MODE=Release
 NOTIFEND=false
 BUILDBRANCH=MyBuildAdapt
+TARGETBRANCH=NightlyBuild
 BUILD_BRANCH_PARAM_USED=false
 
 # Script command line help
@@ -50,6 +51,7 @@ mostrar_ayuda() {
 	echo "  --notify-end    Sends a notification when the process ends (success or failure)"
     echo "  --debug			Prepares the build for debug (if not as the last time, be aware that you should compile all again)"
     echo "  --buildbranch <branch>  Specifies the branch to build from (default: MyBuildAdapt). WARNING: The branch revision will not be checked with the remote"
+	echo "  --targetbranch <branch>  Specifies the branch to build from (default: NightlyBuild)"
     echo "  --help, -h      Shows this help message"
     echo ""
     exit 1
@@ -96,6 +98,14 @@ while [[ $# -gt 0 ]]; do
 			fi
 			BUILDBRANCH="$2"
 			BUILD_BRANCH_PARAM_USED=true
+			shift 2
+			;;
+		--targetbranch)
+			if [[ -z "$2" || "$2" == --* ]]; then
+				echo "ERROR: --targetbranch requires a branch name"
+				mostrar_ayuda
+			fi
+			TARGETBRANCH="$2"
 			shift 2
 			;;
         *)
@@ -162,7 +172,7 @@ if $FROMSCRATCH; then
 	git checkout $BUILDBRANCH
 
 	# Por si existe ya la rama, primero se elimina y luego se crea
-	git branch -D NightlyBuild
+	git branch -D "$TARGETBRANCH" > /dev/null 2>&1 || true
 
 fi	# if $FROMSCRATCH; then
 
@@ -185,8 +195,8 @@ else
 	fi
 fi
 
-if ! git checkout -B NightlyBuild; then
-	echo "ERROR: Not able to switch to NightlyBuild. Maybe not in previously built directory" | tee -a $LOGFILE
+if ! git checkout -B "$TARGETBRANCH"; then
+	echo "ERROR: Not able to switch to $TARGETBRANCH. Maybe not in previously built directory" | tee -a $LOGFILE
 	salida $ERR
 fi
 
