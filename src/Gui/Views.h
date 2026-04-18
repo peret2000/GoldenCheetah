@@ -51,7 +51,7 @@ class LTMSidebarView : public AbstractView
 
     protected:
 
-        LTMSidebarView(Context *context, int type, const QString& view, const QString& heading);
+        LTMSidebarView(Context *context, GcViewType viewType, const QString& view, const QString& heading);
         virtual ~LTMSidebarView();
 
         void showEvent(QShowEvent*) override;
@@ -77,6 +77,13 @@ class AnalysisView : public AbstractView
         void close() override;
         void setRide(RideItem*ride) override;
         void addIntervals();
+
+        // the view's user name must be translated for display
+        static constexpr const char* userName = "Activities";
+        QString viewsUserName() const override { return userName; }
+
+        static constexpr const char* internalName = "analysis";
+        QString viewsInternalName() const override { return internalName; }
 
         RideNavigator *rideNavigator();
         AnalysisSidebar *analSidebar;
@@ -106,6 +113,13 @@ class PlanView : public LTMSidebarView
         PlanView(Context *context, QStackedWidget *controls);
         virtual ~PlanView();
 
+        // the view's user name must be translated for display
+        static constexpr const char* userName = "Plan";
+        QString viewsUserName() const override { return userName; }
+
+        static constexpr const char* internalName = "plan";
+        QString viewsInternalName() const override { return internalName; }
+
     public slots:
 
         bool isBlank() override;
@@ -120,6 +134,13 @@ class TrainView : public AbstractView
         TrainView(Context *context, QStackedWidget *controls);
         virtual ~TrainView();
         void close() override;
+
+        // the view's user name must be translated for display
+        static constexpr const char* userName = "Train";
+        QString viewsUserName() const override { return userName; }
+
+        static constexpr const char* internalName = "train";
+        QString viewsInternalName() const override { return internalName; }
 
     public slots:
 
@@ -147,6 +168,13 @@ class TrendsView : public LTMSidebarView
 
         TrendsView(Context *context, QStackedWidget *controls);
         virtual ~TrendsView();
+
+        // the view's user name must be translated for display
+        static constexpr const char* userName = "Trends";
+        QString viewsUserName() const override { return userName; }
+
+        static constexpr const char* internalName = "home";
+        QString viewsInternalName() const override { return internalName; }
 
         int countActivities(Perspective *, DateRange dr);
 
