@@ -25,7 +25,7 @@
 #include "HelpWhatsThis.h"
 #include "Views.h"
 
-OverviewWindow::OverviewWindow(Context *context, OverviewScope scope, bool blank) : GcChartWindow(context), context(context), configured(false), scope(scope), blank(blank)
+OverviewWindow::OverviewWindow(Context *context, OverviewScope scope, bool blank) : GcChartWindow(context), context(context), configured(false), blank(blank)
 {
     setContentsMargins(0,0,0,0);
     setProperty("color", GColor(COVERVIEWBACKGROUND));
@@ -43,7 +43,7 @@ OverviewWindow::OverviewWindow(Context *context, OverviewScope scope, bool blank
 
     // settings
     QWidget *controls=new QWidget(this);
-    QFormLayout *formlayout = new QFormLayout(controls);
+    formlayout = new QFormLayout(controls);
     mincolsEdit= new QSpinBox(this);
     mincolsEdit->setMinimum(1);
     mincolsEdit->setMaximum(10);
@@ -61,24 +61,11 @@ OverviewWindow::OverviewWindow(Context *context, OverviewScope scope, bool blank
     space->setMinimumColumns(minimumColumns());
     main->addWidget(space);
 
-    HelpWhatsThis *help = new HelpWhatsThis(space);
-    if (scope & OverviewScope::ANALYSIS) space->setWhatsThis(help->getWhatsThisText(HelpWhatsThis::ChartRides_Overview));
-    else space->setWhatsThis(help->getWhatsThisText(HelpWhatsThis::Chart_Overview));
+    help = new HelpWhatsThis(space);
 
     // all the widgets
     setChartLayout(main);
 
-    // tell space when a ride is selected
-    if (scope & OverviewScope::ANALYSIS) {
-        connect(this, SIGNAL(rideItemChanged(RideItem*)), space, SLOT(rideSelected(RideItem*)));
-    }
-
-    if (scope & (OverviewScope::TRENDS | OverviewScope::PLAN)) {
-        connect(this, SIGNAL(dateRangeChanged(DateRange)), space, SLOT(dateRangeChanged(DateRange)));
-        connect(context, SIGNAL(filterChanged()), space, SLOT(filterChanged()));
-        connect(context, SIGNAL(homeFilterChanged()), space, SLOT(filterChanged()));
-        connect(this, SIGNAL(perspectiveFilterChanged(QString)), space, SLOT(filterChanged()));
-    }
     connect(this, SIGNAL(perspectiveChanged(Perspective*)), space, SLOT(refresh()));
     connect(context, SIGNAL(refreshEnd()), space, SLOT(refresh()));
     connect(context, SIGNAL(estimatesRefreshed()), space, SLOT(refresh()));
@@ -91,26 +78,26 @@ OverviewWindow::OverviewWindow(Context *context, OverviewScope scope, bool blank
     connect(space, SIGNAL(itemConfigRequested(ChartSpaceItem*, QPoint)), this, SLOT(configItem(ChartSpaceItem*, QPoint)));
 }
 
-void
+ChartSpaceItem*
 OverviewWindow::addTile()
 {
     ChartSpaceItem *added = NULL; // tell us what you added...
 
-    AddTileWizard *p = new AddTileWizard(context, space, scope, added);
+    AddTileWizard* p = getTileWizard(added);
     p->exec(); // no mem leak delete on close dialog
 
     // set ride / date range if we added one.....
     if (added) {
 
         // update after config changed
-        if (added->parent->scope & OverviewScope::ANALYSIS && added->parent->currentRideItem) added->setData(added->parent->currentRideItem);
-        if (added->parent->scope & (OverviewScope::TRENDS | OverviewScope::PLAN)) added->setDateRange(added->parent->currentDateRange);
+        tileAddedNotication(added);
 
         // update geometry
         space->updateGeometry();
         space->updateView();
 
     }
+    return added;
 }
 
 void
@@ -136,13 +123,7 @@ OverviewWindow::importChart()
     QList<QMap<QString,QString> > props = GcChartWindow::chartPropertiesFromFile(fileName);
 
     // we only support user charts, and they must be relevant to the current view
-    QString want;
-    switch (scope) {
-    case OverviewScope::ANALYSIS: want = QString("%1").arg(GcWindowTypes::UserAnalysis); break;
-    case OverviewScope::TRENDS: want = QString("%1").arg(GcWindowTypes::UserTrends); break;
-    case OverviewScope::PLAN: want = QString("%1").arg(GcWindowTypes::UserPlan); break;
-    default: break;
-    }
+    QString want = QString("%1").arg(getWindowType());
 
     // we look through all charts, but only import the first relevant one
     for (int i=0; i<props.count(); i++) {
@@ -165,8 +146,7 @@ OverviewWindow::importChart()
 
             // initialise to current selected daterange / activity as appropriate
             // need to do after geometry as it won't be visible till added to space
-            if (scope & OverviewScope::ANALYSIS && space->currentRideItem) add->setData(space->currentRideItem);
-            if (scope & (OverviewScope::TRENDS | OverviewScope::PLAN)) add->setDateRange(space->currentDateRange);
+            importChartNotification(add);
 
             // and update- sometimes a little wonky
             space->updateGeometry();
@@ -178,13 +158,6 @@ OverviewWindow::importChart()
 nodice:
     QMessageBox::critical(this, tr("Not imported"), tr("We only support importing valid User Charts built for this view at present."));
     return;
-}
-
-void
-OverviewWindow::configItem(ChartSpaceItem *item, QPoint pos)
-{
-    OverviewConfigDialog *p = new OverviewConfigDialog(item, pos);
-    p->exec(); // no mem leak as delete on close
 }
 
 QString
@@ -227,89 +200,7 @@ OverviewWindow::getConfiguration() const
         }
 
         // now the actual card settings
-        switch(item->type) {
-        case OverviewItemType::RPE:
-            {
-                //UNUSED RPEOverviewItem *rpe = reinterpret_cast<RPEOverviewItem*>(item);
-            }
-            break;
-
-        case OverviewItemType::DONUT:
-            {
-                DonutOverviewItem *donut = reinterpret_cast<DonutOverviewItem*>(item);
-                config += "\"symbol\":\"" + QString("%1").arg(donut->symbol) + "\",";
-                config += "\"meta\":\"" + QString("%1").arg(donut->meta) + "\",";
-            }
-            break;
-
-        case OverviewItemType::TOPN:
-        case OverviewItemType::METRIC:
-            {
-                MetricOverviewItem *metric = reinterpret_cast<MetricOverviewItem*>(item);
-                config += "\"symbol\":\"" + QString("%1").arg(metric->symbol) + "\",";
-            }
-            break;
-        case OverviewItemType::META:
-            {
-                MetaOverviewItem *meta = reinterpret_cast<MetaOverviewItem*>(item);
-                config += "\"symbol\":\"" + QString("%1").arg(meta->symbol) + "\",";
-            }
-            break;
-        case OverviewItemType::PMC:
-            {
-                PMCOverviewItem *pmc = reinterpret_cast<PMCOverviewItem*>(item);
-                config += "\"symbol\":\"" + QString("%1").arg(pmc->symbol) + "\",";
-            }
-            break;
-        case OverviewItemType::ROUTE:
-            {
-                // UNUSED RouteOverviewItem *route = reinterpret_cast<RouteOverviewItem*>(item);
-            }
-            break;
-        case OverviewItemType::INTERVAL:
-        case OverviewItemType::ACTIVITIES:
-            {
-                IntervalOverviewItem *interval = reinterpret_cast<IntervalOverviewItem*>(item);
-                config += "\"xsymbol\":\"" + QString("%1").arg(interval->xsymbol) + "\",";
-                config += "\"ysymbol\":\"" + QString("%1").arg(interval->ysymbol) + "\",";
-                config += "\"zsymbol\":\"" + QString("%1").arg(interval->zsymbol) + "\"" + ",";
-            }
-            break;
-        case OverviewItemType::ZONE:
-            {
-                ZoneOverviewItem *zone = reinterpret_cast<ZoneOverviewItem*>(item);
-                config += "\"series\":" + QString("%1").arg(static_cast<int>(zone->series)) + ",";
-                config += "\"polarized\":" + QString("%1").arg(zone->polarized) + ",";
-            }
-            break;
-        case OverviewItemType::DATATABLE:
-            {
-                DataOverviewItem *data = reinterpret_cast<DataOverviewItem*>(item);
-                config += "\"program\":\"" + QString("%1").arg(Utils::jsonprotect2(data->program)) + "\",";
-
-                // although they aren't config we remember the last sort order
-                // so it is retained over restarts, config of dynamic data is too hard
-                config += "\"sortcolumn\":" + QString("%1").arg(data->lastsort) + ",";
-                config += "\"sortorder\":" + QString("%1").arg(data->lastorder) + ",";
-            }
-            break;
-        case OverviewItemType::KPI:
-            {
-                KPIOverviewItem *kpi = reinterpret_cast<KPIOverviewItem*>(item);
-                config += "\"program\":\"" + QString("%1").arg(Utils::jsonprotect2(kpi->program)) + "\",";
-                config += "\"units\":\"" + QString("%1").arg(kpi->units) + "\",";
-                config += "\"istime\":" + QString("%1").arg(kpi->istime) + ",";
-                config += "\"start\":" + QString("%1").arg(kpi->start) + ",";
-                config += "\"stop\":" + QString("%1").arg(kpi->stop) + ",";
-            }
-            break;
-        case OverviewItemType::USERCHART:
-            {
-                UserChartOverviewItem *uc = reinterpret_cast<UserChartOverviewItem*>(item);
-                config += "\"settings\":\"" + QString("%1").arg(Utils::jsonprotect(uc->getConfig())) + "\",";
-            }
-            break;
-        }
+        getTileConfig(item, config);
 
         config += "\"datafilter\":\"" + Utils::jsonprotect(item->datafilter) + "\",";
         config += "\"name\":\"" + item->name + "\"";
@@ -324,6 +215,94 @@ OverviewWindow::getConfiguration() const
     config += "  ]\n}\n";
 
     return config;
+}
+
+void
+OverviewWindow::getTileConfig(ChartSpaceItem* item, QString& config) const
+{
+    switch (item->type) {
+    case OverviewItemType::RPE:
+    {
+        //UNUSED RPEOverviewItem *rpe = reinterpret_cast<RPEOverviewItem*>(item);
+    }
+    break;
+
+    case OverviewItemType::DONUT:
+    {
+        DonutOverviewItem* donut = reinterpret_cast<DonutOverviewItem*>(item);
+        config += "\"symbol\":\"" + QString("%1").arg(donut->symbol) + "\",";
+        config += "\"meta\":\"" + QString("%1").arg(donut->meta) + "\",";
+    }
+    break;
+
+    case OverviewItemType::TOPN:
+    case OverviewItemType::METRIC:
+    {
+        MetricOverviewItem* metric = reinterpret_cast<MetricOverviewItem*>(item);
+        config += "\"symbol\":\"" + QString("%1").arg(metric->symbol) + "\",";
+    }
+    break;
+    case OverviewItemType::META:
+    {
+        MetaOverviewItem* meta = reinterpret_cast<MetaOverviewItem*>(item);
+        config += "\"symbol\":\"" + QString("%1").arg(meta->symbol) + "\",";
+    }
+    break;
+    case OverviewItemType::PMC:
+    {
+        PMCOverviewItem* pmc = reinterpret_cast<PMCOverviewItem*>(item);
+        config += "\"symbol\":\"" + QString("%1").arg(pmc->symbol) + "\",";
+    }
+    break;
+    case OverviewItemType::ROUTE:
+    {
+        // UNUSED RouteOverviewItem *route = reinterpret_cast<RouteOverviewItem*>(item);
+    }
+    break;
+    case OverviewItemType::INTERVAL:
+    case OverviewItemType::ACTIVITIES:
+    {
+        IntervalOverviewItem* interval = reinterpret_cast<IntervalOverviewItem*>(item);
+        config += "\"xsymbol\":\"" + QString("%1").arg(interval->xsymbol) + "\",";
+        config += "\"ysymbol\":\"" + QString("%1").arg(interval->ysymbol) + "\",";
+        config += "\"zsymbol\":\"" + QString("%1").arg(interval->zsymbol) + "\"" + ",";
+    }
+    break;
+    case OverviewItemType::ZONE:
+    {
+        ZoneOverviewItem* zone = reinterpret_cast<ZoneOverviewItem*>(item);
+        config += "\"series\":" + QString("%1").arg(static_cast<int>(zone->series)) + ",";
+        config += "\"polarized\":" + QString("%1").arg(zone->polarized) + ",";
+    }
+    break;
+    case OverviewItemType::DATATABLE:
+    {
+        DataOverviewItem* data = reinterpret_cast<DataOverviewItem*>(item);
+        config += "\"program\":\"" + QString("%1").arg(Utils::jsonprotect2(data->program)) + "\",";
+
+        // although they aren't config we remember the last sort order
+        // so it is retained over restarts, config of dynamic data is too hard
+        config += "\"sortcolumn\":" + QString("%1").arg(data->lastsort) + ",";
+        config += "\"sortorder\":" + QString("%1").arg(data->lastorder) + ",";
+    }
+    break;
+    case OverviewItemType::KPI:
+    {
+        KPIOverviewItem* kpi = reinterpret_cast<KPIOverviewItem*>(item);
+        config += "\"program\":\"" + QString("%1").arg(Utils::jsonprotect2(kpi->program)) + "\",";
+        config += "\"units\":\"" + QString("%1").arg(kpi->units) + "\",";
+        config += "\"istime\":" + QString("%1").arg(kpi->istime) + ",";
+        config += "\"start\":" + QString("%1").arg(kpi->start) + ",";
+        config += "\"stop\":" + QString("%1").arg(kpi->stop) + ",";
+    }
+    break;
+    case OverviewItemType::USERCHART:
+    {
+        UserChartOverviewItem* uc = reinterpret_cast<UserChartOverviewItem*>(item);
+        config += "\"settings\":\"" + QString("%1").arg(Utils::jsonprotect(uc->getConfig())) + "\",";
+    }
+    break;
+    }
 }
 
 void
@@ -352,13 +331,7 @@ defaultsetup:
         //
         // so we open the json doc and extract the config element
         //
-        QString source;
-        switch (scope) {
-        case OverviewScope::ANALYSIS: source = ":charts/overview-analysis.gchart"; break;
-        case OverviewScope::TRENDS: source = ":charts/overview-trends.gchart"; break;
-        case OverviewScope::PLAN: source = ":charts/overview-plan.gchart"; break;
-        default: break;
-        }
+        QString source = getChartSource();
 
         QFile file(source);
         if (file.open(QIODevice::ReadOnly)) {
@@ -433,139 +406,9 @@ badconfig:
         int deep = obj["deep"].toInt();
         int type = obj["type"].toInt();
 
-
-
         // lets create the cards
         ChartSpaceItem *add=NULL;
-
-        switch(type) {
-
-        case OverviewItemType::RPE :
-            {
-                add = new RPEOverviewItem(space, name);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::TOPN :
-            {
-                QString symbol=obj["symbol"].toString();
-                add = new TopNOverviewItem(space, name,symbol);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::DONUT :
-            {
-                QString symbol=obj["symbol"].toString();
-                QString meta=obj["meta"].toString();
-                add = new DonutOverviewItem(space, name,symbol,meta);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::METRIC :
-            {
-                QString symbol=obj["symbol"].toString();
-                add = new MetricOverviewItem(space, name,symbol);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::META :
-            {
-                QString symbol=obj["symbol"].toString();
-                add = new MetaOverviewItem(space, name,symbol);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::PMC :
-            {
-                QString symbol=obj["symbol"].toString();
-                add = new PMCOverviewItem(space, symbol); // doesn't have a title
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::ZONE :
-            {
-                RideFile::SeriesType series = static_cast<RideFile::SeriesType>(obj["series"].toInt());
-                bool polarized = obj["polarized"].toInt();
-                add = new ZoneOverviewItem(space, name, series, polarized);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-
-            }
-            break;
-
-        case OverviewItemType::ROUTE :
-            {
-                add = new RouteOverviewItem(space, name); // doesn't have a title
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::INTERVAL :
-        case OverviewItemType::ACTIVITIES:
-            {
-                QString xsymbol=obj["xsymbol"].toString();
-                QString ysymbol=obj["ysymbol"].toString();
-                QString zsymbol=obj["zsymbol"].toString();
-
-                add = new IntervalOverviewItem(space, name, xsymbol, ysymbol, zsymbol); // doesn't have a title
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::DATATABLE:
-            {
-                QString program=Utils::jsonunprotect2(obj["program"].toString());
-                add = new DataOverviewItem(space, name, program);
-                add->datafilter = datafilter;
-
-                // added later, so not guaranteed to be there
-                // we remember the sorting so we can reinstate after restart
-                if (obj.contains("sortorder")) {
-                    int column = obj["sortcolumn"].toInt();
-                    int order = obj["sortorder"].toInt();
-                    static_cast<DataOverviewItem*>(add)->lastsort = column;
-                    static_cast<DataOverviewItem*>(add)->lastorder = static_cast<Qt::SortOrder>(order);
-                }
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::KPI :
-            {
-                QString program=Utils::jsonunprotect2(obj["program"].toString());
-                double start=obj["start"].toDouble();
-                double stop =obj["stop"].toDouble();
-                QString units =obj["units"].toString();
-                bool istime =obj["istime"].toInt();
-                add = new KPIOverviewItem(space, name, start, stop, program, units, istime);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-
-        case OverviewItemType::USERCHART :
-            {
-                QString settings=Utils::jsonunprotect(obj["settings"].toString());
-                add = new UserChartOverviewItem(space, name, settings);
-                add->datafilter = datafilter;
-                space->addItem(order,column,span,deep, add);
-            }
-            break;
-        }
+        setTileConfig(obj, type, name, datafilter, order, column, span, deep, add);
 
         // color is common- if we actuall added one...
         if (add) {
@@ -576,6 +419,140 @@ badconfig:
 
     // put in place
     space->updateGeometry();
+}
+
+void
+OverviewWindow::setTileConfig(const QJsonObject& obj, int type, const QString& name,
+                               const QString& datafilter, int order, int column,
+                               int span, int deep, ChartSpaceItem* add) const {
+    switch (type) {
+
+    case OverviewItemType::RPE:
+    {
+        add = new RPEOverviewItem(space, name);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::TOPN:
+    {
+        QString symbol = obj["symbol"].toString();
+        add = new TopNOverviewItem(space, name, symbol);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::DONUT:
+    {
+        QString symbol = obj["symbol"].toString();
+        QString meta = obj["meta"].toString();
+        add = new DonutOverviewItem(space, name, symbol, meta);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::METRIC:
+    {
+        QString symbol = obj["symbol"].toString();
+        add = new MetricOverviewItem(space, name, symbol);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::META:
+    {
+        QString symbol = obj["symbol"].toString();
+        add = new MetaOverviewItem(space, name, symbol);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::PMC:
+    {
+        QString symbol = obj["symbol"].toString();
+        add = new PMCOverviewItem(space, symbol); // doesn't have a title
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::ZONE:
+    {
+        RideFile::SeriesType series = static_cast<RideFile::SeriesType>(obj["series"].toInt());
+        bool polarized = obj["polarized"].toInt();
+        add = new ZoneOverviewItem(space, name, series, polarized);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+
+    }
+    break;
+
+    case OverviewItemType::ROUTE:
+    {
+        add = new RouteOverviewItem(space, name); // doesn't have a title
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::INTERVAL:
+    case OverviewItemType::ACTIVITIES:
+    {
+        QString xsymbol = obj["xsymbol"].toString();
+        QString ysymbol = obj["ysymbol"].toString();
+        QString zsymbol = obj["zsymbol"].toString();
+
+        add = new IntervalOverviewItem(space, name, xsymbol, ysymbol, zsymbol); // doesn't have a title
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::DATATABLE:
+    {
+        QString program = Utils::jsonunprotect2(obj["program"].toString());
+        add = new DataOverviewItem(space, name, program);
+        add->datafilter = datafilter;
+
+        // added later, so not guaranteed to be there
+        // we remember the sorting so we can reinstate after restart
+        if (obj.contains("sortorder")) {
+            int column = obj["sortcolumn"].toInt();
+            int order = obj["sortorder"].toInt();
+            static_cast<DataOverviewItem*>(add)->lastsort = column;
+            static_cast<DataOverviewItem*>(add)->lastorder = static_cast<Qt::SortOrder>(order);
+        }
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::KPI:
+    {
+        QString program = Utils::jsonunprotect2(obj["program"].toString());
+        double start = obj["start"].toDouble();
+        double stop = obj["stop"].toDouble();
+        QString units = obj["units"].toString();
+        bool istime = obj["istime"].toInt();
+        add = new KPIOverviewItem(space, name, start, stop, program, units, istime);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+
+    case OverviewItemType::USERCHART:
+    {
+        QString settings = Utils::jsonunprotect(obj["settings"].toString());
+        add = new UserChartOverviewItem(space, name, settings);
+        add->datafilter = datafilter;
+        space->addItem(order, column, span, deep, add);
+    }
+    break;
+    }
 }
 
 //
@@ -592,14 +569,9 @@ OverviewConfigDialog::OverviewConfigDialog(ChartSpaceItem*item, QPoint pos) : QD
 
     // get the factory and set what's this string according to type
     ChartSpaceItemRegistry &registry = ChartSpaceItemRegistry::instance();
-    ChartSpaceItemDetail itemDetail = registry.detailForType(item->type);
+    itemDetail = registry.detailForType(item->type);
     itemDetail.quick.replace(" ", "-"); // Blanks are replaced by - in Wiki URLs
-    HelpWhatsThis *help = new HelpWhatsThis(this);
-    if (item->parent->scope & OverviewScope::ANALYSIS) {
-        this->setWhatsThis(help->getWhatsThisText(HelpWhatsThis::ChartRides_Overview_Config).arg(itemDetail.quick, itemDetail.description));
-    } else {
-        this->setWhatsThis(help->getWhatsThisText(HelpWhatsThis::Chart_Overview_Config).arg(itemDetail.quick, itemDetail.description));
-    }
+    help = new HelpWhatsThis(this);
 
     main = new QVBoxLayout(this);
     main->addWidget(item->config());
@@ -618,7 +590,7 @@ OverviewConfigDialog::OverviewConfigDialog(ChartSpaceItem*item, QPoint pos) : QD
         exp = new QPushButton(tr("Export"), this);
         buttons->addWidget(exp);
         buttons->addStretch();
-        connect(exp, SIGNAL(clicked()), this, SLOT(exportChart()));
+        connect(exp, SIGNAL(clicked()), this, SLOT(exportUserChart()));
     }
     buttons->addWidget(ok);
 
@@ -657,7 +629,7 @@ OverviewConfigDialog::~OverviewConfigDialog()
 void
 OverviewConfigDialog::close()
 {
-    // remove from the layout- unless we just deleted it !
+    // remove item from the dialog layout - unless we just deleted it !
     if (item) {
 
         main->removeWidget(item->config());
@@ -671,8 +643,7 @@ OverviewConfigDialog::close()
         item->itemGeometryChanged();
 
         // update after config changed
-        if (item->parent->scope & OverviewScope::ANALYSIS && item->parent->currentRideItem) item->setData(item->parent->currentRideItem);
-        if (item->parent->scope & (OverviewScope::TRENDS | OverviewScope::PLAN)) item->setDateRange(item->parent->currentDateRange);
+        updateItemNotification();
 
         item=NULL;
     }
@@ -703,7 +674,7 @@ OverviewConfigDialog::removeItem()
 }
 
 void
-OverviewConfigDialog::exportChart()
+OverviewConfigDialog::exportUserChart()
 {
     // Overview tiles that contain user charts can be exported
     // as .gchart files, but bear in mind these tiles are not
@@ -748,8 +719,8 @@ OverviewConfigDialog::exportChart()
     // serialise (mimicing real exporter in GoldenCheetah.cpp
     out <<"{\n\t\"CHART\":{\n";
     out <<"\t\t\"VERSION\":\"1\",\n";
-    out <<"\t\t\"VIEW\":\"" << viewName << "\",\n";
-    out <<"\t\t\"TYPE\":\"" << QString::number(chartId) << "\",\n";
+    out <<"\t\t\"VIEW\":\"" << getViewForExport() << "\",\n";
+    out <<"\t\t\"TYPE\":\"" << getTypeForExport() << "\",\n";
 
     // PROPERTIES
     out <<"\t\t\"PROPERTIES\":{\n";
@@ -765,6 +736,4 @@ OverviewConfigDialog::exportChart()
 
     // all done
     outfile.close();
-
-
 }
