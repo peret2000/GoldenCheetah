@@ -23,6 +23,7 @@
 
 #include "LTMChartParser.h"
 #include "GcUpgrade.h"
+#include "Views.h"
 #include "Colors.h"
 
 #ifdef GC_WANT_R
