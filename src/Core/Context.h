@@ -128,7 +128,7 @@ class Context : public QObject
 
         // mainwindow state
         NavigationModel *nav;
-        int viewIndex;
+        GcViewType viewType;
         bool showSidebar, showLowbar, showToolbar, showTabbar;
         int style;
         QString searchText;
@@ -215,7 +215,7 @@ class Context : public QObject
         void notifyUserMetricsChanged() { emit userMetricsChanged(); }
 
         // view changed
-        void setIndex(int i) { viewIndex = i; emit viewChanged(i); }
+        void setViewType(GcViewType v) { viewType = v; emit viewChanged(v); }
 
         // realtime signals
         void notifyTelemetryUpdate(const RealtimeData &rtData) { telemetryUpdate(rtData); }
@@ -324,7 +324,7 @@ class Context : public QObject
         void userMetricsChanged();
 
         // view changed
-        void viewChanged(int);
+        void viewChanged(GcViewType);
 
         // refreshing stats
         void refreshStart();
