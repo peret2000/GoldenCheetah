@@ -16,6 +16,7 @@
             "**/*.AppImage": true,
             "squashfs-root/**": true,
             "D2XX/**": true,
+            "deprecated/**": true,
         },
         "files.watcherExclude": {
             "**/*.o": true,
@@ -23,6 +24,7 @@
             "**/*.AppImage": true,
             "squashfs-root/**": true,
             "D2XX/**": true,
+            "deprecated/**": true,
         },
         "search.exclude": {
             "**/*.o": true,
@@ -31,6 +33,7 @@
             "squashfs-root/**": true,
             "D2XX/**": true,
             "**/*.ts": true,
+            "deprecated/**": true,
         }
     }
 }
