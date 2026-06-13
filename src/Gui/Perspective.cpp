@@ -1749,10 +1749,10 @@ ImportChartDialog::ImportChartDialog(Context *context, const QList<QMap<QString,
         GcViewType chartRelevance = GcWindowRegistry::relevanceForId(GcWinID(winId));
 
         // add entries to combox for all relevant views
-        if (chartRelevance & GcViewType::VIEW_ANALYSIS) com->addItem(tr(AnalysisView::userName), GcViewType::VIEW_ANALYSIS);
-        if (chartRelevance & GcViewType::VIEW_PLAN) com->addItem(tr(PlanView::userName), GcViewType::VIEW_PLAN);
-        if (chartRelevance & GcViewType::VIEW_TRENDS) com->addItem(tr(TrendsView::userName), GcViewType::VIEW_TRENDS);
-        if (chartRelevance & GcViewType::VIEW_TRAIN) com->addItem(tr(TrainView::userName), GcViewType::VIEW_TRAIN);
+        if (chartRelevance & GcViewType::VIEW_ANALYSIS) com->addItem(tr(AnalysisView::userName), int(GcViewType::VIEW_ANALYSIS));
+        if (chartRelevance & GcViewType::VIEW_PLAN) com->addItem(tr(PlanView::userName), int(GcViewType::VIEW_PLAN));
+        if (chartRelevance & GcViewType::VIEW_TRENDS) com->addItem(tr(TrendsView::userName), int(GcViewType::VIEW_TRENDS));
+        if (chartRelevance & GcViewType::VIEW_TRAIN) com->addItem(tr(TrainView::userName), int(GcViewType::VIEW_TRAIN));
 
         // ensure at least one relevance match
         if (com->count() > 0) {
@@ -1770,12 +1770,12 @@ ImportChartDialog::ImportChartDialog(Context *context, const QList<QMap<QString,
 
             // select the combo box index for the chart's default view,
             // default to first entry if the chart's default view cannot be found
-            int index = com->findData(chartDefaultView);
+            int index = com->findData(int(chartDefaultView));
             com->setCurrentIndex( (index != -1) ? index : 0);
 
         } else {
             chartRelevance = GcViewType::NO_VIEW_SET;
-            com->addItem(tr("Unknown"), chartRelevance);
+            com->addItem(tr("Unknown"), int(chartRelevance));
             qDebug() << "Chart type" << winId << "is not relevant for any View!";
         }
 
@@ -1826,15 +1826,14 @@ ImportChartDialog::importClicked()
                 else if (viewType == GcViewType::VIEW_TRAIN) context->mainWindow->selectTrain();
                 else if (viewType == GcViewType::VIEW_EQUIPMENT) context->mainWindow->selectEquipment();
 
-            // add to the currently selected tab and select if only adding one chart
-            if (viewType != GcViewType::NO_VIEW_SET) {
-                if (viewType == GcViewType::VIEW_EQUIPMENT) {
-                    context->mainWindow->equipView()->importChart(list[i], (list.count()==1));
-                } else {
-                    context->mainWindow->athleteTab()->view(viewType)->importChart(list[i], (list.count()==1));
+                // add to the currently selected tab and select if only adding one chart
+                if (viewType != GcViewType::NO_VIEW_SET) {
+                    if (viewType == GcViewType::VIEW_EQUIPMENT) {
+                        context->mainWindow->equipView()->importChart(list[i], (list.count()==1));
+                    } else {
+                        context->mainWindow->athleteTab()->view(viewType)->importChart(list[i], (list.count()==1));
+                    }
                 }
-            } else {
-                qDebug() << "Unhandled view type in ImportChartDialog:" << view;
             }
         }
     }
