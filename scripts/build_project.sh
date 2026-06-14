@@ -218,8 +218,8 @@ if $MERGECODE; then
 	merge origin/train_view_improvements
 	merge origin/activities_view_improvements
 	merge origin/train_geolocation_widget
-	# Se inhibe de momento porque hay conflicto con c9091bb25
-	#merge origin/equipment_view
+	merge origin/equipment_view
+	merge origin/pr-html-tmp
 
 	echo "----- Skipped branches: ${#MERGE_FAILED[@]} -----" | tee -a $LOGFILE
 	if [[ ${#MERGE_FAILED[@]} -gt 0 ]]; then
