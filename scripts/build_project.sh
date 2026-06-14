@@ -219,7 +219,9 @@ if $MERGECODE; then
 	merge origin/activities_view_improvements
 	merge origin/train_geolocation_widget
 	merge origin/equipment_view
-	merge origin/pr-html-tmp
+	# 'Copia' de los commits de pr-html-tmp, para que no de conflictos con equipment_view. Es una rama que deberá desaparecer
+	# si pr-html-tmp sube a producción
+	merge origin/ADAPTADOR_pr-html-tmp
 
 	echo "----- Skipped branches: ${#MERGE_FAILED[@]} -----" | tee -a $LOGFILE
 	if [[ ${#MERGE_FAILED[@]} -gt 0 ]]; then
