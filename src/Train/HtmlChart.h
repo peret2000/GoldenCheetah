@@ -20,19 +20,43 @@
 #define _GC_HtmlChart_h
 
 #include "GoldenCheetah.h"
+#include <QSyntaxHighlighter>
+#include <QRegularExpression>
+#include <QTextCharFormat>
 
 class QWebEngineView;
 class QWebChannel;
 
 class QTableWidget;
 class QCheckBox;
-class QTextEdit;
+class QPlainTextEdit;
 class QSplitter;
 class QWidget;
 class QTimer;
 
 class Context;
 class HtmlChart;
+
+// HTML Syntax Highlighter class for the editor
+class HtmlSyntaxHighlighter : public QSyntaxHighlighter
+{
+    Q_OBJECT
+public:
+    explicit HtmlSyntaxHighlighter(QTextDocument *parent = nullptr);
+protected:
+    void highlightBlock(const QString &text) override;
+private:
+    struct HighlightingRule {
+        QRegularExpression pattern;
+        QTextCharFormat format;
+    };
+    QList<HighlightingRule> highlightingRules;
+
+    QTextCharFormat tagFormat;
+    QTextCharFormat attributeFormat;
+    QTextCharFormat valueFormat;
+    QTextCharFormat commentFormat;
+};
 
 // This is the object that is exposed to the JavaScript environment of the chart, instead
 // of the full HtmlChart object
@@ -95,7 +119,7 @@ public slots:
 private:
     Context *context;
     QSplitter *splitter;
-    QTextEdit *editor;
+    QPlainTextEdit *editor;
     QCheckBox *showEditorBtn;
     QCheckBox *showConfigBtn;
     QCheckBox *showTitleBtn;

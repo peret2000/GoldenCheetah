@@ -41,8 +41,55 @@
 #include <QHBoxLayout>
 #include <QTableWidget>
 #include <QPushButton>
+#include <QPlainTextEdit>
 
 extern QApplication *application;
+
+// --- Syntax Highlighter Implementation ---
+
+HtmlSyntaxHighlighter::HtmlSyntaxHighlighter(QTextDocument *parent)
+    : QSyntaxHighlighter(parent)
+{
+    HighlightingRule rule;
+
+    // HTML Tags
+    tagFormat.setForeground(QColor("#005cc5")); 
+    tagFormat.setFontWeight(QFont::Bold);
+    rule.pattern = QRegularExpression("</?[A-Za-z0-9]+[^>]*>");
+    rule.format = tagFormat;
+    highlightingRules.append(rule);
+
+    // HTML Attributes
+    attributeFormat.setForeground(QColor("#d73a49"));
+    rule.pattern = QRegularExpression("\\b[A-Za-z0-9_-]+(?=\\=)");
+    rule.format = attributeFormat;
+    highlightingRules.append(rule);
+
+    // String values
+    valueFormat.setForeground(QColor("#22863a"));
+    rule.pattern = QRegularExpression("\"[^\"]*\"");
+    rule.format = valueFormat;
+    highlightingRules.append(rule);
+
+    // HTML Comments
+    commentFormat.setForeground(QColor("#6a737d"));
+    commentFormat.setFontItalic(true);
+    rule.pattern = QRegularExpression("");
+    rule.format = commentFormat;
+    highlightingRules.append(rule);
+}
+void HtmlSyntaxHighlighter::highlightBlock(const QString &text)
+{
+    for (const HighlightingRule &rule : std::as_const(highlightingRules)) {
+        QRegularExpressionMatchIterator matchIterator = rule.pattern.globalMatch(text);
+        while (matchIterator.hasNext()) {
+            QRegularExpressionMatch match = matchIterator.next();
+            setFormat(match.capturedStart(), match.capturedLength(), rule.format);
+        }
+    }
+}
+
+// -----------------------------------------
 
 HtmlChartBridge::HtmlChartBridge(HtmlChart *chart, QObject *parent)
     : QObject(parent), m_chart(chart)
@@ -98,15 +145,16 @@ HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context
     splitter->setHandleWidth(1);
     mainLayout->addWidget(splitter);
 
-    // Editor
-    editor = new QTextEdit(this);
+    // Editor (Optimized with QPlainTextEdit and Syntax Highlighting)
+    editor = new QPlainTextEdit(this);
     editor->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
     editor->setFrameStyle(QFrame::NoFrame);
-    editor->setAcceptRichText(false);
     QFont courier("Courier", QFont().pointSize());
     editor->setFont(courier);
+    
+    new HtmlSyntaxHighlighter(editor->document());
 
-    connect(editor, &QTextEdit::textChanged, this, [this]() {
+    connect(editor, &QPlainTextEdit::textChanged, this, [this]() {
         if (m_renderTimer) m_renderTimer->start(1000);
     });
 
@@ -266,9 +314,12 @@ void HtmlChart::configChanged(qint32)
     palette.setColor(QPalette::Base, GCColor::alternateColor(GColor(CPLOTBACKGROUND)));
     setPalette(palette);
 
-    if (editor) {
-        editor->setPalette(palette);
-        editor->setStyleSheet(AbstractView::ourStyleSheet());
+if (editor) {
+        QPalette editorPalette = palette;
+
+        editorPalette.setColor(QPalette::Text, QApplication::palette().color(QPalette::Text));
+        editorPalette.setColor(QPalette::Base, QApplication::palette().color(QPalette::Base));
+        editor->setPalette(editorPalette);
     }
 }
 
