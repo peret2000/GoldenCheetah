@@ -1226,6 +1226,15 @@ QString RealtimeData::seriesSymbol(DataSeries series)
     case DistanceRemaining: return QString("Distance Remaining");
         break;
 
+    case DeltaSlope: return QString("Delta Slope");
+        break;
+
+    case ElevationGain: return QString("Elevation Gain");
+        break;
+
+    case Calories: return QString("Calories");
+        break;
+
     case VAM: return QString("VAM");
         break;
 
@@ -1272,6 +1281,9 @@ QString RealtimeData::seriesSymbol(DataSeries series)
         break;
 
     case AvgCadenceLap: return QString("Lap Cadence");
+        break;
+
+    case Gear: return QString("Gear");
         break;
 
     case LRBalance: return QString("Left/Right Balance");
