@@ -104,6 +104,11 @@ jobs:
           if [ ! -f qwt/lib/libqwt.a ]; then
             make -j${THREADS_VAL} sub-qwt
           fi
+          
+          # Evita race conditions de bison en qmake generando yacc de forma secuencial primero
+          make -j1 -C src compiler_yacc_decl_make_all || true
+          make -j1 -C src compiler_yacc_impl_make_all || true
+          
           make -j${THREADS_VAL} sub-src
 
       - name: Generate AppImage
