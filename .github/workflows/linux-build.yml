@@ -105,9 +105,8 @@ jobs:
             make -j${THREADS_VAL} sub-qwt
           fi
           
-          # Evita race conditions de bison en qmake generando yacc de forma secuencial primero
-          make -j1 -C src compiler_yacc_decl_make_all || true
-          make -j1 -C src compiler_yacc_impl_make_all || true
+          # Evita race conditions de bison en qmake generando los objetos yacc explícitamente y de forma secuencial primero
+          make -j1 -C src JsonRideFile_yacc.o DataFilter_yacc.o RideDB_yacc.o WorkoutFilter_yacc.o TrainerDayAPIQuery_yacc.o
           
           make -j${THREADS_VAL} sub-src
 
