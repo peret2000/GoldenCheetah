@@ -94,6 +94,14 @@ jobs:
 
           sed -i '/^linuxdeployqt/{/geoservices/!s/$/ -extra-plugins=geoservices/}' src/Resources/linux/MakeAppImageQt6.sh
 
+      - name: Debug R Installation
+        run: |
+          which R || echo "R not found"
+          R RHOME || echo "R RHOME failed"
+          R CMD config --cppflags || echo "R CMD config failed"
+          find /usr -name "R.h" 2>/dev/null || echo "find failed"
+          pkg-config --cflags libR || echo "pkg-config libR failed"
+
       - name: Build GoldenCheetah
         run: |
           export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
