@@ -1,0 +1,109 @@
+name: Linux amd64 Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libgsl-dev \
+            libsamplerate0-dev \
+            libusb-1.0-0-dev \
+            libical-dev \
+            libfuse2t64 \
+            patchelf \
+            libxkbcommon-dev \
+            libxkbfile1 \
+            libxkbfile-dev \
+            libqt6sql6-sqlite \
+            libxcb-cursor0 \
+            libevent-2.1-7t64 \
+            build-essential bison flex fuse file zlib1g-dev \
+            autoconf automake cmake libtool autopoint libssl-dev \
+            ubuntu-restricted-extras \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav gstreamer1.0-pulseaudio libgl1-mesa-dri libgbm1
+
+      - name: Build SRMIO
+        run: |
+          git clone https://github.com/rclasen/srmio.git
+          cd srmio
+          sh genautomake.sh
+          ./configure --disable-shared --enable-static
+          make --silent -j$(nproc)
+          sudo make install
+          cd ..
+          rm -rf srmio
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies (sip, aqtinstall)
+        run: |
+          python -m pip install --upgrade pip
+          pip install sip aqtinstall
+
+      - name: Install Qt 6.8.0
+        run: |
+          python -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 \
+            --base https://qt.mirror.constant.com --external 7z \
+            -m qt5compat qtcharts qtconnectivity qtmultimedia qtlanguageserver qtpositioning qtsensors qtserialport qtwebchannel qtwebengine qtwebsockets qtlocation
+
+      - name: Compile linuxdeployqt
+        run: |
+          export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
+          export PATH="${QT_DIR}/bin:${PATH}"
+          export CMAKE_PREFIX_PATH="${QT_DIR}/lib/cmake:${CMAKE_PREFIX_PATH}"
+          
+          git clone https://github.com/probonopd/linuxdeployqt.git
+          cd linuxdeployqt
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ..
+          make -j$(nproc)
+          sudo cp -p tools/linuxdeployqt/linuxdeployqt /usr/bin/
+          cd ../..
+          rm -rf linuxdeployqt
+
+      - name: Build GoldenCheetah
+        run: |
+          export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
+          export PATH="${QT_DIR}/bin:${PATH}"
+          
+          qmake build.pro -r QMAKE_CXXFLAGS_WARN_ON+="-Wno-unused-private-field -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-deprecated-register -Wno-nullability-completeness -Wno-sign-compare -Wno-inconsistent-missing-override"
+          
+          THREADS_VAL=$(nproc)
+          if [ ! -f qwt/lib/libqwt.a ]; then
+            make -j${THREADS_VAL} sub-qwt
+          fi
+          make -j${THREADS_VAL} sub-src
+
+      - name: Generate AppImage
+        run: |
+          export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
+          export PATH="${QT_DIR}/bin:${PATH}"
+          
+          # Change to src directory where the AppImage script is executed from
+          cd src
+          chmod +x ./Resources/linux/MakeAppImageQt6.sh
+          ./Resources/linux/MakeAppImageQt6.sh
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoldenCheetah-Linux-amd64
+          path: src/GoldenCheetah_*.AppImage
+          if-no-files-found: error
