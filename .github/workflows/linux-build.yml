@@ -83,7 +83,7 @@ jobs:
       - name: Prepare build environment (gcconfig.pri)
         run: |
           export PYTHON_VERSION="3.12"
-          ./appveyor/linux/before_build.sh
+          bash ./appveyor/linux/before_build.sh
 
           # Apply D2XX header and MakeAppImage fixes from preparedirectory.sh
           mkdir -p D2XX
