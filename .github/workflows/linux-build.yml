@@ -36,7 +36,8 @@ jobs:
             ubuntu-restricted-extras \
             libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev \
             gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
-            gstreamer1.0-libav gstreamer1.0-pulseaudio libgl1-mesa-dri libgbm1
+            gstreamer1.0-libav gstreamer1.0-pulseaudio libgl1-mesa-dri libgbm1 \
+            r-base-dev
 
       - name: Build SRMIO
         run: |
