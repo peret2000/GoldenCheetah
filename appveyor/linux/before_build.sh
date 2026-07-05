@@ -23,7 +23,7 @@ sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|^#HTPATH|HTPATH|" src/gcconfig.pri
 # R
 sed -i "s|#\(DEFINES += GC_WANT_R.*\)|\1|" src/gcconfig.pri
-echo "QMAKE_CXXFLAGS += -I/usr/share/R/include" >> src/gcconfig.pri
+echo "INCLUDEPATH += /usr/share/R/include" >> src/gcconfig.pri
 # Enable CloudDB
 sed -i "s|^#CloudDB|CloudDB|" src/gcconfig.pri
 # D2XX
