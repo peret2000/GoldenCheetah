@@ -106,9 +106,18 @@ jobs:
           fi
           
           # Evita race conditions de bison en qmake generando los objetos yacc explícitamente y de forma secuencial primero
-          make -j1 -C src compiler_yacc_decl_make_all compiler_yacc_impl_make_all compiler_lex_make_all
+          make -j1 -C src compiler_yacc_decl_make_all compiler_yacc_impl_make_all compiler_lex_make_all > make_yacc.log 2>&1 || { echo "YACC FAILED"; cat make_yacc.log; exit 1; }
           
-          make -j${THREADS_VAL} sub-src
+          make -j${THREADS_VAL} sub-src > make_output.log 2>&1 || {
+            echo "Make failed. Pushing logs to branch tmp_build_logs..."
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git checkout -b tmp_build_logs
+            git add make_output.log make_yacc.log
+            git commit -m "Upload failed build logs"
+            git push -f origin tmp_build_logs
+            exit 1
+          }
 
       - name: Generate AppImage
         run: |
