@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
           export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
           export PATH="${QT_DIR}/bin:${PATH}"
           export CMAKE_PREFIX_PATH="${QT_DIR}/lib/cmake:${CMAKE_PREFIX_PATH}"
-          
+
           git clone https://github.com/probonopd/linuxdeployqt.git
           cd linuxdeployqt
           mkdir build && cd build
@@ -80,13 +80,26 @@ jobs:
           cd ../..
           rm -rf linuxdeployqt
 
+      - name: Prepare build environment (gcconfig.pri)
+        run: |
+          export PYTHON_VERSION="3.12"
+          ./appveyor/linux/before_build.sh
+
+          # Apply D2XX header and MakeAppImage fixes from preparedirectory.sh
+          mkdir -p D2XX
+          wget --no-verbose https://ftdichip.com/wp-content/uploads/2022/07/libftd2xx-x86_64-1.4.27.tgz
+          tar xf libftd2xx-x86_64-1.4.27.tgz -C D2XX
+          rm libftd2xx-x86_64-1.4.27.tgz
+
+          sed -i '/^linuxdeployqt/{/geoservices/!s/$/ -extra-plugins=geoservices/}' src/Resources/linux/MakeAppImageQt6.sh
+
       - name: Build GoldenCheetah
         run: |
           export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
           export PATH="${QT_DIR}/bin:${PATH}"
-          
+
           qmake build.pro -r QMAKE_CXXFLAGS_WARN_ON+="-Wno-unused-private-field -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-deprecated-register -Wno-nullability-completeness -Wno-sign-compare -Wno-inconsistent-missing-override"
-          
+
           THREADS_VAL=$(nproc)
           if [ ! -f qwt/lib/libqwt.a ]; then
             make -j${THREADS_VAL} sub-qwt
@@ -97,7 +110,7 @@ jobs:
         run: |
           export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
           export PATH="${QT_DIR}/bin:${PATH}"
-          
+
           # Change to src directory where the AppImage script is executed from
           cd src
           chmod +x ./Resources/linux/MakeAppImageQt6.sh
