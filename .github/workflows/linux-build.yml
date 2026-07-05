@@ -2,7 +2,9 @@ name: Linux amd64 Build
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - tmp_BuildAdapt # Se lanzará automáticamente al hacer push en esta rama
 jobs:
   build:
     runs-on: ubuntu-24.04
