@@ -83,7 +83,8 @@ enum gcwinid {
         UserPlan=54,
         OverviewPlan=55,
         OverviewPlanBlank = 56,
-        PlanAdherence = 57
+        PlanAdherence = 57,
+        HtmlTraining = 58
 };
 };
 typedef enum GcWindowTypes::gcwinid GcWinID;
@@ -109,6 +110,7 @@ class GcWindowRegistry {
     static QStringList windowsForType(int type);
     static QList<GcWinID> idsForType(int type);
     static QString title(GcWinID id);
+    static unsigned int relevanceForId(GcWinID id);
 };
 
 extern GcWindowRegistry* GcWindows;

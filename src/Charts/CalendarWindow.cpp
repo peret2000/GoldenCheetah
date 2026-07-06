@@ -28,7 +28,7 @@
 #include "RideMetadata.h"
 #include "Colors.h"
 #include "ManualActivityWizard.h"
-#include "RepeatScheduleWizard.h"
+#include "PlanWizards.h"
 #include "WorkoutFilter.h"
 #include "IconManager.h"
 #include "FilterSimilarDialog.h"
@@ -296,6 +296,7 @@ CalendarWindow::CalendarWindow(Context *context)
 
     setStartHour(8);
     setEndHour(21);
+    setMinVisibleMins(0);
     setShowSecondaryLabel(true);
     setSummaryIncludePlanned(0);
 
@@ -368,14 +369,28 @@ CalendarWindow::CalendarWindow(Context *context)
         wizard.exec();
         this->context->tab->setNoSwitch(false);
     });
-    connect(calendar, &Calendar::repeatSchedule, this, [this](const QDate &day) {
+    connect(calendar, &Calendar::repeatPlan, this, [this](const QDate &day) {
         this->context->tab->setNoSwitch(true);
-        RepeatScheduleWizard wizard(this->context, day);
+        RepeatPlanWizard wizard(this->context, day);
         if (wizard.exec() == QDialog::Accepted) {
             // Context::rideDeleted is not always emitted, therefore forcing the update
             updateActivities();
         }
         this->context->tab->setNoSwitch(false);
+    });
+    connect(calendar, &Calendar::importPlan, this, [this](const QDate &day) {
+        this->context->tab->setNoSwitch(true);
+        ImportPlanWizard wizard(this->context, day);
+        if (wizard.exec() == QDialog::Accepted) {
+            // Context::rideDeleted is not always emitted, therefore forcing the update
+            updateActivities();
+        }
+        this->context->tab->setNoSwitch(false);
+    });
+    connect(calendar, QOverload<CalendarEntry>::of(&Calendar::exportPlan), this, &CalendarWindow::exportPlan);
+    connect(calendar, QOverload<>::of(&Calendar::exportPlan), this, [this]() {
+        ExportPlanWizard wizard(this->context, nullptr);
+        wizard.exec();
     });
     connect(calendar, &Calendar::delActivity, this, [this](CalendarEntry activity) {
         QMessageBox::StandardButton res = QMessageBox::question(this, tr("Delete Activity"), tr("Are you sure you want to delete %1?").arg(activity.reference));
@@ -527,6 +542,25 @@ CalendarWindow::setEndHour
     startHourSpin->setMaximum(hour - 1);
     if (calendar != nullptr) {
         calendar->setEndHour(hour);
+        updateActivities();
+    }
+}
+
+
+int
+CalendarWindow::getMinVisibleMins
+() const
+{
+    return minVisibleMinsSpin->value();
+}
+
+
+void
+CalendarWindow::setMinVisibleMins
+(int mins)
+{
+    minVisibleMinsSpin->setValue(mins);
+    if (calendar != nullptr) {
         updateActivities();
     }
 }
@@ -816,6 +850,10 @@ CalendarWindow::mkControls
     endHourSpin = new QSpinBox();
     endHourSpin->setSuffix(":00");
     endHourSpin->setMaximum(24);
+    minVisibleMinsSpin = new QSpinBox();
+    minVisibleMinsSpin->setRange(0, 120);
+    minVisibleMinsSpin->setSingleStep(15);
+    minVisibleMinsSpin->setSuffix(" " + tr("mins"));
     includePlannedCombo = new QComboBox();
     includePlannedCombo->addItem(tr("Always"), QVariant::fromValue(PlanFilterType::IncludeAll));
     includePlannedCombo->addItem(tr("If upcoming or missed"), QVariant::fromValue(PlanFilterType::IncludeIfUpcomingOrMissed));
@@ -852,6 +890,7 @@ CalendarWindow::mkControls
     generalForm->addRow(new QLabel(HLO + tr("Calendar Basics") + HLC));
     generalForm->addRow(tr("Startup View"), defaultViewCombo);
     generalForm->addRow(tr("First Day of Week"), firstDayOfWeekCombo);
+    generalForm->addRow(tr("Minimum Display Duration"), minVisibleMinsSpin);
     generalForm->addItem(new QSpacerItem(0, 20 * dpiYFactor));
     generalForm->addRow(new QLabel(HLO + tr("Default Times") + HLC));
     generalForm->addRow(tr("Default Start Time"), startHourSpin);
@@ -883,6 +922,7 @@ CalendarWindow::mkControls
 
     connect(startHourSpin, &QSpinBox::valueChanged, this, &CalendarWindow::setStartHour);
     connect(endHourSpin, &QSpinBox::valueChanged, this, &CalendarWindow::setEndHour);
+    connect(minVisibleMinsSpin, &QSpinBox::valueChanged, this, &CalendarWindow::setMinVisibleMins);
     connect(defaultViewCombo, &QComboBox::currentIndexChanged, this, &CalendarWindow::setDefaultView);
     connect(firstDayOfWeekCombo, &QComboBox::currentIndexChanged, this, [this](int idx) { setFirstDayOfWeek(idx + 1); });
     connect(primaryMainCombo, &QComboBox::currentIndexChanged, this, &CalendarWindow::updateActivities);
@@ -1044,6 +1084,11 @@ CalendarWindow::getActivities
         activity.reference = rideItem->fileName;
         activity.start = rideItem->dateTime.time();
         activity.durationSecs = rideItem->getForSymbol("workout_time", GlobalContext::context()->useMetricUnits);
+        if (calendar->currentView() == CalendarView::Day || calendar->currentView() == CalendarView::Week) {
+            activity.visibleSecs = std::min(std::max(activity.durationSecs, getMinVisibleMins() * 60), activity.start.secsTo(QTime(23, 59, 59)));
+        } else {
+            activity.visibleSecs = activity.durationSecs;
+        }
         activity.type = rideItem->planned ? ENTRY_TYPE_PLANNED_ACTIVITY : ENTRY_TYPE_ACTUAL_ACTIVITY;
         activity.isRelocatable = rideItem->planned;
         activity.hasTrainMode = rideItem->planned && sport == "Bike" && ! buildWorkoutFilter(rideItem).isEmpty();
@@ -1623,7 +1668,7 @@ CalendarWindow::unlinkActivities
 {
     bool ret = false;
     RideItem *item = context->athlete->rideCache->getRide(entry.reference, entry.type == ENTRY_TYPE_PLANNED_ACTIVITY);
-    if (item->getLinkedFileName().isEmpty()) {
+    if (item == nullptr || item->getLinkedFileName().isEmpty()) {
         return true;
     }
     RideCache::OperationPreCheck check = context->athlete->rideCache->checkUnlinkActivity(item);
@@ -1905,5 +1950,36 @@ CalendarWindow::delPhase
             break;
         }
         ++idx;
+    }
+}
+
+
+void
+CalendarWindow::exportPlan
+(const CalendarEntry &entry)
+{
+    if (entry.type != ENTRY_TYPE_PHASE) {
+        return;
+    }
+    Season const *currentSeason = context->currentSeason();
+    if (currentSeason == nullptr) {
+        return;
+    }
+    Season *phaseSeason = nullptr;
+    for (Season &s : context->athlete->seasons->seasons) {
+        if (s.id() == currentSeason->id()) {
+            phaseSeason = &s;
+            break;
+        }
+    }
+    if (phaseSeason == nullptr) {
+        return;
+    }
+    for (Phase &editPhase : phaseSeason->phases) {
+        if (entry.reference == editPhase.id().toString()) {
+            ExportPlanWizard wizard(context, &editPhase);
+            wizard.exec();
+            break;
+        }
     }
 }

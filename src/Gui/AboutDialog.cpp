@@ -140,6 +140,7 @@ ContributorsPage::ContributorsPage(Context *context) : context(context)
     contributors.append("Eric Christoffersen");
     contributors.append("Eric Murray");
     contributors.append("Erik Boto");
+    contributors.append("Felix Gertz");
     contributors.append("Frank Zschockelt");
     contributors.append("Gareth Coco");
     contributors.append("Greg Lonnon");
@@ -157,6 +158,7 @@ ContributorsPage::ContributorsPage(Context *context) : context(context)
     contributors.append("John Ehrlinger");
     contributors.append("Jon Beverley");
     contributors.append("Jon Escombe");
+    contributors.append("Jonathan Savage");
     contributors.append("Josef Gebel");
     contributors.append("Julian Baumgartner");
     contributors.append("Julian Simioni");
@@ -175,8 +177,10 @@ ContributorsPage::ContributorsPage(Context *context) : context(context)
     contributors.append("Mark Rages");
     contributors.append("Michael Puchowicz");
     contributors.append("Michel Dagenais");
+    contributors.append("Miguel Angel Quiles");
     contributors.append("Mitja Zupanic");
     contributors.append("Mitsukuni Sato");
+    contributors.append("Nathan Henrie");
     contributors.append("Ned Harding");
     contributors.append("Nicholas Feng");
     contributors.append("Nick Burrett");

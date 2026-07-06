@@ -175,6 +175,10 @@ bool VideoLayoutParser::startElement( const QString&, const QString&,
         {
             meterWidget = new NeedleMeterWidget(meterName, containerWidget, source);
         }
+        else if (meterType == QString("Compass"))
+        {
+            meterWidget = new CompassWidget(meterName, containerWidget, source);
+        }
         else if (meterType == QString("CircularMeter"))
         {
             meterWidget = new CircularIndicatorMeterWidget(meterName, containerWidget, source);
@@ -269,7 +273,8 @@ bool VideoLayoutParser::startElement( const QString&, const QString&,
         meterWidget->m_AltFont = QFont(FontName, FontSize);
         meterWidget->m_AltFont.setFixedPitch(true);
     }
-    else if(qName != "layouts" && qName != "Text" && qName != "AltText" && qName != "Angle" && qName != "SubRange" && qName != "Zoom" && qName != "osmURL")
+    else if(qName != "layouts" && qName != "Text" && qName != "AltText" && qName != "Angle" && qName != "SubRange" && qName != "Zoom"
+        && qName != "osmURL" && qName != "RotateCompass")
     {
         qDebug() << QObject::tr("Unknown start element ") << qName;
     }
@@ -314,6 +319,18 @@ bool VideoLayoutParser::endElement( const QString&, const QString&, const QStrin
             else if (qName == "osmURL")
                 liveMapWidget->m_osmURL = QString(buffer);
         }
+
+
+        CompassWidget* compass = dynamic_cast<CompassWidget*>(meterWidget);
+        if (compass != NULL)
+        {
+            if (qName == "RotateCompass")
+                if (buffer == "true")
+                    compass->setCompassMode(QwtCompass::RotateScale);
+                else
+                    compass->setCompassMode(QwtCompass::RotateNeedle);
+        }
+
 
         return true;
     }

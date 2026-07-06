@@ -51,7 +51,7 @@ public:
                       LeftPedalSmoothness, RightPedalSmoothness, Slope, 
                       LapDistance, LapDistanceRemaining, ErgTimeRemaining,
                       Latitude, Longitude, Altitude, RouteDistance,
-                      DistanceRemaining,
+                      DistanceRemaining, Bearing, DeltaSlope, ElevationGain, Gear, Calories,
                       RightPowerPhaseBegin, RightPowerPhaseEnd,
                       RightPowerPhasePeakBegin, RightPowerPhasePeakEnd,
                       Position, RightPCO, LeftPCO,
@@ -63,6 +63,7 @@ public:
 
     double value(DataSeries) const;
     static QString seriesName(DataSeries);
+    static QString seriesSymbol(DataSeries);
     static const QList<DataSeries> &listDataSeries();
 
     // style is coded to be compatible with FIT files
@@ -82,6 +83,7 @@ public:
     void setSpeed(double speed);
     void setWbal(double speed);
     void setVirtualSpeed(double speed);
+    void setAvgSpeed(double);
     void setWheelRpm(double wheelRpm, bool fMarkTimeSample = false);
     void setCadence(double aCadence);
     void setLoad(double load);
@@ -93,8 +95,10 @@ public:
     void setDistance(double);
     void setRouteDistance(double);
     void setDistanceRemaining(double);
+    void setDeltaSlope(double);
+    void setElevationGain(double);
+    void setCalories(double);
     void setBikeScore(long);
-    void setJoules(long);
     void setXPower(long);
     void setLap(long);
     void setLapDistance(double distance);
@@ -121,7 +125,12 @@ public:
     void setLatitude(double);
     void setLongitude(double);
     void setAltitude(double);
+    void setBearing(double);
+    void setJoules(long);
+    void setAvgWatts(double);
+    void setGear(double);
     void setCoreTemp(double,double,double);
+
     const char *getName() const;
 
     // new muscle oxygen stuff
@@ -149,6 +158,8 @@ public:
     double getHeatStrain() const;
 
     double getWatts() const;
+    double getAvgWatts() const;
+    double getGear() const;
     double getAltWatts() const;
     double getAltDistance() const;
     double getHr() const;
@@ -156,6 +167,7 @@ public:
     double getSpeed() const;
     double getWbal() const;
     double getVirtualSpeed() const;
+    double getAvgSpeed() const;
     double getWheelRpm() const;
     std::chrono::high_resolution_clock::time_point getWheelRpmSampleTime() const;
     double getCadence() const;
@@ -166,6 +178,10 @@ public:
     double getDistance() const;
     double getRouteDistance() const;
     double getDistanceRemaining() const;
+    double getDeltaSlope() const;
+    double getElevationGain() const;
+    double getCalories() const;
+    long getJoules() const;
     long getLap() const;
     double getLapDistance() const;
     double getLapDistanceRemaining() const;
@@ -189,6 +205,7 @@ public:
     double getLatitude() const;
     double getLongitude() const;
     double getAltitude() const;
+    double getBearing() const;
 
     void setTrainerStatusAvailable(bool status);
     bool getTrainerStatusAvailable() const;
@@ -234,12 +251,20 @@ private:
     double distance;
     double routeDistance;
     double distanceRemaining;
+    double deltaSlope;
+    double elevationGain;
+    double calories;
     double lapDistance;
     double lapDistanceRemaining;
+    double avgWatts;
+    double gear;
+    long joules;
     double virtualSpeed;
+    double avgSpeed;
     double wbal;
     double hhb, o2hb;
     double rer;
+    double bearing;
     long lap;
     long msecs;
     long lapMsecs;

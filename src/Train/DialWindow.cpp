@@ -297,11 +297,11 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         valueLabel->setText(QString("%1").arg(round(value)));
         break;
 
-    case RealtimeData::AvgSpeed:
     case RealtimeData::AvgSpeedLap:
         sum += rtData.value(RealtimeData::Speed);
         count++;
         value = sum / count;
+    case RealtimeData::AvgSpeed:    // AvgSpeed is aleady get computed by RealtimeData
         if (!GlobalContext::context()->useMetricUnits) value *= MILES_PER_KM;
         valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
         break;
@@ -330,6 +330,10 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
 
     case RealtimeData::Wbal:
         valueLabel->setText(QString("%1").arg(rtData.getWbal()/1000.00f, 0, 'f', 1)); // kJoules
+        break;
+
+    case RealtimeData::Calories:
+        valueLabel->setText(QString("%1").arg(round(rtData.getCalories())));
         break;
 
     // COGGAN Metrics
@@ -528,7 +532,8 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         break;
 
     case RealtimeData::Slope:
-        valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
+    case RealtimeData::DeltaSlope:
+        valueLabel->setText(QString("%1%").arg(value, 0, 'f', 1));
         break;
 
     case RealtimeData::Latitude:
@@ -537,7 +542,11 @@ DialWindow::telemetryUpdate(const RealtimeData &rtData)
         break;
 
     case RealtimeData::Altitude:
+    case RealtimeData::ElevationGain:
         valueLabel->setText(QString("%1").arg(value, 0, 'f', 1));
+        break;
+    case RealtimeData::Bearing:
+        valueLabel->setText(QString("%1°").arg(value, 0, 'f', 0));
         break;
 
     case RealtimeData::VO2:
@@ -663,6 +672,7 @@ void DialWindow::seriesChanged()
     case RealtimeData::LapDistance:
     case RealtimeData::LapDistanceRemaining:
     case RealtimeData::RER:
+    case RealtimeData::Bearing:
     case RealtimeData::None:
             foreground = GColor(CDIAL);
             break;
@@ -688,6 +698,7 @@ void DialWindow::seriesChanged()
         break;
 
     case RealtimeData::Slope:
+    case RealtimeData::DeltaSlope:
         foreground = GColor(CSLOPE);
         break;
 
@@ -709,6 +720,7 @@ void DialWindow::seriesChanged()
     case RealtimeData::Watts:
     case RealtimeData::AvgWatts:
     case RealtimeData::AvgWattsLap:
+    case RealtimeData::Calories:
             foreground = GColor(CPOWER);
             break;
 
@@ -777,6 +789,7 @@ void DialWindow::seriesChanged()
            break;
 
     case RealtimeData::Altitude:
+    case RealtimeData::ElevationGain:
            foreground = GColor(CALTITUDE);
            break;
 

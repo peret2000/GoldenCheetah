@@ -71,6 +71,7 @@
 #include "MeasuresDownload.h"
 #include "WorkoutWizard.h"
 #include "TrainerDayDownloadDialog.h"
+#include "TredictWorkoutDownload.h"
 #include "AddDeviceWizard.h"
 #include "Dropbox.h"
 #include "SixCycle.h"
@@ -79,6 +80,7 @@
 #include "LocalFileStore.h"
 #include "CloudService.h"
 #include "SaveDialogs.h"
+#include "PlanWizards.h"
 
 // GUI Widgets
 #include "AthleteTab.h"
@@ -612,12 +614,17 @@ MainWindow::MainWindow(const QDir &home)
     optionsMenu->addSeparator();
     optionsMenu->addAction(tr("Create a new workout..."), this, SLOT(showWorkoutWizard()));
     optionsMenu->addAction(tr("Download workouts from TrainerDay..."), this, SLOT(downloadTrainerDay()));
+    optionsMenu->addAction(tr("Download workouts from Tredict..."), this, SLOT(downloadTredictWorkouts()));
     optionsMenu->addAction(tr("Download workouts from Strava Routes..."), this, SLOT(downloadStravaRoutes()));
     optionsMenu->addAction(tr("Import workouts, videos, videoSyncs..."), this, SLOT(importWorkout()));
     optionsMenu->addAction(tr("Scan disk for workouts, videos, videoSyncs..."), this, SLOT(manageLibrary()));
 
     optionsMenu->addAction(tr("Create Heat Map..."), this, SLOT(generateHeatMap()));
     optionsMenu->addAction(tr("Export Metrics as CSV..."), this, SLOT(exportMetrics()));
+    optionsMenu->addAction(tr("Export Plan..."), this, [this]() {
+        ExportPlanWizard wizard(this->currentAthleteTab->context, nullptr);
+        wizard.exec();
+    });
 
 #ifdef GC_HAS_CLOUD_DB
     // CloudDB options
@@ -965,13 +972,16 @@ MainWindow::importPerspective()
         pactive = true;
         if (current->importPerspective(fileName)) {
 
-            // on success we select the new one
-            resetPerspective(view);
+            // on success we select the new one forcefully, as the view hasn't changed.
+            resetPerspective(view, true);
             //current->setPerspectives(perspectiveSelector);
 
             // and select remember pactive is true, so we do the heavy lifting here
             perspectiveSelector->setCurrentIndex(current->perspectives_.count()-1);
             current->perspectiveSelected(perspectiveSelector->currentIndex());
+        } else {
+            // no valid perspective found for this view... (maybe its for another type of view)
+            QMessageBox::information(this, tr("Perspective Import"), tr("No perspectives found that are appropriate for the current view."));
         }
         pactive = false;
     }
@@ -2496,6 +2506,27 @@ MainWindow::downloadTrainerDay()
 }
 
 /*----------------------------------------------------------------------
+ * Tredict Planned Workouts
+ *--------------------------------------------------------------------*/
+
+void
+MainWindow::downloadTredictWorkouts()
+{
+    QString workoutDir = appsettings->value(this, GC_WORKOUTDIR).toString();
+
+    QFileInfo fi(workoutDir);
+
+    if (fi.exists() && fi.isDir()) {
+        TredictWorkoutDownload *d = new TredictWorkoutDownload(currentAthleteTab->context);
+        d->exec();
+    } else {
+        QMessageBox::critical(this, tr("Workout Directory Invalid"),
+        tr("The workout directory is not configured, or the directory selected no longer exists.\n\n"
+        "Please check your preference settings."));
+    }
+}
+
+/*----------------------------------------------------------------------
  * Strava Routes as Workouts
  *--------------------------------------------------------------------*/
 
@@ -2638,6 +2669,11 @@ MainWindow::configChanged(qint32)
                                                                         .arg(fg_select.name()));
     tabbar->setDocumentMode(true);
     athleteView->setPalette(tabbar->palette());
+
+    QPalette pal = QApplication::palette();
+    pal.setColor(QPalette::ToolTipBase, GColor(CPLOTBACKGROUND));
+    pal.setColor(QPalette::ToolTipText, GCColor::invertColor(GColor(CPLOTBACKGROUND)));
+    QApplication::setPalette(pal);
 
     head->updateGeometry();
     repaint();

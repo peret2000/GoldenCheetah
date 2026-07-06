@@ -499,6 +499,8 @@ DataFilter::builtins(Context *context)
     QStringList returning;
 
     // add special/old functions
+    returning <<"isPlanned";
+    returning <<"isDirty";
     returning <<"isRun"<<"isRide"<<"isSwim"<<"isXtrain";
     returning << "ctl" << "tsb" << "atl";
     returning << "config(cranklength)";
@@ -876,7 +878,7 @@ DataFilter::fingerprint(QString &query)
 }
 
 void
-DataFilter::colorSyntax(QTextDocument *document, int pos)
+DataFilter::colorSyntax(QTextDocument *document, int pos, bool dark)
 {
     // matched bracket position
     int bpos = -1;
@@ -891,30 +893,32 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
     QTextCharFormat normal;
     normal.setFontWeight(QFont::Normal);
     normal.setUnderlineStyle(QTextCharFormat::NoUnderline);
-    normal.setForeground(Qt::black);
+    normal.setForeground(dark ? QColor("#c7c7c7") : QColor("#1a1a1a"));
 
     QTextCharFormat cyanbg;
-    cyanbg.setBackground(Qt::cyan);
+    cyanbg.setBackground(dark ? QColor("#68615e") : QColor("#a8a19f"));
     QTextCharFormat redbg;
-    redbg.setBackground(QColor(255,153,153));
+    redbg.setBackground(QColor("#f22c40"));
 
     QTextCharFormat function;
+    function.setFontWeight(QFont::Bold);
     function.setUnderlineStyle(QTextCharFormat::NoUnderline);
-    function.setForeground(Qt::blue);
+    function.setForeground(dark ? QColor("#79b8ff") : QColor("#007a99"));
 
     QTextCharFormat symbol;
+    symbol.setFontWeight(QFont::DemiBold);
     symbol.setUnderlineStyle(QTextCharFormat::NoUnderline);
-    symbol.setForeground(Qt::red);
+    symbol.setForeground(dark ? QColor("#9d8fcc") : QColor("#3d1a80"));
 
     QTextCharFormat literal;
-    literal.setFontWeight(QFont::Normal);
+    literal.setFontWeight(QFont::DemiBold);
     literal.setUnderlineStyle(QTextCharFormat::NoUnderline);
-    literal.setForeground(Qt::magenta);
+    literal.setForeground(dark ? QColor("#c38418") : QColor("#865910"));
 
     QTextCharFormat comment;
     comment.setFontWeight(QFont::Normal);
     comment.setUnderlineStyle(QTextCharFormat::NoUnderline);
-    comment.setForeground(Qt::darkGreen);
+    comment.setForeground(dark ? QColor("#6a737d") : QColor("#8c959e"));
 
     QTextCursor cursor(document);
 
@@ -964,6 +968,9 @@ DataFilter::colorSyntax(QTextDocument *document, int pos)
                 if (!sym.compare("Date", Qt::CaseInsensitive) ||
                     !sym.compare("Time", Qt::CaseInsensitive) ||
                     !sym.compare("isPlanned", Qt::CaseInsensitive) ||
+                    !sym.compare("Planned", Qt::CaseInsensitive) ||
+                    !sym.compare("isDirty", Qt::CaseInsensitive) ||
+                    !sym.compare("Dirty", Qt::CaseInsensitive) ||
                     !sym.compare("banister", Qt::CaseInsensitive) ||
                     !sym.compare("best", Qt::CaseInsensitive) ||
                     !sym.compare("tiz", Qt::CaseInsensitive) ||
@@ -1726,6 +1733,9 @@ bool Leaf::isNumber(DataFilterRuntime *df, Leaf *leaf)
             else if (!symbol.compare("Date", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Time", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("isPlanned", Qt::CaseInsensitive)) return true;
+            else if (!symbol.compare("Planned", Qt::CaseInsensitive)) return true;
+            else if (!symbol.compare("isDirty", Qt::CaseInsensitive)) return true;
+            else if (!symbol.compare("Dirty", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Today", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("Current", Qt::CaseInsensitive)) return true;
             else if (!symbol.compare("RECINTSECS", Qt::CaseInsensitive)) return true;
@@ -1827,6 +1837,9 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                 if (symbol.compare("Date", Qt::CaseInsensitive) &&
                     symbol.compare("Time", Qt::CaseInsensitive) &&
                     symbol.compare("isPlanned", Qt::CaseInsensitive) &&
+                    symbol.compare("Planned", Qt::CaseInsensitive) &&
+                    symbol.compare("isDirty", Qt::CaseInsensitive) &&
+                    symbol.compare("Dirty", Qt::CaseInsensitive) &&
                     symbol.compare("x", Qt::CaseInsensitive) && // used by which and [lexpr]
                     symbol.compare("i", Qt::CaseInsensitive) && // used by which and [lexpr]
                     symbol.compare("Today", Qt::CaseInsensitive) &&
@@ -3048,6 +3061,9 @@ void Leaf::validateFilter(Context *context, DataFilterRuntime *df, Leaf *leaf)
                             if (!symbol.compare("Date", Qt::CaseInsensitive) ||
                                 !symbol.compare("Time", Qt::CaseInsensitive) ||
                                 !symbol.compare("isPlanned", Qt::CaseInsensitive) ||
+                                !symbol.compare("Planned", Qt::CaseInsensitive) ||
+                                !symbol.compare("isDirty", Qt::CaseInsensitive) ||
+                                !symbol.compare("Dirty", Qt::CaseInsensitive) ||
                                 !symbol.compare("x", Qt::CaseInsensitive) || // used by which
                                 !symbol.compare("i", Qt::CaseInsensitive) || // used by which
                                 !symbol.compare("Today", Qt::CaseInsensitive) ||
@@ -6701,7 +6717,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     // lets copy into our array
                     if (series == "date") value = earliest.daysTo(QDateTime(date, QTime(0,0,0)));
-                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0) {
+                    if (QString::compare(type, "Planned", Qt::CaseInsensitive) == 0) {
                         if (series == "lts") value = pmcData->plannedLts()[si];
                         if (series == "stress") value = pmcData->plannedStress()[si];
                         if (series == "sts") value = pmcData->plannedSts()[si];
@@ -7188,7 +7204,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
                     QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
-                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                    if (QString::compare(type, "Planned", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->plannedLts(m->dateTime.date()));
                     else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->expectedLts(m->dateTime.date()));
@@ -7203,7 +7219,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
                     QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
-                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                    if (QString::compare(type, "Planned", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->plannedSts(m->dateTime.date()));
                     else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->expectedSts(m->dateTime.date()));
@@ -7218,7 +7234,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
                     QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
-                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                    if (QString::compare(type, "Planned", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->plannedSb(m->dateTime.date()));
                     else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->expectedSb(m->dateTime.date()));
@@ -7233,7 +7249,7 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
 
                     PMCData *pmcData = m->context->athlete->getPMCFor(leaf->fparms[0], df);
                     QString type = (leaf->fparms.count() >= 2) ?  *(leaf->fparms[1]->lvalue.n) : "actual";
-                    if (QString::compare(type, "planned", Qt::CaseInsensitive) == 0)
+                    if (QString::compare(type, "Planned", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->plannedRr(m->dateTime.date()));
                     else if (QString::compare(type, "expected", Qt::CaseInsensitive) == 0)
                         return Result(pmcData->expectedRr(m->dateTime.date()));
@@ -7989,9 +8005,16 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
             lhsdouble = QTime(0,0,0).secsTo(m->dateTime.time());
             lhsisNumber = true;
 
-        } else if (!symbol.compare("isPlanned", Qt::CaseInsensitive)) {
+        } else if (!symbol.compare("isPlanned", Qt::CaseInsensitive) ||
+                   !symbol.compare("Planned", Qt::CaseInsensitive)) {
 
             lhsdouble = m->planned;
+            lhsisNumber = true;
+
+        } else if (!symbol.compare("isDirty", Qt::CaseInsensitive) ||
+                   !symbol.compare("Dirty", Qt::CaseInsensitive)) {
+
+            lhsdouble = m->isdirty;
             lhsisNumber = true;
 
         } else if (isCoggan(symbol)) {
@@ -8253,42 +8276,57 @@ Result Leaf::eval(DataFilterRuntime *df, Leaf *leaf, const Result &x, long it, R
         }
         break;
 
+        // relational operations should all work with vectors or scalars
         case EQ:
-        {
-            if (lhs.isNumber) return Result(lhs.number() == rhs.number());
-            else return Result(lhs.string() == rhs.string());
-        }
-        break;
-
         case NEQ:
-        {
-            if (lhs.isNumber) return Result(lhs.number() != rhs.number());
-            else return Result(lhs.string() != rhs.string());
-        }
-        break;
-
         case LT:
-        {
-            if (lhs.isNumber) return Result(lhs.number() < rhs.number());
-            else return Result(lhs.string() < rhs.string());
-        }
-        break;
         case LTE:
-        {
-            if (lhs.isNumber) return Result(lhs.number() <= rhs.number());
-            else return Result(lhs.string() <= rhs.string());
-        }
-        break;
         case GT:
-        {
-            if (lhs.isNumber) return Result(lhs.number() > rhs.number());
-            else return Result(lhs.string() > rhs.string());
-        }
-        break;
         case GTE:
         {
-            if (lhs.isNumber) return Result(lhs.number() >= rhs.number());
-            else return Result(lhs.string() >= rhs.string());
+            if (lhs.isVector() || rhs.isVector()) {
+
+                Result returning(0);
+                // coerce both into a vector of matching size
+                int size = std::max(lhs.isNumber ? lhs.asNumeric().count() : lhs.asString().count(),
+                                    rhs.isNumber ? rhs.asNumeric().count() : rhs.asString().count());
+                lhs.vectorize(size);
+                rhs.vectorize(size);
+
+                for(int i=0; i<size; i++) {
+
+                    double value = 0;
+
+                    switch (leaf->op) {
+                    case EQ:  value = lhs.isNumber ? lhs.number() == rhs.number() : lhs.string() == rhs.string(); break;
+                    case NEQ: value = lhs.isNumber ? lhs.number() != rhs.number() : lhs.string() != rhs.string(); break;
+                    case LT:  value = lhs.isNumber ? lhs.number() < rhs.number() : lhs.string() < rhs.string(); break;
+                    case LTE: value = lhs.isNumber ? lhs.number() <= rhs.number() : lhs.string() <= rhs.string(); break;
+                    case GT:  value = lhs.isNumber ? lhs.number() > rhs.number() : lhs.string() > rhs.string(); break;
+                    case GTE: value = lhs.isNumber ? lhs.number() >= rhs.number() : lhs.string() >= rhs.string(); break;
+                    }
+                    returning.asNumeric() << value;
+                    returning.number() += value;
+                }
+                return returning;
+
+            } else {
+
+                switch (leaf->op) {
+                case EQ:  if (lhs.isNumber) return Result(lhs.number() == rhs.number());
+                          else return Result(lhs.string() == rhs.string());
+                case NEQ: if (lhs.isNumber) return Result(lhs.number() != rhs.number());
+                          else return Result(lhs.string() != rhs.string());
+                case LT:  if (lhs.isNumber) return Result(lhs.number() < rhs.number());
+                          else return Result(lhs.string() < rhs.string());
+                case LTE: if (lhs.isNumber) return Result(lhs.number() <= rhs.number());
+                          else return Result(lhs.string() <= rhs.string());
+                case GT:  if (lhs.isNumber) return Result(lhs.number() > rhs.number());
+                          else return Result(lhs.string() > rhs.string());
+                case GTE: if (lhs.isNumber) return Result(lhs.number() >= rhs.number());
+                          else return Result(lhs.string() >= rhs.string());
+                }
+            }
         }
         break;
 

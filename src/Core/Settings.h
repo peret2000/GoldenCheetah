@@ -149,9 +149,9 @@
 #define GC_LINEWIDTH                    "<global-general>linewidth"
 #define GC_ANTIALIAS                    "<global-general>antialias"
 #define GC_MAC_FORMS                    "<global-general>macForms"
-#define GC_RIDEBG                       "<global-general>rideBG"
 #define GC_RIDESCROLL                   "<global-general>rideScroll"
 #define GC_RIDEHEAD                     "<global-general>rideHead"
+#define GC_SUMMARYROWS                  "<global-general>summaryRows"
 #define GC_SHADEZONES                   "<global-general>shadezones"
 #define GC_LANG                         "<global-general>lang"
 #define GC_PACE                         "<global-general>pace"
@@ -402,6 +402,11 @@
 #define GC_AZUM_USERKEY                 "<athlete-private>azum_userkey"
 #define GC_AZUM_URL                     "<athlete-private>azum_url"
 #define GC_AZUM_ATHLETE_ID              "<athlete-private>azum_athlete_id"
+
+// Tredict
+#define GC_TREDICT_TOKEN                "<athlete-private>tredict_token"
+#define GC_TREDICT_REFRESH_TOKEN        "<athlete-private>tredict_refresh_token"
+#define GC_TREDICT_LAST_REFRESH         "<athlete-private>tredict_last_refresh"
 
 // Polar Flow
 #define GC_POLARFLOW_TOKEN             "<athlete-private>polarflow_token"

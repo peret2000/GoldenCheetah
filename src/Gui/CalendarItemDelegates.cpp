@@ -40,7 +40,7 @@ static int paintMetric(QPainter *painter, const QRect &rect, const QFont::Weight
 
 
 //////////////////////////////////////////////////////////////////////////////
-// TimeScaleData
+// HitTester
 
 HitTester::HitTester
 ()
@@ -347,6 +347,8 @@ CalendarDetailedDayDelegate::paint
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
 
+    const bool darkMode = GCColor::isPaletteDark(option.palette);
+
     bool ok;
     int pressedEntryIdx = index.data(PressedEntryRole).toInt(&ok);
     if (! ok) {
@@ -401,7 +403,7 @@ CalendarDetailedDayDelegate::paint
         bool related = (l.entryIdx == relatedEntryIdx);
         const CalendarEntry &entry = calendarDay.entries[l.entryIdx];
         int startMinute = entry.start.hour() * 60 + entry.start.minute();
-        int endMinute = startMinute + entry.durationSecs / 60;
+        int endMinute = startMinute + entry.visibleSecs / 60;
         int columnWidth = (rectWidth - (l.columnCount - 1) * columnSpacing) / std::max(1, l.columnCount);
         int left = rectLeft + l.columnIndex * (columnWidth + columnSpacing);
         int top = timeScaleData->minuteToYInTable(startMinute, option.rect);
@@ -424,18 +426,14 @@ CalendarDetailedDayDelegate::paint
             entryFrame = entryBG;
         } else if (related) {
             QColor relColor = opt.palette.highlight().color();
-            relColor.setAlpha(40);
+            relColor.setAlphaF(0.16);
             relColor = GCColor::blendedColor(relColor, bgColor);
             entryBG = relColor;
             entryFrame = relColor;
         } else if (entry.type == ENTRY_TYPE_ACTUAL_ACTIVITY) {
             QColor overlayBG = entry.color;
             overlayBG = entry.color;
-            if (GCColor::isPaletteDark(option.palette)) {
-                overlayBG.setAlpha(150);
-            } else {
-                overlayBG.setAlpha(60);
-            }
+            overlayBG.setAlphaF(darkMode ? 0.6 : 0.2);
             entryBG = GCColor::blendedColor(overlayBG, entryBG);
             entryFrame = entryBG;
         }
@@ -738,7 +736,7 @@ CalendarTimeScaleDelegate::paint
         QRect rect = option.rect;
         rect.setHeight(blockY);
         QColor blockColor = option.palette.color(QPalette::Disabled, QPalette::Base);
-        blockColor.setAlpha(180);
+        blockColor.setAlphaF(0.7);
         painter->fillRect(rect, blockColor);
     }
     int currentY = scaleIndex.data(CurrentYRole).toInt();
@@ -808,6 +806,8 @@ CalendarCompactDayDelegate::paint
     QColor selColor = opt.palette.highlight().color();
     QColor entryColor;
 
+    const bool darkMode = GCColor::isPaletteDark(option.palette);
+
     bool ok;
     int pressedEntryIdx = index.data(PressedEntryRole).toInt(&ok);
     if (! ok) {
@@ -817,8 +817,9 @@ CalendarCompactDayDelegate::paint
     if (! ok) {
         relatedEntryIdx = -2;
     }
+    const bool cellSelected = opt.state & QStyle::State_Selected && pressedEntryIdx < 0;
 
-    if (pressedEntryIdx < 0 && opt.state & QStyle::State_Selected) {
+    if (cellSelected) {
         bgColor = opt.palette.color(calendarDay.isDimmed == DayDimLevel::Full ? QPalette::Disabled : QPalette::Active, QPalette::Highlight);
     } else if (calendarDay.isDimmed == DayDimLevel::Full) {
         bgColor = opt.palette.color(QPalette::Disabled, QPalette::Base);
@@ -827,7 +828,7 @@ CalendarCompactDayDelegate::paint
     }
     entryColor = GCColor::invertColor(bgColor);
     QColor relColor = opt.palette.highlight().color();
-    relColor.setAlpha(40);
+    relColor.setAlphaF(0.16);
     relColor = GCColor::blendedColor(relColor, bgColor);
 
     painter->fillRect(opt.rect, bgColor);
@@ -885,12 +886,25 @@ CalendarCompactDayDelegate::paint
             painter->setPen(relColor);
             painter->drawRoundedRect(entryRect, radius, radius);
             painter->setPen(GCColor::invertColor(relColor));
+        } else if (! cellSelected && calEntry.type == ENTRY_TYPE_ACTUAL_ACTIVITY) {
+            QColor activityColor = calEntry.color;
+            activityColor.setAlphaF(darkMode ? 0.6 : 0.2);
+            activityColor = GCColor::blendedColor(activityColor, bgColor);
+            painter->setBrush(activityColor);
+            painter->setPen(activityColor);
+            painter->drawRoundedRect(entryRect, radius, radius);
+            painter->setPen(GCColor::invertColor(activityColor));
+        } else if (! cellSelected && calEntry.type == ENTRY_TYPE_PLANNED_ACTIVITY) {
+            QColor activityColor = calEntry.color;
+            activityColor.setAlphaF(0.6);
+            activityColor = GCColor::blendedColor(activityColor, bgColor);
+            painter->setPen(activityColor);
+            painter->drawRoundedRect(entryRect, radius, radius);
+            painter->setPen(entryColor);
         }
         QPixmap pixmap;
         QColor pixmapColor(calEntry.color);
-        if (   i == pressedEntryIdx
-            || (   opt.state & QStyle::State_Selected
-                && pressedEntryIdx < 0)) {
+        if (i == pressedEntryIdx || cellSelected) {
             pixmapColor = GCColor::invertColor(selColor);
         } else if (i == relatedEntryIdx) {
             pixmapColor = GCColor::invertColor(relColor);
@@ -954,7 +968,7 @@ CalendarCompactDayDelegate::paint
                                    overflowWidth,
                                    lineHeight);
         QColor overflowBg(bgColor);
-        overflowBg.setAlpha(185);
+        overflowBg.setAlphaF(0.73);
         painter->save();
         painter->setPen(overflowBg);
         painter->setBrush(overflowBg);
@@ -1751,43 +1765,48 @@ toolTipDayEntry(const QPoint &pos, QAbstractItemView *view, const CalendarDay &d
         CalendarEntry calEntry = day.entries[idx];
         QString status;
         if (calEntry.type == ENTRY_TYPE_ACTUAL_ACTIVITY) {
-            status = QObject::tr("actual");
+            status = QObject::tr("actual").toHtmlEscaped();
         } else {
-            status = QObject::tr("planned");
+            status = QObject::tr("planned").toHtmlEscaped();
         }
         if (calEntry.dirty) {
-            status += " • " + QObject::tr("modified");
+            status += " • " + QObject::tr("modified").toHtmlEscaped();
         }
         if (calEntry.isExcludedFromSummary) {
-            status += " • " + QObject::tr("not in summary");
+            status += " • " + QObject::tr("not in summary").toHtmlEscaped();
+        }
+        if (calEntry.visibleSecs > calEntry.durationSecs) {
+            status += " • " + QObject::tr("enlarged for readability").toHtmlEscaped();
+        } else if (calEntry.visibleSecs < calEntry.durationSecs) {
+            status += " • " + QObject::tr("shortened at midnight").toHtmlEscaped();
         }
 
         QString tooltip = QString("<div style='padding: %1px;'>").arg(4 * dpiXFactor);
-        tooltip += QString("<div style='font-weight: bold; font-size: 110%; margin-bottom: %1px;'>%2</div>").arg(8 * dpiYFactor).arg(calEntry.primary);
-        tooltip += QString("<div style='font-style: italic; color: gray; margin-bottom: %1px;'>%2</div>").arg(6 * dpiYFactor).arg(status);
+        tooltip += QString("<div style='font-weight: bold; font-size: 110%; margin-bottom: %1px;'>%2</div>").arg(8 * dpiYFactor).arg(calEntry.primary.toHtmlEscaped());
+        tooltip += QString("<div style='font-style: italic; color: gray; margin-bottom: %1px;'>%2</div>").arg(6 * dpiYFactor).arg(status.toHtmlEscaped());
         tooltip += "<table>";
         if (! calEntry.secondary.isEmpty()) {
-            tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(calEntry.secondaryMetric).arg(calEntry.secondary);
+            tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(calEntry.secondaryMetric).arg(calEntry.secondary.toHtmlEscaped());
         }
         if (calEntry.start.isValid()) {
             QString time = calEntry.start.toString();
             if (calEntry.durationSecs > 0) {
                 time += " - " + calEntry.start.addSecs(calEntry.durationSecs).toString();
             }
-            tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(QObject::tr("When")).arg(time);
+            tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(QObject::tr("When").toHtmlEscaped()).arg(time.toHtmlEscaped());
         }
         if (calEntry.type == ENTRY_TYPE_PLANNED_ACTIVITY && ! calEntry.originalPlanLabel.isEmpty()) {
             tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>")
-                              .arg(QObject::tr("Originally"))
-                              .arg(calEntry.originalPlanLabel);
+                              .arg(QObject::tr("Originally").toHtmlEscaped())
+                              .arg(calEntry.originalPlanLabel.toHtmlEscaped());
         }
         if (! calEntry.linkedReference.isEmpty()) {
             QString countertype;
             countertype = QObject::tr("Linked");
             tooltip += QString("<tr><td style='padding-top: %1px'><b>%2:</b></td><td style='padding-top: %1px'>%3</td></tr>")
                               .arg(6 * dpiYFactor)
-                              .arg(countertype)
-                              .arg(calEntry.linkedPrimary);
+                              .arg(countertype.toHtmlEscaped())
+                              .arg(calEntry.linkedPrimary.toHtmlEscaped());
             if (calEntry.linkedStartDT.isValid()) {
                 QString linkedWhen;
                 QLocale locale;
@@ -1796,15 +1815,18 @@ toolTipDayEntry(const QPoint &pos, QAbstractItemView *view, const CalendarDay &d
                 } else {
                     linkedWhen = locale.toString(calEntry.linkedStartDT, QLocale::NarrowFormat);
                 }
-                tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(QObject::tr("On")).arg(linkedWhen);
+                tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>").arg(QObject::tr("On").toHtmlEscaped()).arg(linkedWhen.toHtmlEscaped());
                 if (calEntry.type == ENTRY_TYPE_ACTUAL_ACTIVITY && ! calEntry.originalPlanLabel.isEmpty()) {
                     tooltip += QString("<tr><td><b>%1:</b></td><td>%2</td></tr>")
-                                      .arg(QObject::tr("Originally"))
-                                      .arg(calEntry.originalPlanLabel);
+                                      .arg(QObject::tr("Originally").toHtmlEscaped())
+                                      .arg(calEntry.originalPlanLabel.toHtmlEscaped());
                 }
             }
         }
         tooltip += "</table>";
+        if (! calEntry.tertiary.isEmpty()) {
+            tooltip += QString("<p>%1</p>").arg(calEntry.tertiary.toHtmlEscaped());
+        }
         QToolTip::showText(pos, tooltip, view);
         return true;
     }
@@ -1821,7 +1843,7 @@ toolTipMore
         entries << entry.primary;
     }
     if (! entries.isEmpty()) {
-        QString tooltip = entries.join("\n");
+        QString tooltip = entries.join("\n").toHtmlEscaped();
         QToolTip::showText(pos, tooltip, view);
         return true;
     }

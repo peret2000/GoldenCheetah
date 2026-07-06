@@ -110,12 +110,14 @@ AddClass::AddClass(AddCloudWizard *parent) : QWizardPage(parent), wizard(parent)
     mapper->setMapping(p, CloudService::Measures);
     layout->addWidget(p);
 
+#ifdef GC_HAVE_ICAL
     // Calendar
     p = new QCommandLinkButton(tr("Calendar"), tr("Sync planned workouts to WebDAV and CalDAV calendars like Google Calendar."));
     p->setStyleSheet(QString("font-size: %1px;").arg(font.pointSizeF() * dpiXFactor));
     connect(p, SIGNAL(clicked()), mapper, SLOT(map()));
     mapper->setMapping(p, CloudService::Calendar);
     layout->addWidget(p);
+#endif
 
     setFinalPage(false);
 }
@@ -175,7 +177,7 @@ AddService::initializePage()
         const CloudService *s = factory.service(name);
 
         // only ones with the capability we need.
-        if (s->type() != wizard->type) continue;
+        if (!(s->type() & wizard->type)) continue;
 
         QCommandLinkButton *p = new QCommandLinkButton(s->uiName(), s->description(), this);
         p->setStyleSheet(QString("font-size: %1px;").arg(font.pointSizeF() * dpiXFactor));
@@ -584,7 +586,7 @@ AddSettings::initializePage()
         browse->show(); folder->show(); folderLabel->show();
         folder->setText(wizard->cloudService->getSetting(cname, "").toString());
     }
-    if (wizard->cloudService->capabilities() & CloudService::Query) {
+    if (wizard->cloudService->capabilities() & CloudService::Download) {
         QString value = wizard->cloudService->getSetting(wizard->cloudService->syncOnStartupSettingName(), "false").toString();
         syncStartup->setChecked(value == "true");
         syncStartup->show();

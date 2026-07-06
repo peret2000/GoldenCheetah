@@ -576,6 +576,7 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
         else if (p_meterWidget->Source() == QString("Speed"))
         {
             p_meterWidget->Value = rtd.getSpeed() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Value = std::round(p_meterWidget->Value * 10.0f) / 10.0f;
             p_meterWidget->Text = QString::number((int)p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = QString(".") +QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + (metric ? tr(" kph") : tr(" mph")) + p_meterWidget->AltTextSuffix;
         }
@@ -707,6 +708,67 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             p_meterWidget->Text = time_to_string(trunc(p_meterWidget->Value)).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = QString(".") + QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + p_meterWidget->AltTextSuffix;
         }
+        else if (p_meterWidget->Source() == QString("DistanceRemaining"))
+        {
+            p_meterWidget->Value = - rtd.getDistanceRemaining() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = QString(".") + QString::number((((int) p_meterWidget->Value) * 10) - (int)(p_meterWidget->Value * 10.0)) + (metric ? tr(" km") : tr(" mi")) + p_meterWidget->AltTextSuffix;
+        }
+        else if (p_meterWidget->Source() == QString("Joules"))
+        {
+            p_meterWidget->Value = rtd.getJoules();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
+        }
+        else if (p_meterWidget->Source() == QString("Average Power"))
+        {
+            p_meterWidget->Value = rtd.getAvgWatts();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
+        }
+        else if (p_meterWidget->Source() == QString("Average Speed"))
+        {
+            p_meterWidget->Value = rtd.getAvgSpeed() * (metric ? 1.0 : MILES_PER_KM);
+            p_meterWidget->Text = QString::number((int)p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = QString(".") +QString::number((int)(p_meterWidget->Value * 10.0) - (((int) p_meterWidget->Value) * 10)) + (metric ? tr(" kph") : tr(" mph")) + p_meterWidget->AltTextSuffix;
+        }
+        else if (p_meterWidget->Source() == QString("Elevation Gain"))
+        {
+            p_meterWidget->Value = rtd.getElevationGain();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = (metric ? tr(" m") : tr(" mi")) + p_meterWidget->AltTextSuffix;
+        }
+        else if (p_meterWidget->Source() == QString("Gear"))
+        {
+            if (p_meterWidget->Name() == QString("GearPlato44")) {
+                double speedratio = (float)rtd.getGear();
+                if (speedratio == 0.0)
+                    p_meterWidget->Value = 0;
+                else if (speedratio < 1.42)
+                    p_meterWidget->Value = 34;
+                else if (speedratio < 1.70)
+                    p_meterWidget->Value = 28;
+                else if (speedratio < 1.96)
+                    p_meterWidget->Value = 24;
+                else if (speedratio < 2.27)
+                    p_meterWidget->Value = 21;
+                else if (speedratio < 2.69)
+                    p_meterWidget->Value = 18;
+                else if (speedratio < 3.16)
+                    p_meterWidget->Value = 15;
+                else if (speedratio < 3.69)
+                    p_meterWidget->Value = 13;
+                else
+                    p_meterWidget->Value = 11;
+                p_meterWidget->Text = QString::number((int)p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+                p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
+            }
+            else {
+                p_meterWidget->Value =  (float)rtd.getGear();
+                p_meterWidget->Text = QString::number((double)p_meterWidget->Value, 'g', 2).rightJustified(p_meterWidget->textWidth);
+                p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
+            }
+        }
         else if (p_meterWidget->Source() == QString("TrainerStatus"))
         {
             p_meterWidget->AltText = p_meterWidget->AltTextSuffix;
@@ -739,6 +801,12 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
             {
                 p_meterWidget->Text = tr("");
             }
+        }
+        else if (p_meterWidget->Source() == QString("Bearing"))
+        {
+            p_meterWidget->Value = rtd.getBearing();
+            p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
+            p_meterWidget->AltText = tr(" °") + p_meterWidget->AltTextSuffix;
         }
     }
 

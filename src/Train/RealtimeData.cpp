@@ -30,8 +30,8 @@
 RealtimeData::RealtimeData()
 {
     name[0] = '\0';
-    hr= watts= altWatts= speed= wheelRpm= load= slope= torque= 0.0;
-    cadence = distance = altDistance = virtualSpeed = wbal = 0.0;
+    hr= watts= avgWatts = altWatts= speed= wheelRpm= load= slope= torque= gear= 0.0;
+    cadence = distance = altDistance = virtualSpeed = avgSpeed = wbal = 0.0;
     lap = msecs = lapMsecs = lapMsecsRemaining = ergMsecsRemaining = 0;
     thb = smo2 = o2hb = hhb = 0.0;
     lrbalance = RideFile::NA;
@@ -43,13 +43,16 @@ RealtimeData::RealtimeData()
     heatStrain = 0.0;
     latitude = longitude = altitude = 0.0;
     rf = rmv = vo2 = vco2 = tv = feo2 = 0.0;
+    elevationGain = 0.0; deltaSlope = 0.0; calories = 0.0;
     routeDistance = distanceRemaining = 0.0;
+    joules = 0;
     trainerStatusAvailable = false;
     trainerReady = true;
     trainerRunning = true;
     trainerCalibRequired = false;
     trainerConfigRequired = false;
     trainerBrakeFault = false;
+    bearing = 0.0;
     memset(spinScan, 0, 24);
     temp = 0.0;
 }
@@ -61,6 +64,18 @@ void RealtimeData::setName(char *name)
 void RealtimeData::setAltWatts(double watts)
 {
     this->altWatts = (int)watts;
+}
+void RealtimeData::setAvgWatts(double avgWatts)
+{
+    this->avgWatts= avgWatts;
+}
+void RealtimeData::setGear(double gear)
+{
+    this->gear= gear;
+}
+void RealtimeData::setJoules(long joules)
+{
+    this->joules= joules;
 }
 void RealtimeData::setWatts(double watts)
 {
@@ -90,6 +105,10 @@ void RealtimeData::setWbal(double wbal)
 void RealtimeData::setVirtualSpeed(double speed)
 {
     this->virtualSpeed = speed;
+}
+void RealtimeData::setAvgSpeed(double speed)
+{
+    this->avgSpeed = speed;
 }
 void RealtimeData::setWheelRpm(double wheelRpm, bool fMarkWheelRpmTime)
 {
@@ -143,6 +162,21 @@ void RealtimeData::setDistanceRemaining(double x)
     this->distanceRemaining = x;
 }
 
+void RealtimeData::setDeltaSlope(double x)
+{
+    this->deltaSlope = x;
+}
+
+void RealtimeData::setElevationGain(double x)
+{
+    this->elevationGain = x;
+}
+
+void RealtimeData::setCalories(double x)
+{
+    this->calories = x;
+}
+
 void RealtimeData::setLapDistance(double x)
 {
     this->lapDistance = x;
@@ -178,6 +212,11 @@ void RealtimeData::setRPS(double x)
     this->rps = x;
 }
 
+void RealtimeData::setBearing(double x)
+{
+    this->bearing = x;
+}
+
 //Skin temp passed but not used elsewhere
 void RealtimeData::setCoreTemp(double core, double skin, double heatStrain) {
     this->coreTemp = core;
@@ -204,6 +243,14 @@ double RealtimeData::getWatts() const
 {
     return watts;
 }
+double RealtimeData::getAvgWatts() const
+{
+    return avgWatts;
+}
+double RealtimeData::getGear() const
+{
+    return gear;
+}
 double RealtimeData::getHr() const
 {
     return hr;
@@ -219,6 +266,10 @@ double RealtimeData::getWbal() const
 double RealtimeData::getVirtualSpeed() const
 {
     return virtualSpeed;
+}
+double RealtimeData::getAvgSpeed() const
+{
+    return avgSpeed;
 }
 double RealtimeData::getWheelRpm() const
 {
@@ -260,6 +311,22 @@ double RealtimeData::getDistanceRemaining() const
 {
     return distanceRemaining;
 }
+double RealtimeData::getDeltaSlope() const
+{
+    return deltaSlope;
+}
+double RealtimeData::getElevationGain() const
+{
+    return elevationGain;
+}
+double RealtimeData::getCalories() const
+{
+    return calories;
+}
+long RealtimeData::getJoules() const
+{
+    return joules;
+}
 double RealtimeData::getLapDistance() const
 {
     return lapDistance;
@@ -287,6 +354,10 @@ double RealtimeData::getLPS() const
 double RealtimeData::getRPS() const
 {
     return rps;
+}
+double RealtimeData::getBearing() const
+{
+    return bearing;
 }
 
 double RealtimeData::getRppb() const
@@ -431,22 +502,46 @@ double RealtimeData::value(DataSeries series) const
     case DistanceRemaining: return distanceRemaining;
         break;
 
+    case DeltaSlope: return deltaSlope;
+        break;
+
+    case ElevationGain: return elevationGain;
+        break;
+
+    case Calories: return calories;
+        break;
+
     case LapDistance: return lapDistance;
         break;
 
     case LapDistanceRemaining: return lapDistanceRemaining;
         break;
 
+    case Joules: return joules;
+        break;
+
     case AltWatts: return altWatts;
         break;
 
+    case AvgWatts: return avgWatts;
+        break;
+
+    case Gear: return gear;
+        break;
+
     case Watts: return watts;
+        break;
+
+    case Wbal: return wbal;
         break;
 
     case Speed: return speed;
         break;
 
     case VirtualSpeed: return virtualSpeed;
+        break;
+
+    case AvgSpeed: return avgSpeed;
         break;
 
     case Cadence: return cadence;
@@ -535,6 +630,8 @@ double RealtimeData::value(DataSeries series) const
 
     case FeO2: return feo2;
         break;
+    case Bearing: return bearing;
+        break;
 
     case Temp: return temp;
         break;
@@ -572,15 +669,15 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << Cadence;
         seriesList << HeartRate;
         seriesList << Load;
+        seriesList << XPower;
         seriesList << BikeScore;
+        seriesList << RI;
+        seriesList << Joules;
         seriesList << SkibaVI;
         seriesList << BikeStress;
-        seriesList << XPower;
         seriesList << IsoPower;
-        seriesList << RI;
         seriesList << IF;
         seriesList << VI;
-        seriesList << Joules;
         seriesList << Wbal;
         seriesList << SmO2;
         seriesList << tHb;
@@ -623,6 +720,11 @@ const QList<RealtimeData::DataSeries> &RealtimeData::listDataSeries()
         seriesList << SkinTemp;
         seriesList << HeatStrain;
         seriesList << HeatLoad;
+        seriesList << Bearing;
+        seriesList << DeltaSlope;
+        seriesList << ElevationGain;
+        seriesList << Gear;
+        seriesList << Calories;
     }
     return seriesList;
 }
@@ -689,6 +791,15 @@ QString RealtimeData::seriesName(DataSeries series)
     case DistanceRemaining: return tr("Distance Remaining");
         break;
 
+    case DeltaSlope: return tr("Delta Slope");
+        break;
+
+    case ElevationGain: return tr("Elevation Gain");
+        break;
+
+    case Calories: return tr("Calories");
+        break;
+
     case AltWatts: return tr("Alternate Power");
         break;
 
@@ -711,6 +822,9 @@ QString RealtimeData::seriesName(DataSeries series)
         break;
 
     case AvgWatts: return tr("Average Power");
+        break;
+
+    case Gear: return tr("Gear");
         break;
 
     case AvgSpeed: return tr("Average Speed");
@@ -822,6 +936,229 @@ QString RealtimeData::seriesName(DataSeries series)
     case HeatStrain: return tr("Heat Strain");
         break;
     case HeatLoad: return tr("Estimated Heat Load");
+        break;
+    case Bearing: return tr("Bearing");
+        break;
+    case RightPCO: return tr("Right PCO");
+        break;
+    case LeftPCO: return tr("Left PCO");
+        break;
+    }
+}
+
+QString RealtimeData::seriesSymbol(DataSeries series)
+{
+    switch (series) {
+
+    default:
+    case None: return QString("None");
+        break;
+
+    case Time: return QString("Time");
+        break;
+
+    case Lap: return QString("Lap");
+        break;
+
+    case LapTime: return QString("Lap Time");
+        break;
+
+    case LapTimeRemaining: return QString("Lap Time Remaining");
+        break;
+
+    case ErgTimeRemaining: return QString("Section Time Remaining");
+        break;
+
+    case BikeStress: return QString("BikeStress");
+        break;
+
+    case BikeScore: return "BikeScore (TM)";
+        break;
+
+    case Joules: return QString("kJoules");
+        break;
+
+    case Wbal: return QString("W' bal");
+        break;
+
+    case XPower: return QString("XPower");
+        break;
+
+    case IsoPower: return QString("Iso Power");
+        break;
+
+    case IF: return QString("Intensity Factor");
+        break;
+
+    case RI: return QString("Relative Intensity");
+        break;
+
+    case SkibaVI: return QString("Skiba Variability Index");
+        break;
+
+    case VI: return QString("Variability Index");
+        break;
+
+    case Distance: return QString("Distance");
+        break;
+
+    case RouteDistance: return QString("Route Distance");
+        break;
+
+    case DistanceRemaining: return QString("Distance Remaining");
+        break;
+
+    case DeltaSlope: return QString("Delta Slope");
+        break;
+
+    case ElevationGain: return QString("Elevation Gain");
+        break;
+
+    case Calories: return QString("Calories");
+        break;
+
+    case AltWatts: return QString("Alternate Power");
+        break;
+
+    case Watts: return QString("Power");
+        break;
+
+    case Speed: return QString("Speed");
+        break;
+
+    case VirtualSpeed: return QString("Virtual Speed");
+        break;
+
+    case Cadence: return QString("Cadence");
+        break;
+
+    case HeartRate: return QString("Heart Rate");
+        break;
+
+    case Load: return QString("Target Power");
+        break;
+
+    case AvgWatts: return QString("Average Power");
+        break;
+
+    case Gear: return QString("Gear");
+        break;
+
+    case AvgSpeed: return QString("Average Speed");
+        break;
+
+    case AvgHeartRate: return QString("Average Heartrate");
+        break;
+
+    case AvgCadence: return QString("Average Cadence");
+        break;
+
+    case AvgWattsLap: return QString("Lap Power");
+        break;
+
+    case AvgSpeedLap: return QString("Lap Speed");
+        break;
+
+    case AvgHeartRateLap: return QString("Lap Heartrate");
+        break;
+
+    case AvgCadenceLap: return QString("Lap Cadence");
+        break;
+
+    case LRBalance: return QString("Left/Right Balance");
+        break;
+
+    case tHb: return QString("Total Hb Mass");
+        break;
+
+    case SmO2: return QString("Hb O2 Saturation");
+        break;
+
+    case HHb: return QString("Deoxy Hb");
+        break;
+
+    case O2Hb: return QString("Oxy Hb");
+        break;
+
+    case LeftTorqueEffectiveness: return QString("Left Torque Effectiveness");
+        break;
+
+    case RightTorqueEffectiveness: return QString("Right Torque Effectiveness");
+        break;
+
+    case LeftPedalSmoothness: return QString("Left Pedal Smoothness");
+        break;
+
+    case RightPedalSmoothness: return QString("Right Pedal Smoothness");
+        break;
+
+    case RightPowerPhaseBegin: return QString("Right Power Phase Start");
+        break;
+
+    case RightPowerPhaseEnd: return QString("Right Power Phase End");
+        break;
+
+    case RightPowerPhasePeakBegin: return QString("Right Power Phase Peak Start");
+        break;
+
+    case RightPowerPhasePeakEnd: return QString("Right Power Phase Peak End");
+        break;
+
+    case Slope: return QString("Slope");
+        break;
+
+    case LapDistance: return QString("Lap Distance");
+        break;
+
+    case LapDistanceRemaining: return QString("Lap Distance Remaining");
+        break;
+
+    case Latitude: return QString("Latitude");
+        break;
+
+    case Longitude: return QString("Longitude");
+        break;
+
+    case Altitude: return QString("Altitude");
+        break;
+
+    case Rf: return QString("Respiratory Frequency");
+        break;
+
+    case RMV: return QString("Ventilation");
+        break;
+
+    case VO2: return QString("VO2");
+        break;
+
+    case VCO2: return QString("VCO2");
+        break;
+
+    case RER: return QString("Respiratory Exchange Ratio");
+        break;
+
+    case TidalVolume: return QString("Tidal Volume");
+        break;
+
+    case FeO2: return QString("Fraction O2 Expired");
+        break;
+
+    case Temp: return QString("Temperature");
+        break;
+
+    case CoreTemp: return QString("Core Temp");
+        break;
+    case SkinTemp: return QString("Skin Temp");
+        break;
+    case HeatStrain: return QString("Heat Strain");
+        break;
+    case HeatLoad: return QString("Estimated Heat Load");
+        break;
+    case Bearing: return QString("Bearing");
+        break;
+    case RightPCO: return QString("Right PCO");
+        break;
+    case LeftPCO: return QString("Left PCO");
         break;
     }
 }
