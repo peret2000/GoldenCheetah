@@ -131,6 +131,7 @@ class TrainSidebar : public GcWindow
 
         RemoteControl *remote;      // remote control settings
         int currentStatus() {return status;}
+        int getCurrentFTP() const { return FTP > 0 ? FTP : 285; } // Return FTP or default if not set
 
     signals:
         void deviceSelected();
@@ -230,6 +231,9 @@ class TrainSidebar : public GcWindow
         // watch keyboard events.
         bool eventFilter(QObject *object, QEvent *e);
 
+        // helper to tag Stop() with a reason before invoking it
+        void stopWithReason(const QString &reason, int status = 0);
+
         GcSplitter   *trainSplitter;
         GcSplitterItem *deviceItem,
                        *workoutItem,
@@ -297,6 +301,7 @@ class TrainSidebar : public GcWindow
         int pwrcount, cadcount, hrcount, spdcount, lodcount, grdcount; // for NZ average calc
         int status;
         int displaymode;
+        QString stopReasonHint; // last known reason before Stop() is invoked
 
         QString codeWorkoutKey;     // traindb-key of the workout in the case of a code-workout; empty otherwise
         QString codeWorkoutTitle;   // title of the workout in the case of a code-workout; empty otherwise
@@ -337,6 +342,7 @@ class TrainSidebar : public GcWindow
 
         bool autoConnect;
         bool pendingConfigChange;
+        bool stopping;  // To distinguish from other situations. Used in mediaTreeWidgetSelectionChanged()
 
         Bicycle bicycle;
 

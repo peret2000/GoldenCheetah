@@ -29,6 +29,7 @@
 #include "HelpWhatsThis.h"
 #include "RideFile.h"
 #include <QtGui>
+#include <QDebug>
 #include <QRegExp>
 #include <QStyle>
 #include <QStyleFactory>
@@ -80,7 +81,7 @@
 #endif
 
 TrainSidebar::TrainSidebar(Context *context) : GcWindow(context), context(context),
-    bicycle(context)
+    bicycle(context), stopping(false)
 {
     // Athlete
     FTP=285; // default to 285 if zones are not set
@@ -621,7 +622,7 @@ TrainSidebar::eventFilter(QObject *, QEvent *event)
                     break;
 
                 case Qt::Key_Escape:
-                    Stop();
+                    stopWithReason(QStringLiteral("ESC key while recording"));
                     break;
 
                 default:
@@ -1257,7 +1258,9 @@ TrainSidebar::mediaTreeWidgetSelectionChanged()
     QModelIndex current = mediaTree->currentIndex();
     QModelIndex target = vsortModel->mapToSource(current);
     QString filename = videoModel->data(videoModel->index(target.row(), TdbVideoModelIdx::filepath), Qt::DisplayRole).toString();
-    if (filename == context->videoFilename) {
+    // Called also when stopping, but in such case, we do not care about selection/deselection
+    // of video: we do not have to change its selection at all
+    if (filename == context->videoFilename && !stopping) {
         mediafile = "";
         context->notifyMediaSelected(""); // CTRL+Click to clear selection
     } else {
@@ -1423,9 +1426,6 @@ void TrainSidebar::Start()       // when start button is pressed
             foreach(int dev, activeDevices) Devices[dev].controller->setMode(RT_MODE_SPIN);
         }
 
-        // tell the world
-        context->notifyStart();
-
         // we're away!
         setStatusFlags(RT_RUNNING);
 
@@ -1551,9 +1551,22 @@ void TrainSidebar::Pause()        // pause capture to recalibrate
     }
 }
 
+void TrainSidebar::stopWithReason(const QString &reason, int deviceStatus)
+{
+    stopReasonHint = reason;
+    Stop(deviceStatus);
+}
+
 void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
 {
     if ((status&RT_RUNNING) == 0) return;
+
+    const QString reason = stopReasonHint.isEmpty()
+        ? QStringLiteral("Stop() called without reason hint")
+        : stopReasonHint;
+    stopReasonHint.clear();
+    qInfo() << "[TrainSidebar] Stop invoked" << reason << "deviceStatus=" << deviceStatus;
+    stopping = true;
 
     // re-enable the screen saver on Windows
 #ifdef WIN32
@@ -1710,6 +1723,11 @@ void TrainSidebar::Stop(int deviceStatus)        // when stop button is pressed
     guiUpdate();
 
     context->notifySetNotification(tr("Stopped.."), 2);
+
+    stopping = false;
+
+    // Disconnect devices, to avoid remote control sending commands after stopping
+    Disconnect();
 
     return;
 }
@@ -2021,7 +2039,7 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 {
                     // If we reached the end of the RLV then stop
                     if (displayWorkoutDistance >= context->currentVideoSyncFile()->distance()) {
-                        Stop(DEVICE_OK);
+                        stopWithReason(QStringLiteral("Reached end of video sync distance"), DEVICE_OK);
                         return;
                     }
                     // TODO : graphs to be shown at seek position
@@ -2487,7 +2505,7 @@ void TrainSidebar::loadUpdate()
 
         // we got to the end!
         if (load == -100) {
-            Stop(DEVICE_OK);
+            stopWithReason(QStringLiteral("ERG workout end-of-file (load == -100)"), DEVICE_OK);
         } else {
             foreach(int dev, activeDevices) Devices[dev].controller->setLoad(load);
             context->notifySetNow(load_msecs);
@@ -2507,7 +2525,7 @@ void TrainSidebar::loadUpdate()
 
         // we got to the end!
         if (slope == -100) {
-            Stop(DEVICE_OK);
+            stopWithReason(QStringLiteral("Slope workout end-of-file (slope == -100)"), DEVICE_OK);
         } else {
             foreach(int dev, activeDevices) {
                 Devices[dev].controller->setGradient(slope);
@@ -3412,7 +3430,7 @@ TrainSidebar::remoteControl(uint16_t command)
         break;
 
     case GC_REMOTE_CMD_STOP:
-        this->Stop();
+        this->stopWithReason(QStringLiteral("Remote control STOP command"));
         break;
 
     case GC_REMOTE_CMD_LAP:
