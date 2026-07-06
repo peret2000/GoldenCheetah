@@ -228,6 +228,7 @@ public:
     virtual void startPlayback(Context* context);
     //virtual void stopPlayback();
     float gradientValue;
+    float Speed;  // kmh. To compute distance in 10 seconds
 };
 
 #endif // _MeterWidget_h
