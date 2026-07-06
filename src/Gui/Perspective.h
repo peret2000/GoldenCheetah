@@ -61,19 +61,18 @@ class Perspective : public GcWindow
 
     public:
 
-        Perspective(Context *, QString title, int type);
-        ~Perspective();
+        virtual ~Perspective();
 
         // am I relevant? (for switching when ride selected)
-        bool relevant(RideItem*);
+        virtual bool relevant(RideItem*) const { return true; }
 
         // the items I'd choose (for filtering on trends view, optionally refined by chart filter)
-        bool isFiltered() const override { return (type_ == VIEW_TRENDS && df != NULL); }
+        virtual bool isFiltered() const override { return false; }
         QStringList filterlist(DateRange dr, bool isfiltered=false, QStringList files=QStringList());
 
         // get/set the expression (will compile df)
-        QString expression() const;
-        void setExpression(QString);
+        const QString& expression() const { return expression_; }
+        virtual bool setExpression(const QString& expr);
 
         // trainswitch
         enum switchenum { None=0, Erg=1, Slope=2, Video=3, Map=4 };
@@ -81,15 +80,16 @@ class Perspective : public GcWindow
         void setTrainSwitch(int x) { trainswitch = (switchenum)x; }
 
         // import and export
-        static Perspective *fromFile(Context *context, QString filename, int type);
-        bool toFile(QString filename);
+        static Perspective *fromFile(ViewParser* handler, const QString& filename, GcViewType viewType);
+        bool toFile(const QString& filename);
         void toXml(QTextStream &out);
 
-        int type() const { return type_; }
-        QString title() const { return title_; }
+        virtual GcViewType viewType() const = 0;
+        virtual QString viewsInternalName() const = 0;
+        const QString& title() const { return title_; }
 
         void resetLayout();
-        void importChart(QMap<QString,QString> properties, bool select);
+        void importChart(const QMap<QString,QString>& properties, bool select);
 
         void setStyle(int style) { styleChanged(style); }
         int currentStyle;
@@ -98,6 +98,8 @@ class Perspective : public GcWindow
         GcChartWindow *currentChart() {
             return currentTab() >= 0 ? charts[currentTab()] : NULL;
         }
+
+        const QList<GcChartWindow*>& getCharts() { return charts; }
 
     public slots:
 
@@ -112,8 +114,8 @@ class Perspective : public GcWindow
         void tabSelected(int id, bool forride);
         void tabMoved(int from, int to);
         void tabMenu(int index, int x);
-        virtual void dragEnterEvent(QDragEnterEvent *) override;
-        virtual void dropEvent(QDropEvent *) override;
+        void dragEnterEvent(QDragEnterEvent *) override;
+        void dropEvent(QDropEvent *) override;
         void resizeEvent(QResizeEvent *) override;
         void resize();
         void showEvent(QShowEvent *) override;
@@ -130,7 +132,7 @@ class Perspective : public GcWindow
 
         // window wants to close...
         void closeWindow(GcWindow*);
-        void showControls();
+        virtual void showControls();
 
         void userChartConfigChanged(UserChartWindow *);
 
@@ -152,15 +154,19 @@ class Perspective : public GcWindow
         void steerScroll(int scrollAmount);
 
     protected:
+
+        // Hide constructor to create an Abstract class
+        Perspective(Context* context, const QString& title);
+
+        virtual ViewParser* getViewParser(bool useDefault) const = 0;
+        virtual QColor& getBackgroundColor() const;
+
         Context *context;
+
         bool active; // ignore gui signals when changing views
         bool resizing; // when resizing elements, don't double dip
         GcChartWindow *clicked; // keep track of selected charts
         bool dropPending;
-
-        // what are we?
-        int type_;
-        QString view;
 
         // top bar
         QString title_;
@@ -234,7 +240,7 @@ class ImportChartDialog : public QDialog
     Q_OBJECT
 
     public:
-        ImportChartDialog(Context *context, QList<QMap<QString,QString> >list, QWidget *parent);
+        ImportChartDialog(Context *context, const QList<QMap<QString,QString>>& list, QWidget *parent);
 
     protected:
         QTableWidget *table;
@@ -255,7 +261,7 @@ class AddPerspectiveDialog : public QDialog
     Q_OBJECT
 
     public:
-        AddPerspectiveDialog(QWidget *parent, Context *context, QString &name, QString &expression, int type, Perspective::switchenum &trainswitch, bool edit=false);
+        AddPerspectiveDialog(QWidget *parent, Context *context, QString &name, QString &expression, GcViewType viewType, Perspective::switchenum &trainswitch, bool edit=false);
 
     protected:
         QLineEdit *nameEdit;
@@ -272,6 +278,6 @@ class AddPerspectiveDialog : public QDialog
         QString &name;
         QString &expression;
         Perspective::switchenum &trainswitch;
-        int type;
+        GcViewType viewType;
 };
 #endif // _GC_HomeWindow_h

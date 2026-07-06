@@ -42,21 +42,23 @@ class AthleteTab: public QWidget
         void close();
 
         ChartSettings *chartsettings() { return chartSettings; } // by HomeWindow
-        int currentView() { return views->currentIndex(); }
-        AbstractView *view(int index);
+        GcViewType currentViewType() const;
+        AbstractView *currentView() const;
+        AbstractView *view(GcViewType viewType) const;
 
         NavigationModel *nav; // back/forward for this tab
+
+        Context *context;
 
     protected:
 
         friend class ::MainWindow;
         friend class ::NavigationModel;
         friend class ::AthleteLoader;
-        Context *context;
 
     signals:
 
-        void viewChanged(int);
+        void viewChanged(GcViewType);
         void rideItemSelected(RideItem*);
         void dateRangeSelected(DateRange);
 
@@ -88,12 +90,17 @@ class AthleteTab: public QWidget
         void addChart(GcWinID);
 
         // switch views
-        void selectView(int);
+        void selectView(GcViewType);
 
         // specific to analysis view
         void addIntervals();
 
     private:
+
+        // map between the view stack index and the GcViewType,
+        // the view stack and this mapping is hidden with athlete tab.
+        int viewTypeToIndex(GcViewType viewType) const;
+        GcViewType indexToViewType(int index) const;
 
         // constructor finished and navigation
         // model isn't undo/redo ride selection

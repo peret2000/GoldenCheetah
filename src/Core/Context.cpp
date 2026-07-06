@@ -150,6 +150,7 @@ Context::Context(MainWindow *mainWindow): mainWindow(mainWindow)
     isCompareIntervals = isCompareDateRanges = false;
     isRunning = isPaused = false;
     m_HtmlTrainingBridge = nullptr;
+    viewType = GcViewType::NO_VIEW_SET;
 
     connect(this, SIGNAL(loadProgress(QString, double)), mainWindow, SLOT(loadProgress(QString, double)));
 

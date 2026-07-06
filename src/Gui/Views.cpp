@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Mark Liversedge (liversedge@gmail.com)
  * LTMSidebarView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
+ * EquipmentView Copyright (c) 2025 Paul Johnson (paulj49457@gmail.com)
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -18,6 +19,7 @@
  */
 
 #include "Views.h"
+#include "Perspectives.h"
 #include "RideCache.h"
 #include "AnalysisSidebar.h"
 #include "MiniCalendar.h"
@@ -31,8 +33,8 @@
 
 QMap<Context*, LTMSidebar*> LTMSidebarView::LTMSidebars_;
 
-LTMSidebarView::LTMSidebarView(Context *context, int type, const QString& view, const QString& heading) :
-    AbstractView(context, type, view, heading)
+LTMSidebarView::LTMSidebarView(Context *context, const QString& viewName, const QString& heading) :
+    AbstractView(context, viewName, heading)
 {
     // get or create the LTMSidebar shared between the views
     getLTMSidebar(context);
@@ -66,7 +68,7 @@ void LTMSidebarView::showEvent(QShowEvent*)
     setSidebar(LTMSidebars_[context]);
 
     // update the sidebar's preset chart visibility
-    LTMSidebars_[context]->updatePresetChartsOnShow(type);
+    LTMSidebars_[context]->updatePresetChartsOnShow(viewType());
 
     // update sidebar for the new view
     sidebarChanged();
@@ -111,8 +113,14 @@ LTMSidebarView::dateRangeChanged(DateRange dr)
     if (loaded) page()->setProperty("dateRange", QVariant::fromValue<DateRange>(dr));
 }
 
+Perspective*
+AnalysisViewParser::getViewParsersPerspective(const QString& name) const
+{
+    return new AnalysisPerspective(context, name);
+}
+
 AnalysisView::AnalysisView(Context *context, QStackedWidget *controls) :
-        AbstractView(context, VIEW_ANALYSIS, "analysis", tr("Compare Activities and Intervals"))
+    AbstractView(context, internalName, tr("Compare Activities and Intervals"))
 {
     analSidebar = new AnalysisSidebar(context);
     BlankStateAnalysisPage *b = new BlankStateAnalysisPage(context);
@@ -131,7 +139,8 @@ AnalysisView::AnalysisView(Context *context, QStackedWidget *controls) :
     setBlank(b);
     setBottom(new ComparePane(context, this, ComparePane::interval));
 
-    setSidebarEnabled(appsettings->value(this, GC_SETTINGS_MAIN_SIDEBAR "analysis", defaultAppearance.sideanalysis).toBool());
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    setSidebarEnabled(appsettings->value(this, path, defaultAppearance.sideanalysis).toBool());
 
     connect(bottomSplitter(), SIGNAL(compareChanged(bool)), this, SLOT(compareChanged(bool)));
     connect(bottomSplitter(), SIGNAL(compareClear()), bottom(), SLOT(clear()));
@@ -144,8 +153,21 @@ RideNavigator *AnalysisView::rideNavigator()
 
 AnalysisView::~AnalysisView()
 {
-    appsettings->setValue(GC_SETTINGS_MAIN_SIDEBAR "analysis", _sidebar);
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    appsettings->setValue(path, _sidebar);
     delete analSidebar;
+}
+
+Perspective*
+AnalysisView::getViewsPerspective(const QString& name) const
+{
+    return new AnalysisPerspective(context, name);
+}
+
+ViewParser*
+AnalysisView::getViewParser(Context* context, bool useDefault) const
+{
+    return new AnalysisViewParser(context, useDefault);
 }
 
 void
@@ -158,7 +180,7 @@ AnalysisView::setRide(RideItem *ride)
 
     // if we are the current view and the current perspective is no longer relevant
     // then lets go find one to switch to..
-    if (context->mainWindow->athleteTab()->currentView() == 1 && page()->relevant(ride) != true) {
+    if (context->mainWindow->athleteTab()->currentViewType() == GcViewType::VIEW_ANALYSIS && page()->relevant(ride) != true) {
 
         // lets find a perspective to switch to
         int ridePerspectiveIdx = findRidesPerspective(ride);
@@ -246,8 +268,14 @@ AnalysisView::notifyViewSplitterMoved() {
     }
 }
 
+Perspective*
+PlanViewParser::getViewParsersPerspective(const QString& name) const
+{
+    return new PlanPerspective(context, name);
+}
+
 PlanView::PlanView(Context *context, QStackedWidget *controls) :
-        LTMSidebarView(context, VIEW_PLAN, "plan", tr("Plan future activities"))
+    LTMSidebarView(context, internalName, tr("Plan future activities"))
 {
     BlankStatePlanPage *b = new BlankStatePlanPage(context);
 
@@ -256,7 +284,8 @@ PlanView::PlanView(Context *context, QStackedWidget *controls) :
     controls->addWidget(cstack);
     controls->setCurrentIndex(0);
 
-    setSidebarEnabled(appsettings->value(this,  GC_SETTINGS_MAIN_SIDEBAR "plan", defaultAppearance.sideplan).toBool());
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    setSidebarEnabled(appsettings->value(this, path, defaultAppearance.sideplan).toBool());
 
     pstack = new QStackedWidget(this);
     setPages(pstack);
@@ -265,7 +294,20 @@ PlanView::PlanView(Context *context, QStackedWidget *controls) :
 
 PlanView::~PlanView()
 {
-    appsettings->setValue(GC_SETTINGS_MAIN_SIDEBAR "plan", _sidebar);
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    appsettings->setValue(path, _sidebar);
+}
+
+Perspective*
+PlanView::getViewsPerspective(const QString& name) const
+{
+    return new PlanPerspective(context, name);
+}
+
+ViewParser*
+PlanView::getViewParser(Context* context, bool useDefault) const
+{
+    return new PlanViewParser(context, useDefault);
 }
 
 bool
@@ -275,8 +317,14 @@ PlanView::isBlank()
     else return true;
 }
 
+Perspective*
+TrendsViewParser::getViewParsersPerspective(const QString& name) const
+{
+    return new TrendsPerspective(context, name);
+}
+
 TrendsView::TrendsView(Context *context, QStackedWidget *controls) :
-        LTMSidebarView(context, VIEW_TRENDS, "home", tr("Compare Date Ranges"))
+    LTMSidebarView(context, internalName, tr("Compare Date Ranges"))
 {
     BlankStateHomePage *b = new BlankStateHomePage(context);
 
@@ -285,6 +333,7 @@ TrendsView::TrendsView(Context *context, QStackedWidget *controls) :
     controls->addWidget(cstack);
     controls->setCurrentIndex(0);
 
+    // note: "trend" differs from the normal internalName usage for sidebar settings
     setSidebarEnabled(appsettings->value(this,  GC_SETTINGS_MAIN_SIDEBAR "trend", defaultAppearance.sidetrend).toBool());
 
     pstack = new QStackedWidget(this);
@@ -298,7 +347,20 @@ TrendsView::TrendsView(Context *context, QStackedWidget *controls) :
 
 TrendsView::~TrendsView()
 {
+    // note: "trend" differs from the normal internalName usage for sidebar settings
     appsettings->setValue(GC_SETTINGS_MAIN_SIDEBAR "trend", _sidebar);
+}
+
+Perspective*
+TrendsView::getViewsPerspective(const QString& name) const
+{
+    return new TrendsPerspective(context, name);
+}
+
+ViewParser*
+TrendsView::getViewParser(Context* context, bool useDefault) const
+{
+    return new TrendsViewParser(context, useDefault);
 }
 
 void
@@ -341,8 +403,14 @@ TrendsView::isBlank()
     else return true;
 }
 
+Perspective*
+TrainViewParser::getViewParsersPerspective(const QString& name) const
+{
+    return new TrainPerspective(context, name);
+}
+
 TrainView::TrainView(Context *context, QStackedWidget *controls) :
-        AbstractView(context, VIEW_TRAIN, "train", tr("Intensity Adjustments and Workout Control"))
+    AbstractView(context, internalName, tr("Intensity Adjustments and Workout Control"))
 {
     trainTool = new TrainSidebar(context);
     trainTool->setTrainView(this);
@@ -364,7 +432,8 @@ TrainView::TrainView(Context *context, QStackedWidget *controls) :
     setBottom(trainBottom);
     setHideBottomOnIdle(false);
 
-    setSidebarEnabled(appsettings->value(NULL,  GC_SETTINGS_MAIN_SIDEBAR "train", defaultAppearance.sidetrain).toBool());
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    setSidebarEnabled(appsettings->value(NULL, path, defaultAppearance.sidetrain).toBool());
     connect(this, SIGNAL(onSelectionChanged()), this, SLOT(onSelectionChanged()));
     connect(trainBottom, SIGNAL(autoHideChanged(bool)), this, SLOT(onAutoHideChanged(bool)));
 }
@@ -376,8 +445,21 @@ void TrainView::onAutoHideChanged(bool enabled)
 
 TrainView::~TrainView()
 {
-    appsettings->setValue(GC_SETTINGS_MAIN_SIDEBAR "train", _sidebar);
+    QString path = QString(GC_SETTINGS_MAIN_SIDEBAR) + internalName;
+    appsettings->setValue(path, _sidebar);
     delete trainTool;
+}
+
+Perspective*
+TrainView::getViewsPerspective(const QString& name) const
+{
+    return new TrainPerspective(context, name);
+}
+
+ViewParser*
+TrainView::getViewParser(Context* context, bool useDefault) const
+{
+    return new TrainViewParser(context, useDefault);
 }
 
 void
@@ -404,5 +486,78 @@ TrainView::onSelectionChanged()
 void
 TrainView::notifyViewPerspectiveAdded(Perspective* page) {
     page->styleChanged(2);
+}
+
+Perspective*
+EquipmentViewParser::getViewParsersPerspective(const QString& name) const
+{
+    return new EquipmentPerspective(context, name);
+}
+
+EquipmentView::EquipmentView(Context *context, QStackedWidget *controls) :
+    AbstractView(context, internalName, tr("Equipment Management"))
+{
+    viewCfgPath = QDir(gcroot).canonicalPath();
+
+    // perspectives are stacked
+    pstack = new QStackedWidget(this);
+    setPages(pstack);
+
+    setSidebarEnabled(false);
+
+    // each perspective has a stack of controls
+    cstack = new QStackedWidget(this);
+    controls->addWidget(cstack);
+    controls->setCurrentIndex(0);
+
+    // the dialog box for the chart settings
+    chartsettings = new ChartSettings(this, controls);
+    chartsettings->setFixedWidth(650);
+    chartsettings->setFixedHeight(600);
+    chartsettings->hide();
+
+    // load the default single hidden perspective
+    restoreState(false);
+    loaded = true;
+    perspectiveSelected(0);
+}
+
+EquipmentView::~EquipmentView()
+{
+    // No sidebar to delete
+}
+
+Perspective*
+EquipmentView::getViewsPerspective(const QString& name) const
+{
+    return new EquipmentPerspective(context, name);
+}
+
+ViewParser*
+EquipmentView::getViewParser(Context* context, bool useDefault) const
+{
+    return new EquipmentViewParser(context, useDefault);
+}
+
+void
+EquipmentView::selectionChanged()
+{
+    // selects the equipment tab
+    if (isSelected()) perspective_->tabSelected(perspective_->currentTab());
+}
+
+bool
+EquipmentView::isBlank()
+{
+    return true;
+}
+
+void
+EquipmentView::addChart(GcWinID id)
+{
+    AbstractView::addChart(id);
+
+    // need to recalculate the equipment cache after a user creates a new Equipment Overview chart.
+    GlobalContext::context()->requestEqRecalculation("EquipmentOverviewWindow created");
 }
 

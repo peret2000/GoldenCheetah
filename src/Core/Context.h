@@ -86,6 +86,11 @@ class GlobalContext : public QObject
 
         void notifyConfigChanged(qint32);
 
+        // equipment management
+        void notifyEqRecalculationComplete() { emit eqRecalculationComplete(); }  // equipment recalculation complete
+        void requestEqRecalculation(const QString& reason) { emit eqRecalculation(reason); }  // request equipment cache recalculation
+        void requestEqItemRecalculation(const QUuid& equipmentRef, const QString& reason) { emit eqItemRecalculation(equipmentRef, reason); }  // request equipment item recalculated
+
         // metadata etc
         RideMetadata *rideMetadata;
         ColorEngine *colorEngine;
@@ -106,6 +111,11 @@ class GlobalContext : public QObject
         // realtime signals global widgets that aren't athlete specific
         void start();
         void stop();
+
+        // equipment management
+        void eqRecalculationComplete(); // equipment realculation complete
+        void eqRecalculation(const QString& reason); // request equipment cache recalculation
+        void eqItemRecalculation(const QUuid& equipmentRef, const QString& reason); // request equipment item recalculated
 
     private:
         // singleton pattern
@@ -128,7 +138,7 @@ class Context : public QObject
 
         // mainwindow state
         NavigationModel *nav;
-        int viewIndex;
+        GcViewType viewType;
         bool showSidebar, showLowbar, showToolbar, showTabbar;
         int style;
         QString searchText;
@@ -194,8 +204,7 @@ class Context : public QObject
         void notifyLoadCompleted(QString folder, Context *context) { emit loadCompleted(folder,context); } // Athlete loaded
         void notifyAthleteClose(QString folder, Context *context) { emit athleteClose(folder,context); }
         void notifyLoadDone(QString folder, Context *context) { emit loadDone(folder, context); } // MainWindow finished
-
-        void notifyAutoImportCompleted() { emit autoImportCompleted(); }
+        void notifyAutoImportCompleted() { emit autoImportCompleted(); } // Batch importing finished
 
         // preset charts
         void notifyPresetsChanged() { emit presetsChanged(); }
@@ -215,7 +224,7 @@ class Context : public QObject
         void notifyUserMetricsChanged() { emit userMetricsChanged(); }
 
         // view changed
-        void setIndex(int i) { viewIndex = i; emit viewChanged(i); }
+        void setViewType(GcViewType v) { viewType = v; emit viewChanged(v); }
 
         // realtime signals
         void notifyTelemetryUpdate(const RealtimeData &rtData) { telemetryUpdate(rtData); }
@@ -303,7 +312,6 @@ class Context : public QObject
         void loadCompleted(QString, Context*);
         void loadDone(QString, Context*);
         void athleteClose(QString, Context*);
-
         void autoImportCompleted();
 
         // global filter changed
@@ -324,7 +332,7 @@ class Context : public QObject
         void userMetricsChanged();
 
         // view changed
-        void viewChanged(int);
+        void viewChanged(GcViewType);
 
         // refreshing stats
         void refreshStart();
