@@ -53,6 +53,7 @@ enum gcwinid {
         RealtimePlot = 24,
         WorkoutPlot = 25,
         MapWindow = 26,
+        GeoLocationChart=110,   // Geolocation widget in train view. This high number will avoid conflicts
         StreetViewWindow = 27,
         BingMap = 28, // deprecated
         RealtimeControls = 29,

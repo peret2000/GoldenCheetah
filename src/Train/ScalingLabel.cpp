@@ -27,10 +27,18 @@ ScalingLabel::ScalingLabel
 {
 }
 
+ScalingLabel::ScalingLabel
+(int rescaleEvery, QWidget *parent, Qt::WindowFlags f)
+: ScalingLabel(4, 64, parent, f)
+{
+    ScalingLabel(parent, f);
+    counterLimit = rescaleEvery;
+}
 
 ScalingLabel::ScalingLabel
 (int minFontPointSize, int maxFontPointSize, QWidget *parent, Qt::WindowFlags f)
-: QLabel(parent, f), minFontPointSize(minFontPointSize), maxFontPointSize(maxFontPointSize)
+    : QLabel(parent, f), minFontPointSize(minFontPointSize), maxFontPointSize(maxFontPointSize),
+    counterLimit(10)
 {
     QFont fnt = font();
     fnt.setPointSize(minFontPointSize);
@@ -60,7 +68,7 @@ ScalingLabel::setText
     ++counter;
     if (text.length() > QLabel::text().length()) {
         scaleFont(text, ScalingLabelReason::TextLengthChanged);
-    } else if (counter > 10) {
+    } else if (counter >= counterLimit) {
         scaleFont(text, ScalingLabelReason::CounterExceeded);
     }
     QLabel::setText(text);
@@ -198,24 +206,81 @@ bool
 ScalingLabel::scaleFontLinear
 (const QString &text, const QFont &font, ScalingLabelReason reason)
 {
-    if (text.length() == 0 || width() <= 0 || height() <= 0) {
+    if (text.isEmpty() || width() <= 0 || height() <= 0) {
         return false;
     }
+
+    // Define margins
+    const int horizontalMargin = 6;
+    const int verticalMargin = 4;
+
+    // Available space accounting for margins
+    int availableWidth = width() - 2 * horizontalMargin;
+    int availableHeight = height() - 2 * verticalMargin;
+
+    //int maxSize = (reason == ScalingLabelReason::CounterExceeded) ? font.pointSize() : maxFontPointSize;
     int maxSize = maxFontPointSize;
-    if (reason == ScalingLabelReason::CounterExceeded) {
-        maxSize = font.pointSize();
-    }
+
+    // Split text into lines
+    QStringList lines = text.split('\n');
+
+    // Binary search for optimal font size
+    int low = minFontPointSize;
+    int high = maxSize;
+    int bestSize = minFontPointSize;
+
     QFont f(font);
-    f.setPointSize(minFontPointSize);
-    QFontMetrics fmS = QFontMetrics(f, this);
-    f.setPointSize(maxSize);
-    QFontMetrics fmL = QFontMetrics(f, this);
-    QRect brS = fmS.boundingRect(text);
-    QRect brL = fmL.boundingRect(text);
-    int sizeWidth = (maxSize - minFontPointSize) / float(brL.width() - brS.width()) * width();
-    int sizeHeight = (maxSize - minFontPointSize) / float(brL.height() - brS.height()) * height();
-    int calcSize = std::min<int>(sizeWidth, sizeHeight);
-    f.setPointSize(std::max<int>(std::min<int>(calcSize, maxSize), minFontPointSize));
+
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        f.setPointSize(mid);
+        QFontMetrics fm(f, this);
+
+        // Calculate height needed for all lines
+        int totalHeight = fm.lineSpacing() * lines.size();
+
+        // Find the widest line
+        int maxWidth = 0;
+        for (const QString &line : lines) {
+            int lineWidth = fm.horizontalAdvance(line);
+            maxWidth = qMax(maxWidth, lineWidth);
+        }
+
+        if (maxWidth <= availableWidth && totalHeight <= availableHeight) {
+            bestSize = mid;  // This size works, try larger
+            low = mid + 1;
+        } else {
+            high = mid - 1;  // Too large, try smaller
+        }
+    }
+
+    f.setPointSize(bestSize);
     QLabel::setFont(f);
     return true;
 }
+
+// bool
+// ScalingLabel::scaleFontLinear
+// (const QString &text, const QFont &font, ScalingLabelReason reason)
+// {
+//     if (text.length() == 0 || width() <= 0 || height() <= 0) {
+//         return false;
+//     }
+//     int maxSize = maxFontPointSize;
+//     if (reason == ScalingLabelReason::CounterExceeded) {
+//         maxSize = font.pointSize();
+//     }
+//     QFont f(font);
+//     f.setPointSize(minFontPointSize);
+//     QFontMetrics fmS = QFontMetrics(f, this);
+//     f.setPointSize(maxSize);
+//     QFontMetrics fmL = QFontMetrics(f, this);
+//     QRect brS = fmS.boundingRect(text);
+//     QRect brL = fmL.boundingRect(text);
+//     int sizeWidth = (maxSize - minFontPointSize) / float(brL.width() - brS.width()) * width();
+//     int sizeHeight = (maxSize - minFontPointSize) / float(brL.height() - brS.height()) * height();
+//     int calcSize = std::min<int>(sizeWidth, sizeHeight);
+//     f.setPointSize(std::max<int>(std::min<int>(calcSize, maxSize), minFontPointSize));
+//     QLabel::setFont(f);
+//     return true;
+// }

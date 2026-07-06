@@ -27,6 +27,7 @@
 #include <QWebEngineView>
 #include <qwt_compass.h>
 
+class GeolocationManager;
 class MeterWidget : public QWidget
 {
     Q_OBJECT
@@ -100,6 +101,23 @@ class TextMeterWidget : public MeterWidget
   public:
     explicit TextMeterWidget(QString name, QWidget *parent = 0, QString Source = QString("None"));
     virtual void paintEvent(QPaintEvent* paintevent);
+};
+
+class GeolocMeterWidget : public TextMeterWidget
+{
+  public:
+    explicit GeolocMeterWidget(QString name, QWidget *parent = 0, QString Source = QString("None"));
+    virtual void paintEvent(QPaintEvent* paintevent);
+    virtual ~GeolocMeterWidget() { delete m_geolocationManager; }
+
+    void updateLatitude(double latitude);
+    void updateLongitude(double longitude);
+  protected:
+      void showEvent(QShowEvent *event) override;
+      void hideEvent(QHideEvent *event) override;
+  private:
+		// Geolocation object
+    GeolocationManager *m_geolocationManager;
 };
 
 class CircularIndicatorMeterWidget : public MeterWidget
