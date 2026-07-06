@@ -132,6 +132,7 @@ jobs:
         run: |
           export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
           export PATH="${QT_DIR}/bin:${PATH}"
+          export LD_LIBRARY_PATH="${QT_DIR}/lib:${LD_LIBRARY_PATH}"
 
           # Change to src directory where the AppImage script is executed from
           cd src
