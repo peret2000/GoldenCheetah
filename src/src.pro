@@ -530,6 +530,8 @@ HEADERS += Train/Ftms.h
 
 QT += charts opengl
 
+QT += websockets
+
 # Dashboard uses qt charts, so needs at least Qt 5.7
 DEFINES += GC_HAVE_OVERVIEW
 HEADERS += Gui/ChartSpace.h Charts/OverviewItems.h Charts/Overview.h
@@ -570,7 +572,7 @@ compiler_lex_make_all.depends += compiler_yacc_decl_make_all
 ###=========================================
 
 # ANT+
-HEADERS  += ANT/ANTChannel.h ANT/ANT.h ANT/ANTlocalController.h ANT/ANTLogger.h ANT/ANTMessage.h ANT/ANTMessages.h
+HEADERS  += ANT/ANTChannel.h ANT/ANT.h ANT/ANTlocalController.h ANT/ANTLogger.h ANT/ANTMessage.h ANT/ANTMessages.h ANT/qdomyosWS.h
 
 # Charts and associated widgets
 HEADERS += Charts/Aerolab.h Charts/AerolabWindow.h Charts/AllPlot.h Charts/AllPlotInterval.h Charts/AllPlotSlopeCurve.h \
@@ -682,7 +684,7 @@ HEADERS += Train/TrainBottom.h Train/TrainDB.h Train/TrainSidebar.h \
 ###=============
 
 ## ANT+
-SOURCES += ANT/ANTChannel.cpp ANT/ANT.cpp ANT/ANTlocalController.cpp ANT/ANTLogger.cpp ANT/ANTMessage.cpp
+SOURCES += ANT/ANTChannel.cpp ANT/ANT.cpp ANT/ANTlocalController.cpp ANT/ANTLogger.cpp ANT/ANTMessage.cpp ANT/qdomyosWS.cpp
 
 ## Charts and related
 SOURCES += Charts/Aerolab.cpp Charts/AerolabWindow.cpp Charts/AllPlot.cpp Charts/AllPlotInterval.cpp Charts/AllPlotSlopeCurve.cpp \

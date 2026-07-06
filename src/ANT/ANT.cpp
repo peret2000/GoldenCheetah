@@ -32,6 +32,8 @@
 #include <QtDebug>
 #include "RealtimeData.h"
 
+#include "qdomyosWS.h"
+
 #ifdef Q_OS_LINUX // to get stat /dev/xxx for major/minor
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -95,6 +97,8 @@ ANT::ANT(QObject *parent, DeviceConfiguration *devConf, QString athlete) : QThre
     qRegisterMetaType<uint16_t>("uint16_t");
     qRegisterMetaType<uint8_t>("uint8_t");
     qRegisterMetaType<struct timeval>("struct timeval");
+
+    wsQDomyos = NULL;
 
     //remember the athlete for wheelsize Settings
     trainAthlete = athlete;
@@ -173,6 +177,8 @@ ANT::ANT(QObject *parent, DeviceConfiguration *devConf, QString athlete) : QThre
         antChannel[i]->channelTimer = new QTimer(this);
     }
 
+    connect(this, SIGNAL(setNotification(QString,int)), parent, SIGNAL(setNotification(QString,int)));
+
     // on windows and linux we use libusb to read from USB2
     // sticks, if it is not available we use stubs
 #if defined GC_HAVE_LIBUSB
@@ -185,6 +191,9 @@ ANT::ANT(QObject *parent, DeviceConfiguration *devConf, QString athlete) : QThre
 
 ANT::~ANT()
 {
+    if (wsQDomyos)
+        delete wsQDomyos;
+
 #if defined GC_HAVE_LIBUSB
     delete usb2;
 #endif
@@ -432,6 +441,16 @@ ANT::setGradient(double gradient)
     // gradient changed
     this->gradient = gradient;
 
+    // wsQDomyos is created in ANT::setup() if the deviceProfile contains "o" and the settings are set
+    if (wsQDomyos) {
+        //emit setGradientToWebsocket(gradient);
+        //QTimer::singleShot(0, this, [this, &ws, &gradient]() {
+        //    wsQDomyos->sendResistance(gradient);;
+        //});
+        wsQDomyos->sendResistance(gradient);
+    }
+
+
     // if we have a FE-C trainer connected, relay the change in simulated slope of trainer electronic
     if ((fecChannel != -1) && (antChannel[fecChannel]->capabilities() & FITNESS_EQUIPMENT_SIMUL_MODE_CAPABILITY))
     {
@@ -569,6 +588,18 @@ ANT::setup()
                 int device_number = antid.mid(0, antid.length()-1).toInt();
 
                 addDevice(device_number, ch_type, -1);
+
+                if (ch_type == ANTChannel::CHANNEL_TYPE_FOOTPOD) {
+                    if (appsettings->value(this, TRAIN_QDMYOS_USEWEBSOCKETSRVIP, false).toBool()) {
+                        QString url = appsettings->value(this, TRAIN_QDMYOS_WEBSOCKETSRVIP, "").toString();
+                        if (url.length() > 0) {
+                            qDebug() << "ANT Setup -> Creating QDomyos WebSocket Client";
+                            if (wsQDomyos) delete wsQDomyos;
+                            wsQDomyos = new qdSocket("ws://"+url);
+                            connect(wsQDomyos, SIGNAL(setNotification(QString,int)), this, SIGNAL(setNotification(QString,int)));
+                        }
+                    }
+                }
             }
         }
 
@@ -650,6 +681,10 @@ ANT::stop()
                 int ch_type = interpretSuffix(c);
                 int device_number = antid.mid(0, antid.length()-1).toInt();
 
+                if (wsQDomyos) {
+                    delete wsQDomyos;
+                    wsQDomyos = NULL;
+                }
                 removeDevice(device_number, ch_type);
             }
         }

@@ -91,6 +91,8 @@
 class ANTMessage;
 class ANTChannel;
 
+class qdSocket;
+
 typedef struct ant_sensor_type {
   bool user; // can user select this when calibrating ?
   int type;
@@ -470,6 +472,8 @@ signals:
     void receivedAntMessage(const unsigned char RS, const ANTMessage message, const struct timeval timestamp);
     void sentAntMessage(const unsigned char RS, const ANTMessage message, const struct timeval timestamp);
 
+    void setNotification(QString msg, int timeout);
+
 public slots:
 
     // runtime controls
@@ -808,6 +812,8 @@ private:
 
     // athlete for wheelsize settings, etc.
     QString trainAthlete;
+
+    qdSocket *wsQDomyos;
 };
 
 #include "ANTMessage.h"

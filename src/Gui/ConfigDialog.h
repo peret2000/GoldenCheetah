@@ -128,6 +128,7 @@ class TrainConfig : public QWidget
         RemotePage *remotePage;
         SimBicyclePage *simBicyclePage;
         WorkoutTagManagerPage *workoutTagManagerPage;
+        QdomyosTreadmillPage *qdomyosTreadmillPage;
 };
 
 // INTERVAL PAGE
