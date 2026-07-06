@@ -328,8 +328,18 @@ Strava::writeFile(QByteArray &data, QString remotename, RideFile *ride)
                                       : QVariant("form-data; name=\"activity_type\""));
 
     // Map some known sports and default to ride for anything else
-    if (ride->isRun())
-      activityTypePart.setBody("Run");
+    if (ride->isRun()) {
+      if (ride->getTag("SubSport", "")=="VirtualRun")
+          activityTypePart.setBody("VirtualRun");
+      else
+        activityTypePart.setBody("Run");
+    }
+    else if (ride->isBike()) {
+        if (ride->getTag("SubSport", "")=="VirtualRide")
+            activityTypePart.setBody("VirtualRide");
+        else
+          activityTypePart.setBody("Ride");
+    }
     else if (ride->isSwim())
       activityTypePart.setBody("Swim");
     else if (ride->sport() == "Row")
