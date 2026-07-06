@@ -1,0 +1,150 @@
+name: Linux amd64 Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'gvty-*'
+      - 'grvty-*'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            libgsl-dev \
+            libsamplerate0-dev \
+            libusb-1.0-0-dev \
+            libical-dev \
+            libfuse2t64 \
+            patchelf \
+            libxkbcommon-dev \
+            libxkbfile1 \
+            libxkbfile-dev \
+            libqt6sql6-sqlite \
+            libxcb-cursor0 \
+            libevent-2.1-7t64 \
+            build-essential bison flex fuse file zlib1g-dev \
+            autoconf automake cmake libtool autopoint libssl-dev \
+            ubuntu-restricted-extras \
+            libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+            gstreamer1.0-libav gstreamer1.0-pulseaudio libgl1-mesa-dri libgbm1 \
+            r-base-dev
+
+      - name: Build SRMIO
+        run: |
+          git clone https://github.com/rclasen/srmio.git
+          cd srmio
+          sh genautomake.sh
+          ./configure --disable-shared --enable-static
+          make --silent -j$(nproc)
+          sudo make install
+          cd ..
+          rm -rf srmio
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies (sip, aqtinstall)
+        run: |
+          python -m pip install --upgrade pip
+          pip install sip aqtinstall
+
+      - name: Install Qt 6.8.0
+        run: |
+          python -m aqt install-qt linux desktop 6.8.0 linux_gcc_64 \
+            --base https://qt.mirror.constant.com --external 7z \
+            -m qt5compat qtcharts qtconnectivity qtmultimedia qtlanguageserver qtpositioning qtsensors qtserialport qtwebchannel qtwebengine qtwebsockets qtlocation
+
+      - name: Compile linuxdeployqt
+        run: |
+          export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
+          export PATH="${QT_DIR}/bin:${PATH}"
+          export CMAKE_PREFIX_PATH="${QT_DIR}/lib/cmake:${CMAKE_PREFIX_PATH}"
+
+          git clone https://github.com/probonopd/linuxdeployqt.git
+          cd linuxdeployqt
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ..
+          make -j$(nproc)
+          sudo cp -p tools/linuxdeployqt/linuxdeployqt /usr/bin/
+          cd ../..
+          rm -rf linuxdeployqt
+
+      - name: Debug R Installation
+        run: |
+          which R || echo "R not found"
+          R RHOME || echo "R RHOME failed"
+          R CMD config --cppflags || echo "R CMD config failed"
+          find /usr -name "R.h" 2>/dev/null || echo "find failed"
+          pkg-config --cflags libR || echo "pkg-config libR failed"
+
+      - name: Build GoldenCheetah via build_project.sh
+        run: |
+          export QT_DIR="${GITHUB_WORKSPACE}/6.8.0/gcc_64"
+          export PATH="${QT_DIR}/bin:${PATH}"
+          export LD_LIBRARY_PATH="${QT_DIR}/lib:${LD_LIBRARY_PATH}"
+          export PYTHON_VERSION="3.12"
+
+          # Configure a dummy git user to satisfy merge / checkout needs of the script
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+          chmod +x ./scripts/build_project.sh
+          chmod +x ./scripts/preparedirectory.sh
+          chmod +x ./scripts/script.sh
+          chmod +x ./src/Resources/linux/MakeAppImageQt6.sh
+
+          ./scripts/build_project.sh --fromscratch --appimage --buildbranch ${{ github.ref_name }} --targetbranch ${{ github.ref_name }}
+        env:
+          GC_STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          GC_CLOUD_DB_BASIC_AUTH: ${{ secrets.CLOUD_DB_BASIC_AUTH }}
+          GC_CLOUD_DB_APP_NAME: ${{ secrets.CLOUD_DB_APP_NAME }}
+          GC_GOOGLE_CALENDAR_CLIENT_SECRET: ${{ secrets.GOOGLE_CALENDAR_CLIENT_SECRET }}
+          GC_DROPBOX_CLIENT_SECRET: ${{ secrets.DROPBOX_CLIENT_SECRET }}
+          GC_CYCLINGANALYTICS_CLIENT_SECRET: ${{ secrets.CYCLINGANALYTICS_CLIENT_SECRET }}
+          GC_TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+          GC_DROPBOX_CLIENT_ID: ${{ secrets.DROPBOX_CLIENT_ID }}
+          GC_MAPQUESTAPI_KEY: ${{ secrets.MAPQUESTAPI_KEY }}
+          GC_GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GC_GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+          GC_GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+          GC_WITHINGS_CONSUMER_SECRET: ${{ secrets.WITHINGS_CONSUMER_SECRET }}
+          GC_NOKIA_CLIENT_SECRET: ${{ secrets.NOKIA_CLIENT_SECRET }}
+          GC_SPORTTRACKS_CLIENT_SECRET: ${{ secrets.SPORTTRACKS_CLIENT_SECRET }}
+          GC_CLOUD_OPENDATA_SECRET: ${{ secrets.CLOUD_OPENDATA_SECRET }}
+          GC_RWGPS_API_KEY: ${{ secrets.RWGPS_API_KEY }}
+          GC_NOLIO_CLIENT_ID: ${{ secrets.NOLIO_CLIENT_ID }}
+          GC_NOLIO_SECRET: ${{ secrets.NOLIO_SECRET }}
+          GC_XERT_CLIENT_SECRET: ${{ secrets.XERT_CLIENT_SECRET }}
+          GC_AZUM_CLIENT_SECRET: ${{ secrets.AZUM_CLIENT_SECRET }}
+          GC_TRAINERDAY_API_KEY: ${{ secrets.TRAINERDAY_API_KEY }}
+
+      - name: Print logs on failure
+        if: always()
+        run: |
+          echo "=== BUILD SCRIPT LOGS ==="
+          if [ -f scripts/log.txt ]; then cat scripts/log.txt; fi
+          if [ -f scripts/logtmp.txt ]; then cat scripts/logtmp.txt; fi
+          echo "=== COMPILER LOGS ==="
+          if [ -f scripts/buildlog.txt ]; then cat scripts/buildlog.txt; fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoldenCheetah-Linux-amd64
+          path: src/GoldenCheetah_*.AppImage
+          if-no-files-found: error

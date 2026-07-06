@@ -73,7 +73,7 @@ rm -f src/GoldenCheetah
 # D2XX - refresh cache if folder is empty
 mkdir -p D2XX
 if [ -z "$(ls -A D2XX)" ]; then
-    wget --no-verbose https://ftdichip.com/wp-content/uploads/2022/07/libftd2xx-x86_64-1.4.27.tgz
+    wget --no-verbose "https://web.archive.org/web/20231127085252id_/https://ftdichip.com/wp-content/uploads/2022/07/libftd2xx-x86_64-1.4.27.tgz" -O libftd2xx-x86_64-1.4.27.tgz
     tar xf libftd2xx-x86_64-1.4.27.tgz -C D2XX
     rm libftd2xx-x86_64-1.4.27.tgz
 fi

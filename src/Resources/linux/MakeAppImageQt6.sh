@@ -67,20 +67,35 @@ case "$ARCH" in
     ;;
 esac
 
-export PATH="$PYTHONDIR/bin:$PATH"
-pip install --upgrade pip
-pip install -q -U --upgrade-strategy eager -r Python/requirements.txt
-mkdir -p appdir/opt/python${PYTHONVERS}
-cp -rp $PYTHONDIR/* appdir/opt/python${PYTHONVERS}/
-# Change scripts in python bin directory to execute correct python binary
-find appdir/opt/python${PYTHONVERS}/bin -type f -print0 | while IFS= read -r -d '' f; do
-  if file -b "$f" | grep -qi 'script'; then
-    if sed -n '1p' "$f" | grep -q '^#!.*python'; then
-      sed -i '1 s|^#!.*python.*$|#! /bin/sh\
+if [ "$GITHUB_ACTIONS" = "true" ]; then
+  # On GitHub Actions, the runner python is not relocatable, so we package a relocatable python-appimage
+  wget --no-verbose https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
+  chmod +x python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
+  ./python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage --appimage-extract
+  rm -f python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
+  export PATH="$(pwd)/squashfs-root/usr/bin:$PATH"
+  pip install --upgrade pip
+  pip install -q -r Python/requirements.txt
+  mv squashfs-root/usr appdir/usr
+  mv squashfs-root/opt appdir/opt
+  rm -rf squashfs-root
+else
+  # Native/Docker build uses the compiled Python in $PYTHONDIR
+  export PATH="$PYTHONDIR/bin:$PATH"
+  pip install --upgrade pip
+  pip install -q -U --upgrade-strategy eager -r Python/requirements.txt
+  mkdir -p appdir/opt/python${PYTHONVERS}
+  cp -rp $PYTHONDIR/* appdir/opt/python${PYTHONVERS}/
+  # Change scripts in python bin directory to execute correct python binary
+  find appdir/opt/python${PYTHONVERS}/bin -type f -print0 | while IFS= read -r -d '' f; do
+    if file -b "$f" | grep -qi 'script'; then
+      if sed -n '1p' "$f" | grep -q '^#!.*python'; then
+        sed -i '1 s|^#!.*python.*$|#! /bin/sh\
 "exec" "$(dirname $(readlink -f ${0}))/python3" "$0" "$@"|' "$f"
+      fi
     fi
-  fi
-done
+  done
+fi
 
 
 
