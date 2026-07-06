@@ -136,7 +136,16 @@ jobs:
           # Change to src directory where the AppImage script is executed from
           cd src
           chmod +x ./Resources/linux/MakeAppImageQt6.sh
-          ./Resources/linux/MakeAppImageQt6.sh
+          ./Resources/linux/MakeAppImageQt6.sh > make_appimage.log 2>&1 || {
+            echo "AppImage failed. Pushing logs..."
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git checkout -B tmp_build_logs
+            git add make_appimage.log
+            git commit -m "Upload failed appimage logs"
+            git push -f origin tmp_build_logs
+            exit 1
+          }
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
