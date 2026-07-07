@@ -68,11 +68,20 @@ case "$ARCH" in
 esac
 
 if [ "$GITHUB_ACTIONS" = "true" ]; then
-  # On GitHub Actions, the runner python is not relocatable, so we package a relocatable python-appimage
-  wget --no-verbose https://github.com/niess/python-appimage/releases/download/python3.12/python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
-  chmod +x python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
-  ./python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage --appimage-extract
-  rm -f python3.12.12-cp312-cp312-manylinux2014_x86_64.AppImage
+  # Use environment variable PYTHON_FULL_VERSION or default to 3.12.12
+  PYTHON_FULL_VER="${PYTHON_FULL_VERSION:-3.12.12}"
+  # Extract major.minor (e.g. 3.12)
+  PYTHON_MAJ_MIN=$(echo "$PYTHON_FULL_VER" | cut -d. -f1,2)
+  # Extract tag without dots (e.g. 312)
+  PYTHON_TAG=$(echo "$PYTHON_MAJ_MIN" | tr -d .)
+
+  PYTHON_APPIMAGE_FILENAME="python${PYTHON_FULL_VER}-cp${PYTHON_TAG}-cp${PYTHON_TAG}-manylinux2014_x86_64.AppImage"
+  PYTHON_APPIMAGE_URL="https://github.com/niess/python-appimage/releases/download/python${PYTHON_MAJ_MIN}/${PYTHON_APPIMAGE_FILENAME}"
+
+  wget --no-verbose "$PYTHON_APPIMAGE_URL"
+  chmod +x "$PYTHON_APPIMAGE_FILENAME"
+  ./"$PYTHON_APPIMAGE_FILENAME" --appimage-extract
+  rm -f "$PYTHON_APPIMAGE_FILENAME"
   export PATH="$(pwd)/squashfs-root/usr/bin:$PATH"
   pip install --upgrade pip
   pip install -q -r Python/requirements.txt

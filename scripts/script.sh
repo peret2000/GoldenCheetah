@@ -14,7 +14,9 @@ fi
 
 qmake build.pro -r QMAKE_CXXFLAGS_WARN_ON+="-Wno-unused-private-field -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-deprecated-register -Wno-nullability-completeness -Wno-sign-compare -Wno-inconsistent-missing-override"
 if test ! -f qwt/lib/libqwt.a; then make -j${THREADS_VAL} sub-qwt; fi
-# Avoid bison race conditions in qmake by generating yacc/lex outputs explicitly first in sequential mode (-j1)
-make -j1 -C src compiler_yacc_decl_make_all compiler_yacc_impl_make_all compiler_lex_make_all
+# Avoid bison race conditions in qmake on fresh runner builds by generating yacc/lex outputs sequentially first
+if [ "$GITHUB_ACTIONS" = "true" ]; then
+  make -j1 -C src compiler_yacc_decl_make_all compiler_yacc_impl_make_all compiler_lex_make_all
+fi
 
 make -j${THREADS_VAL} sub-src
