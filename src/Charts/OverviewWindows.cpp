@@ -249,7 +249,7 @@ EquipmentOverviewWindow::getTileConfig(ChartSpaceItem* item, QString& config) co
 
 void
 EquipmentOverviewWindow::setTileConfig(const QJsonObject& obj, int type, const QString& name, const QString& datafilter,
-                                       int order, int column, int span, int deep, ChartSpaceItem* add) const
+                                       int order, int column, int span, int deep, ChartSpaceItem*& add) const
 {
     QUuid equipmentRef = QUuid::fromString(obj["equipmentRef"].toString());
 

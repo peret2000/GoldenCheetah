@@ -132,7 +132,7 @@ class EquipmentOverviewWindow : public OverviewWindow
         void getTileConfig(ChartSpaceItem* item, QString& config) const override;
         void setTileConfig(const QJsonObject& obj, int type, const QString& name,
                            const QString& datafilter, int order, int column,
-                           int span, int deep, ChartSpaceItem* add) const override;
+                           int span, int deep, ChartSpaceItem*& add) const override;
 
     private:
         bool eqWindowVisible_;
