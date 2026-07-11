@@ -364,8 +364,24 @@ ChartSpaceItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt, QW
     if (GCColor::luminance(RGBColor(color())) < 127) painter->setPen(QColor(200,200,200));
     else painter->setPen(QColor(70,70,70));
 
-    painter->setFont(parent->titlefont);
+    QFont font = parent->titlefont;
     QRectF titleRect(ROWHEIGHT / 2.0f, 0, geometry().width() - 60 - (2.5f * ROWHEIGHT), ROWHEIGHT * 2.0f);
+
+    int pSize = font.pixelSize();
+    if (pSize > 0) {
+        while (QFontMetricsF(font).boundingRect(titleRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap, name).height() > titleRect.height() && pSize > 8) {
+            pSize--;
+            font.setPixelSize(pSize);
+        }
+    } else {
+        qreal ptSize = font.pointSizeF();
+        while (QFontMetricsF(font).boundingRect(titleRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap, name).height() > titleRect.height() && ptSize > 6.0) {
+            ptSize -= 0.5;
+            font.setPointSizeF(ptSize);
+        }
+    }
+
+    painter->setFont(font);
     painter->drawText(titleRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap, name);
 
     // only paint contents if not dragging
