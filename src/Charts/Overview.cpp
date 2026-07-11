@@ -424,7 +424,7 @@ badconfig:
 void
 OverviewWindow::setTileConfig(const QJsonObject& obj, int type, const QString& name,
                                const QString& datafilter, int order, int column,
-                               int span, int deep, ChartSpaceItem* add) const {
+                               int span, int deep, ChartSpaceItem*& add) const {
     switch (type) {
 
     case OverviewItemType::RPE:
