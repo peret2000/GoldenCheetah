@@ -75,10 +75,6 @@ void RealtimeData::setGear(double gear)
 {
     this->gear= gear;
 }
-void RealtimeData::setJoules(long joules)
-{
-    this->joules= joules;
-}
 void RealtimeData::setWatts(double watts)
 {
     // negs not allowed (usually from virtual power)
@@ -143,10 +139,6 @@ void RealtimeData::setVI(double vI)
 void RealtimeData::setVirtualSpeed(double speed)
 {
     this->virtualSpeed = speed;
-}
-void RealtimeData::setAvgSpeed(double speed)
-{
-    this->avgSpeed = speed;
 }
 void RealtimeData::setWheelRpm(double wheelRpm, bool fMarkWheelRpmTime)
 {
@@ -329,10 +321,6 @@ double RealtimeData::getWatts() const
 {
     return watts;
 }
-double RealtimeData::getAvgWatts() const
-{
-    return avgWatts;
-}
 double RealtimeData::getGear() const
 {
     return gear;
@@ -389,10 +377,6 @@ double RealtimeData::getVirtualSpeed() const
 {
     return virtualSpeed;
 }
-double RealtimeData::getAvgSpeed() const
-{
-    return avgSpeed;
-}
 double RealtimeData::getWheelRpm() const
 {
     return wheelRpm;
@@ -444,10 +428,6 @@ double RealtimeData::getElevationGain() const
 double RealtimeData::getCalories() const
 {
     return calories;
-}
-long RealtimeData::getJoules() const
-{
-    return joules;
 }
 double RealtimeData::getVAM() const
 {
@@ -678,9 +658,6 @@ double RealtimeData::value(DataSeries series) const
     case LapDistanceRemaining: return lapDistanceRemaining;
         break;
 
-    case Joules: return joules;
-        break;
-
     case AltWatts: return altWatts;
         break;
 
@@ -727,9 +704,6 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case VirtualSpeed: return virtualSpeed;
-        break;
-
-    case AvgSpeed: return avgSpeed;
         break;
 
     case Cadence: return cadence;

@@ -83,7 +83,6 @@ public:
     void setSpeed(double speed);
     void setWbal(double speed);
     void setVirtualSpeed(double speed);
-    void setAvgSpeed(double);
     void setWheelRpm(double wheelRpm, bool fMarkTimeSample = false);
     void setCadence(double aCadence);
     void setLoad(double load);
@@ -176,7 +175,6 @@ public:
     double getHeatLoad() const;
 
     double getWatts() const;
-    double getAvgWatts() const;
     double getGear() const;
     double getAltWatts() const;
     double getAltDistance() const;
@@ -186,7 +184,6 @@ public:
     double getWbal() const;
     double getJoules() const;
     double getVirtualSpeed() const;
-    double getAvgSpeed() const;
     double getWheelRpm() const;
     std::chrono::high_resolution_clock::time_point getWheelRpmSampleTime() const;
     double getCadence() const;
@@ -200,7 +197,6 @@ public:
     double getDeltaSlope() const;
     double getElevationGain() const;
     double getCalories() const;
-    long getJoules() const;
     double getVAM() const;
     double getXPower() const;
     double getBikeScore() const;
@@ -297,9 +293,7 @@ private:
     double lapDistanceRemaining;
     double avgWatts;
     double gear;
-    long joules;
     double virtualSpeed;
-    double avgSpeed;
     double wbal;
     double joules;
     double xPower, bikeScore, rI, skibaVI;
