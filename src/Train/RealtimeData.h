@@ -291,7 +291,6 @@ private:
     double VAMValue;
     double lapDistance;
     double lapDistanceRemaining;
-    double avgWatts;
     double gear;
     double virtualSpeed;
     double wbal;
