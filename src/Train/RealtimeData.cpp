@@ -67,10 +67,6 @@ void RealtimeData::setAltWatts(double watts)
 {
     this->altWatts = (int)watts;
 }
-void RealtimeData::setAvgWatts(double avgWatts)
-{
-    this->avgWatts= avgWatts;
-}
 void RealtimeData::setGear(double gear)
 {
     this->gear= gear;
@@ -659,9 +655,6 @@ double RealtimeData::value(DataSeries series) const
         break;
 
     case AltWatts: return altWatts;
-        break;
-
-    case AvgWatts: return avgWatts;
         break;
 
     case Gear: return gear;
