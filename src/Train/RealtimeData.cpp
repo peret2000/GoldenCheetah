@@ -1485,6 +1485,20 @@ RealtimeDataSession::RealtimeDataSession(Context* context, double CP, double WPR
         heatLoadMSec = 0;
         heatLoadLocalDate = QDateTime::currentDateTime();
     }
+
+    // Calories
+    QDate today = QDate::currentDate();
+    bool male = appsettings->cvalue(context->athlete->cyclist, GC_SEX).toInt() == 0;
+    double athlete_age = today.year() - appsettings->cvalue(context->athlete->cyclist, GC_DOB).toDate().year();
+    double athlete_weight = context->athlete->getWeight(today);
+    //Calories = (calories_constant + calories_avghr_multiplier * average_hr) / 4.184 * duration_minutes;
+    if (male) {
+        calories_avghr_multiplier = 0.6309;
+        calories_constant = -55.0969 + 0.1988 * athlete_weight + 0.2017 * athlete_age;
+    } else {
+        calories_avghr_multiplier = 0.4472;
+        calories_constant = -20.4022 + 0.1263 * athlete_weight + 0.074 * athlete_age;
+    }
 }
 
 RealtimeDataSession::~RealtimeDataSession()
@@ -1535,6 +1549,12 @@ void RealtimeDataSession::updateDerived()
     setAvgCadenceLap(sumAvgCadenceLap/nAvgCadenceLap++);
     sumAvgHeartRateLap += getHr();
     setAvgHeartRateLap(sumAvgHeartRateLap/nAvgHeartRateLap++);
+
+    //
+    // Calories
+    //
+    //Calories = (calories_constant + calories_avghr_multiplier * average_hr) / 4.184 * duration_minutes;
+    setCalories((calories_constant + calories_avghr_multiplier * getAvgHeartRate()) / 4.184 * getMsecs() / 60000.0);
 
     //
     // W'bal on the fly using Dave Waterworth's reformulation
