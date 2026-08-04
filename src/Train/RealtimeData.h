@@ -399,6 +399,10 @@ private:
     // Heat Load Estimate for the athlete, preserve between sessions, and reset when local date changes
     qint64 heatLoadMSec;
     QDateTime heatLoadLocalDate;
+
+    // Calories
+    double calories_avghr_multiplier;
+    double calories_constant;
 };
 
 #endif
