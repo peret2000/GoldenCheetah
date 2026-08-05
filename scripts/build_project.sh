@@ -169,7 +169,7 @@ if $FROMSCRATCH; then
 	git checkout -- appveyor/linux/before_build.sh
 	git checkout -- src/Gui/GcCrashDialog.cpp
 
-	git checkout $BUILDBRANCH
+	git checkout $BUILDBRANCH || { ERR=$?; echo "ERROR: Not able to switch to $BUILDBRANCH" | tee -a $LOGFILE; salida $ERR; }
 
 	# Por si existe ya la rama, primero se elimina y luego se crea
 	git branch -D "$TARGETBRANCH" > /dev/null 2>&1 || true
