@@ -69,15 +69,6 @@ lupdate src/src.pro
 # In case the binary remains from previous compilations, it is removed
 rm -f src/GoldenCheetah
 
-# Download necessary header file if it was not downloaded yet
-# D2XX - refresh cache if folder is empty
-mkdir -p D2XX
-if [ -z "$(ls -A D2XX)" ]; then
-    wget --no-verbose https://ftdichip.com/wp-content/uploads/2022/07/libftd2xx-x86_64-1.4.27.tgz
-    tar xf libftd2xx-x86_64-1.4.27.tgz -C D2XX
-    rm libftd2xx-x86_64-1.4.27.tgz
-fi
-
 ######## Cambios en src/gcconfig.pri
 
 if [ "${1,,}" = "debug" ]; then
@@ -92,6 +83,7 @@ sed -i '/^VLC_LIBS/ s/^/#/' src/gcconfig.pri
 sed -i '/^DEFINES += GC_VIDEO_VLC/ s/^/#/' src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_VIDEO_QT6.*\)|\1|" src/gcconfig.pri
 sed -i "s|#\(DEFINES += GC_WANT_ROBOT*\)|\1|" src/gcconfig.pri
+sed -i '/^D2XX_INCLUDE/ s/^/#/' src/gcconfig.pri
 
 ######## Cambios en src/Resources/linux/MakeAppImageQt6.sh
 
