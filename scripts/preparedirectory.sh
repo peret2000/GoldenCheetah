@@ -68,6 +68,7 @@ lupdate src/src.pro
 
 # In case the binary remains from previous compilations, it is removed
 rm -f src/GoldenCheetah
+rm -rf src/GoldenCheetah.gch
 
 ######## Cambios en src/gcconfig.pri
 
