@@ -303,6 +303,7 @@ main(int argc, char *argv[])
 #ifdef GC_WANT_R
             fprintf(stderr, "--no-r              to disable R startup\n");
 #endif
+            fprintf(stderr, "--run-on-wsl        to apply WSL specific USB workarounds\n");
             fprintf (stderr, "\nSpecify the folder and/or athlete to open on startup\n");
             fprintf(stderr, "If no parameters are passed it will reopen the last athlete.\n\n");
 
@@ -358,6 +359,8 @@ main(int argc, char *argv[])
             fprintf(stderr, "CloudDB support not compiled in, exiting.\n");
             exit(1);
 #endif
+        } else if (arg == "--run-on-wsl") {
+            qputenv("GC_RUN_ON_WSL", "1");
         } else {
 
             // not switches !
@@ -564,6 +567,9 @@ main(int argc, char *argv[])
         else if (!debug) nostderr(QString("%1/%2").arg(home.canonicalPath()).arg("goldencheetah.log"));
         qSetMessagePattern(debugFormat);
         QLoggingCategory::setFilterRules(debugRules.replace(";", "\n")); // accept ; as separator like QT_LOGGING_RULES
+
+        if (qEnvironmentVariableIsSet("GC_RUN_ON_WSL"))
+            qInfo() << "WSL specific USB workarounds enabled";
 
         // Language setting (default to system locale)
         QVariant lang = appsettings->value(NULL, GC_LANG, QLocale::system().name());

@@ -132,8 +132,11 @@ int LibUsb::open()
     if (device == NULL) return -1;
 
     // Clear halt is needed, but ignore return code
-    usb_clear_halt(device, writeEndpoint);
-    usb_clear_halt(device, readEndpoint);
+    if (!qEnvironmentVariableIsSet("GC_RUN_ON_WSL")) {
+        usb_clear_halt(device, writeEndpoint);
+        usb_clear_halt(device, readEndpoint);
+    } else
+        qDebug()<<"Entorno WSL: No se ejecutan llamadas a usb_clear_halt";
 
     return 0;
 }
@@ -174,7 +177,10 @@ void LibUsb::close()
         usb_dev_handle *p = device;
         device = NULL;
 
-        usb_release_interface(p, interface);
+        if (!qEnvironmentVariableIsSet("GC_RUN_ON_WSL"))
+            usb_release_interface(p, interface);
+        else
+            qDebug ()<<"Entorno WSL: No se ejecutan llamadas a usb_release_interface";
         //usb_reset(p);
         usb_close(p);
     }
@@ -666,8 +672,11 @@ usb_dev_handle* LibUsb::OpenAntStick()
                 (dev->descriptor.idProduct == GARMIN_USB2_PID || dev->descriptor.idProduct == GARMIN_OEM_PID)) {
 
                 if ((udev = usb_open(dev))) {
-                    usb_reset(udev);
-                    usb_close(udev);
+                    if (!qEnvironmentVariableIsSet("GC_RUN_ON_WSL")) {
+                        usb_reset(udev);
+                        usb_close(udev);
+                    } else
+                        qDebug ()<<"Entorno WSL: No se ejecutan llamadas a usb_reset()/usb_close()";
                 }
             }
         }
@@ -696,7 +705,10 @@ usb_dev_handle* LibUsb::OpenAntStick()
                         if ((intf = usb_find_interface(&dev->config[0])) != NULL) {
 
 #ifdef Q_OS_LINUX
-                            usb_detach_kernel_driver_np(udev, interface);
+                            if (!qEnvironmentVariableIsSet("GC_RUN_ON_WSL"))
+                                usb_detach_kernel_driver_np(udev, interface);
+                            else
+                                qDebug() << "Entorno WSL: No se ejecuta llamada a usb_detach_kernel_driver_np()";
 #endif
 
                             rc = usb_set_configuration(udev, 1);

@@ -535,26 +535,29 @@ ANT::setup()
         return 0;
     }
 
-    uint8_t attempts = 0;
-    do
-    {
-        ANT_Reset_Acknowledge = false;
-        sendMessage(ANTMessage::resetSystem());
+    if (!qEnvironmentVariableIsSet("GC_RUN_ON_WSL")) {
+        uint8_t attempts = 0;
+        do
+        {
+            ANT_Reset_Acknowledge = false;
+            sendMessage(ANTMessage::resetSystem());
 
-        // specs say wait 500ms after reset before sending any more host commands
-        msleep(500);
+            // specs say wait 500ms after reset before sending any more host commands
+            msleep(500);
 
-        if (!ANT_Reset_Acknowledge)
-            qDebug() << "ANT device reset was not acknowledged !...try again";
-//        else
-//            qDebug() << "ANT device reset successful !";
-    } while (!ANT_Reset_Acknowledge && attempts++<3);
+            if (!ANT_Reset_Acknowledge)
+                qDebug() << "ANT device reset was not acknowledged !...try again";
+//            else
+//                qDebug() << "ANT device reset successful !";
+        } while (!ANT_Reset_Acknowledge && attempts++<3);
 
-    // Error if we've not received an acknowlegement
-    if (!ANT_Reset_Acknowledge) {
-        qDebug() << "ANT+ reset not acknowledged, closing..";
-        Status = 0;
-    }
+        // Error if we've not received an acknowlegement
+        if (!ANT_Reset_Acknowledge) {
+            qDebug() << "ANT+ reset not acknowledged, closing..";
+            Status = 0;
+        }
+    } else
+        qDebug() << "Entorno WSL: No se ejecuta llamada a resetSystem()";
 
     sendMessage(ANTMessage::setNetworkKey(1, key));
 
