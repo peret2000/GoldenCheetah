@@ -61,7 +61,7 @@ class HtmlChart : public GcChartWindow
 
 public:
     HtmlChart(Context *context);
-    ~HtmlChart();
+    virtual ~HtmlChart();
 
     QString getHtml() const;
     void setHtml(const QString &text);
@@ -81,6 +81,11 @@ public:
 
 protected:
     bool event(QEvent *e) override;
+    
+    // Abstract hooks for subclasses
+    virtual void setupBridges(QWebChannel *channel) = 0;
+    virtual QString defaultHtml() const = 0;
+    virtual int backgroundColorIndex() const = 0;
 
 public slots:
     void applyHtml();
@@ -92,8 +97,10 @@ public slots:
     void removeConfigRow();
     void configTableChanged();
 
-private:
+protected:
     Context *context;
+
+private:
     QSplitter *splitter;
     QTextEdit *editor;
     QCheckBox *showEditorBtn;
@@ -103,10 +110,10 @@ private:
     QTableWidget *configTable;
     QWebEngineView *canvas;
     QWebChannel *m_webChannel;
-    int m_savedTopMargin;
+    QTimer *m_renderTimer;
     QString currentHtml;
     QString currentChartConfig;
-    QTimer *m_renderTimer;
+    int m_savedTopMargin;
 };
 
 #endif
