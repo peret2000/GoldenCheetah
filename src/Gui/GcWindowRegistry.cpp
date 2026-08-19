@@ -113,7 +113,7 @@ GcWindowRegistry::initialize()
     { VIEW_TRAIN, tr("Workout Editor"),GcWindowTypes::WorkoutWindow },
     { VIEW_TRAIN, tr("Live Map"),GcWindowTypes::LiveMapWebPageWindow },
     { VIEW_TRAIN, tr("HTML Chart"),GcWindowTypes::HtmlTraining },
-    { VIEW_ACTIVITIES, tr("HTML Chart"),GcWindowTypes::HtmlActivities },
+    { VIEW_ANALYSIS, tr("HTML Chart"),GcWindowTypes::HtmlActivities },
     { VIEW_TRAIN, tr("Elevation Chart"),GcWindowTypes::ElevationChart },
     { VIEW_ANALYSIS|VIEW_TRENDS|VIEW_PLAN|VIEW_TRAIN, tr("Web page"),GcWindowTypes::WebPageWindow },
     { VIEW_TRENDS|VIEW_PLAN, tr("Calendar"),GcWindowTypes::Calendar },
