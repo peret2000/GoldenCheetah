@@ -20,9 +20,7 @@ void HtmlActivitiesChart::setupBridges(QWebChannel *channel)
 
 int HtmlActivitiesChart::backgroundColorIndex() const
 {
-    // CTRENDPLOTBACKGROUND or CRIDEPLOTBACKGROUND can be used depending on context,
-    // but typically CRIDEPLOTBACKGROUND is for Activities view.
-    return (context->viewIndex == 2) ? CTRENDPLOTBACKGROUND : CRIDEPLOTBACKGROUND;
+    return CRIDEPLOTBACKGROUND;
 }
 
 QString HtmlActivitiesChart::defaultHtml() const

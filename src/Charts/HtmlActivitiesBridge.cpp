@@ -85,7 +85,7 @@ QString HtmlActivitiesBridge::activity()
         QString name = RideFile::seriesName(*st, true);
         rd[name] = seriesArrays[*st];
     }
-    
+
     // Add XData
     for (const QString &name : f->xdata().keys()) {
         XDataSeries *xd = f->xdata(name);
@@ -112,7 +112,7 @@ QString HtmlActivitiesBridge::activityMetrics()
     RideItem *item = m_context->rideItem();
 
     QJsonObject rd;
-    
+
     // Date and time
     rd["date"] = item->dateTime.date().toString(Qt::ISODate);
     rd["time"] = item->dateTime.time().toString(Qt::ISODate);
@@ -128,7 +128,7 @@ QString HtmlActivitiesBridge::activityMetrics()
 
         bool useMetricUnits = GlobalContext::context()->useMetricUnits;
         double value = item->metrics()[i] * (useMetricUnits ? 1.0f : metric->conversion()) + (useMetricUnits ? 0.0f : metric->conversionSum());
-        
+
         rd[name] = value;
     }
 
@@ -205,7 +205,7 @@ namespace {
     struct gcZoneConfig {
         gcZoneConfig(QString sport) : sport(sport), date(QDate(1,1,1)), cp(0), wprime(0), pmax(0), aetp(0), ftp(0), lthr(0), aethr(0), rhr(0), hrmax(0), cv(0), aetv(0) {}
         bool operator<(const gcZoneConfig& rhs) const { return date < rhs.date; }
-        
+
         QString sport;
         QDate date;
         QList<int> zoneslow;
@@ -222,7 +222,7 @@ QString HtmlActivitiesBridge::athleteZones(const QString &dateStr, const QString
 
     QList<gcZoneConfig> config;
     QDate forDate;
-    
+
     if (!dateStr.isEmpty()) {
         forDate = QDate::fromString(dateStr, Qt::ISODate);
     }
@@ -408,19 +408,19 @@ QString HtmlActivitiesBridge::athleteZones(const QString &dateStr, const QString
 QString HtmlActivitiesBridge::athlete()
 {
     if (!m_context || !m_context->athlete) return "{}";
-    
+
     QJsonObject obj;
     obj["name"] = m_context->athlete->cyclist;
     obj["home"] = m_context->athlete->home->root().absolutePath();
-    
+
     QDate dob = appsettings->cvalue(m_context->athlete->cyclist, GC_DOB).toDate();
     if (dob.isValid()) {
         obj["dob"] = dob.toString(Qt::ISODate);
     }
-    
+
     obj["weight"] = appsettings->cvalue(m_context->athlete->cyclist, GC_WEIGHT).toDouble();
     obj["height"] = appsettings->cvalue(m_context->athlete->cyclist, GC_HEIGHT).toDouble();
-    
+
     int isfemale = appsettings->cvalue(m_context->athlete->cyclist, GC_SEX).toInt();
     obj["gender"] = isfemale ? "female" : "male";
 
