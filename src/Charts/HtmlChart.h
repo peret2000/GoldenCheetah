@@ -81,7 +81,7 @@ public:
 
 protected:
     bool event(QEvent *e) override;
-    
+
     // Abstract hooks for subclasses
     virtual void setupBridges(QWebChannel *channel) = 0;
     virtual QString defaultHtml() const = 0;
@@ -110,10 +110,10 @@ private:
     QTableWidget *configTable;
     QWebEngineView *canvas;
     QWebChannel *m_webChannel;
-    QTimer *m_renderTimer;
+    int m_savedTopMargin;
     QString currentHtml;
     QString currentChartConfig;
-    int m_savedTopMargin;
+    QTimer *m_renderTimer;
 };
 
 #endif

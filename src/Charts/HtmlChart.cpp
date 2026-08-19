@@ -141,7 +141,7 @@ HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context
 
     try {
         m_webChannel = new QWebChannel(this);
-        
+
         setupBridges(m_webChannel);
 
         HtmlChartBridge *chartBridge = new HtmlChartBridge(this, this);
