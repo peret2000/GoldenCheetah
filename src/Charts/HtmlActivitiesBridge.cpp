@@ -23,11 +23,10 @@
 #include "Settings.h"
 #include "RideItem.h"
 #include "Specification.h"
-#include "GlobalContext.h"
 #include "RideMetadata.h"
 #include "RideMetric.h"
 #include "SpecialFields.h"
-#include "GCColor.h"
+#include "Colors.h"
 #include "PaceZones.h"
 
 #include <QJsonDocument>
