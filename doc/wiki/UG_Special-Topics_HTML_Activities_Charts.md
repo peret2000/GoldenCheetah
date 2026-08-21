@@ -15,8 +15,8 @@ The bridge exposes a global `gc` object to JavaScript, providing methods that mi
 Once the `QWebChannel` is initialized, the `gc` object exposes the following methods. All methods are asynchronous and return JSON-serialized strings that must be parsed using `JSON.parse()`.
 
 ### `gc.activity(callback)`
-Returns an object containing all standard telemetry time-series for the currently selected activity.
-* **Returns:** `{ "watts": [...], "hr": [...], "cad": [...], ... }`
+Returns an object containing all standard telemetry time-series, as well as XData (Extended Data) time-series for the currently selected activity. XData series are suffixed with their variable names (e.g., `SmO2_oxy_hb`), and additionally include their own independent `_secs` and `_km` arrays to map their specific sample times and distances.
+* **Returns:** `{ "watts": [...], "hr": [...], "SmO2_oxy_hb": [...], "SmO2_secs": [...], "SmO2_km": [...], ... }`
 
 ### `gc.activityMetrics(callback)`
 Returns an object containing the computed summary metrics (e.g., TSS, IF, NP, Average Power) and metadata (date, time, sport, custom text fields) of the selected activity.
@@ -28,10 +28,10 @@ Returns an array of data points for a single standard telemetry metric.
 * **Returns:** `[ 150, 155, 160, 162, ... ]`
 
 ### `gc.xdataSeries(deviceName, seriesName, callback)`
-Returns an array of data points for a specific XData (Extended Data) metric.
+Returns an array of data points for a specific XData (Extended Data) metric. You can also request the time or distance arrays for the specific XData device by passing `"secs"` or `"km"`.
 * **Arguments:** 
   * `deviceName` (String) - e.g., `"SmO2"`
-  * `seriesName` (String) - e.g., `"oxy_hb"`
+  * `seriesName` (String) - e.g., `"oxy_hb"`, `"secs"`, or `"km"`
 * **Returns:** `[ 45.2, 45.3, 45.1, ... ]`
 
 ### `gc.athlete(callback)`
