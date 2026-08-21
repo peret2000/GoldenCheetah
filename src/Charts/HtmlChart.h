@@ -99,6 +99,9 @@ public slots:
 
 protected:
     Context *context;
+    // Methods to be invoked once the derived classes are fully constructed and initialized,
+    // to allow them to set up their own bridges and other initialization
+    void initHtmlChart();
 
 private:
     QSplitter *splitter;
