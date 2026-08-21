@@ -34,7 +34,6 @@
 #include <QJsonArray>
 #include <QMap>
 #include <QDate>
-#include "Specification.h"
 
 HtmlActivitiesBridge::HtmlActivitiesBridge(Context *context, QObject *parent)
     : QObject(parent), m_context(context)

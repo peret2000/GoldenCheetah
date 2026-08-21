@@ -6,6 +6,7 @@
 
 HtmlTrainingChart::HtmlTrainingChart(Context *context) : HtmlChart(context)
 {
+    initHtmlChart();
     connect(context, SIGNAL(ergFileSelected(ErgFile*)), this, SLOT(applyHtml()));
 }
 

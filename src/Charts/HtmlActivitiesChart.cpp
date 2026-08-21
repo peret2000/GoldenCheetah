@@ -6,6 +6,7 @@
 
 HtmlActivitiesChart::HtmlActivitiesChart(Context *context) : HtmlChart(context)
 {
+    initHtmlChart();
 }
 
 HtmlActivitiesChart::~HtmlActivitiesChart()

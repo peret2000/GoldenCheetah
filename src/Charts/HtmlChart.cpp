@@ -142,8 +142,6 @@ HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context
     try {
         m_webChannel = new QWebChannel(this);
 
-        setupBridges(m_webChannel);
-
         HtmlChartBridge *chartBridge = new HtmlChartBridge(this, this);
         m_webChannel->registerObject("chart", chartBridge);
 
@@ -163,10 +161,6 @@ HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context
     splitter->setSizes(sizes);
 
     connect(context, SIGNAL(configChanged(qint32)), this, SLOT(configChanged(qint32)));
-    configChanged(CONFIG_APPEARANCE);
-
-    // Default HTML
-    setHtml(defaultHtml());
 
     showEditorChanged(showEditorBtn->checkState());
     showConfigChanged(showConfigBtn->checkState());
@@ -174,6 +168,15 @@ HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context
 
 HtmlChart::~HtmlChart()
 {
+}
+
+void HtmlChart::initHtmlChart()
+{
+    if (m_webChannel) {
+        setupBridges(m_webChannel);
+    }
+    configChanged(CONFIG_APPEARANCE);
+    setHtml(defaultHtml());
 }
 
 QString HtmlChart::getHtml() const
