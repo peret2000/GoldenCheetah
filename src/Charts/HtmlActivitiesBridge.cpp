@@ -28,6 +28,8 @@
 #include "SpecialFields.h"
 #include "Colors.h"
 #include "PaceZones.h"
+#include "Zones.h"
+#include "HrZones.h"
 
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -88,12 +90,21 @@ QString HtmlActivitiesBridge::activity()
     for (const QString &name : f->xdata().keys()) {
         XDataSeries *xd = f->xdata(name);
         if (xd) {
+            QJsonArray secsArr;
+            QJsonArray kmArr;
+            for (int i = 0; i < xd->datapoints.count(); ++i) {
+                secsArr.append(xd->datapoints[i]->secs);
+                kmArr.append(xd->datapoints[i]->km);
+            }
+            rd[QString("%1_secs").arg(name)] = secsArr;
+            rd[QString("%1_km").arg(name)] = kmArr;
+
             for (const QString &serie : xd->valuename) {
                 int sidx = xd->valuename.indexOf(serie);
                 if (sidx >= 0) {
                     QJsonArray arr;
-                    for (int i = 0; i < xd->points.count(); ++i) {
-                        arr.append(xd->points[i]->values[sidx]);
+                    for (int i = 0; i < xd->datapoints.count(); ++i) {
+                        arr.append(xd->datapoints[i]->number[sidx]);
                     }
                     rd[QString("%1_%2").arg(name).arg(serie)] = arr;
                 }
@@ -190,8 +201,20 @@ QString HtmlActivitiesBridge::xdataSeries(const QString &name, const QString &se
         int sidx = xd->valuename.indexOf(series);
         if (sidx >= 0) {
             QJsonArray arr;
-            for (int i = 0; i < xd->points.count(); ++i) {
-                arr.append(xd->points[i]->values[sidx]);
+            for (int i = 0; i < xd->datapoints.count(); ++i) {
+                arr.append(xd->datapoints[i]->number[sidx]);
+            }
+            return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
+        } else if (series == "secs") {
+            QJsonArray arr;
+            for (int i = 0; i < xd->datapoints.count(); ++i) {
+                arr.append(xd->datapoints[i]->secs);
+            }
+            return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
+        } else if (series == "km") {
+            QJsonArray arr;
+            for (int i = 0; i < xd->datapoints.count(); ++i) {
+                arr.append(xd->datapoints[i]->km);
             }
             return QString::fromUtf8(QJsonDocument(arr).toJson(QJsonDocument::Compact));
         }
