@@ -1,12 +1,12 @@
-# HTML Activities and Trends Charts
+# HTML Activities Charts
 
 ## Overview
-GoldenCheetah allows the integration of custom HTML/JavaScript charts directly into the **Activities** and **Trends** views. This is powered by a Qt WebEngine backend and a `QWebChannel` bridge called `HtmlActivitiesBridge`. 
+GoldenCheetah allows the integration of custom HTML/JavaScript charts directly into the **Activities** view. This is powered by a Qt WebEngine backend and a `QWebChannel` bridge called `HtmlActivitiesBridge`. 
 
 By embedding an HTML page, developers can leverage modern JavaScript charting libraries (like D3.js, Chart.js, Plotly, or ECharts) while natively accessing the rich dataset of the currently selected Activity or Athlete in GoldenCheetah.
 
 ## Context and Architecture
-Unlike the Training view HTML charts (which use a push-based model to stream live telemetry), the Activities and Trends views use a **pull-based model**. When an HTML chart is loaded, it establishes a WebSocket-like connection with GoldenCheetah. Once connected, JavaScript can asynchronously query GoldenCheetah for metrics, telemetry series, xdata, and athlete zones.
+Unlike the Training view HTML charts (which use a push-based model to stream live telemetry), the Activities view uses a **pull-based model**. When an HTML chart is loaded, it establishes a WebSocket-like connection with GoldenCheetah. Once connected, JavaScript can asynchronously query GoldenCheetah for metrics, telemetry series, xdata, and athlete zones.
 
 The bridge exposes a global `gc` object to JavaScript, providing methods that mimic the behavior of the GoldenCheetah Python API, ensuring consistency for developers familiar with Python charts.
 
@@ -17,6 +17,8 @@ Once the `QWebChannel` is initialized, the `gc` object exposes the following met
 ### `gc.activity(callback)`
 Returns an object containing all standard telemetry time-series, as well as XData (Extended Data) time-series for the currently selected activity. XData series are suffixed with their variable names (e.g., `SmO2_oxy_hb`), and additionally include their own independent `_secs` and `_km` arrays to map their specific sample times and distances.
 * **Returns:** `{ "watts": [...], "hr": [...], "SmO2_oxy_hb": [...], "SmO2_secs": [...], "SmO2_km": [...], ... }`
+
+> **WARNING:** Avoid using `gc.activity()` for production charts. When loading long or high-resolution activities, serializing the entire dataset into a single massive JSON string can exceed QWebChannel/IPC memory limits, causing the method initialization to fail silently or crash (`gc.activity is not a function`). Instead, it is highly recommended to fetch only the required columns individually using `gc.series()`.
 
 ### `gc.activityMetrics(callback)`
 Returns an object containing the computed summary metrics (e.g., TSS, IF, NP, Average Power) and metadata (date, time, sport, custom text fields) of the selected activity.
@@ -75,6 +77,24 @@ To use the API, you must include `qwebchannel.js` (injected automatically or loa
     <script type="text/javascript">
         var gc = null;
 
+        // Helper to wrap async bridge calls in Promises
+        function fetchSeries(metricName) {
+            return new Promise(resolve => {
+                if (!gc || typeof gc.series !== 'function') {
+                    resolve([]);
+                    return;
+                }
+                gc.series(metricName, function(response) {
+                    try {
+                        let data = JSON.parse(response);
+                        resolve(data || []);
+                    } catch(e) {
+                        resolve([]);
+                    }
+                });
+            });
+        }
+
         function loadChartData() {
             if (!gc) return;
             
@@ -82,14 +102,16 @@ To use the API, you must include `qwebchannel.js` (injected automatically or loa
             gc.activityMetrics(function(response) {
                 var metrics = JSON.parse(response);
                 document.getElementById('summary').innerText = 
-                    "Date: " + metrics.date + " | TSS: " + metrics.TSS;
+                    "Date: " + (metrics.date || "N/A") + " | TSS: " + (metrics.TSS || 0).toFixed(1);
             });
 
-            // Fetch power series
-            gc.series("watts", function(response) {
-                var watts = JSON.parse(response);
+            // Fetch telemetry series in parallel
+            Promise.all([
+                fetchSeries("watts"),
+                fetchSeries("hr")
+            ]).then(([watts, hr]) => {
                 document.getElementById('data').innerText = 
-                    "Loaded " + watts.length + " power samples.";
+                    "Loaded " + watts.length + " power samples and " + hr.length + " hr samples.";
             });
         }
 
@@ -102,11 +124,13 @@ To use the API, you must include `qwebchannel.js` (injected automatically or loa
                 // Load data for the first time
                 loadChartData();
 
-                // Listen for activity changes to refresh data
-                gc.activityChanged.connect(function() {
-                    console.log("Activity changed in GoldenCheetah. Refreshing...");
-                    loadChartData();
-                });
+                // Listen for activity changes to refresh data (with safeguard)
+                if (gc && gc.activityChanged && typeof gc.activityChanged.connect === 'function') {
+                    gc.activityChanged.connect(function() {
+                        console.log("Activity changed in GoldenCheetah. Refreshing...");
+                        loadChartData();
+                    });
+                }
             });
         }
     </script>
