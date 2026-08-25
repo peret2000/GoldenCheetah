@@ -42,6 +42,7 @@ class HtmlChartBridge : public QObject
 public:
     explicit HtmlChartBridge(HtmlChart *chart, QObject *parent = nullptr);
     Q_INVOKABLE QString getChartConfig() const;
+    Q_INVOKABLE void setChartConfig(const QString &config);
 
 private:
     HtmlChart *m_chart;

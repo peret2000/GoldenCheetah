@@ -54,6 +54,13 @@ QString HtmlChartBridge::getChartConfig() const
     return "{}";
 }
 
+void HtmlChartBridge::setChartConfig(const QString &config)
+{
+    if (m_chart) {
+        m_chart->setChartConfigString(config);
+    }
+}
+
 HtmlChart::HtmlChart(Context *context) : GcChartWindow(context), context(context), m_webChannel(nullptr)
 {
     m_savedTopMargin = 0;
