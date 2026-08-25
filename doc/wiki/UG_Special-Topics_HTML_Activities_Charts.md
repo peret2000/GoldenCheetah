@@ -63,6 +63,39 @@ The bridge emits a signal when the user selects a different activity in GoldenCh
 
 * **`gc.activityChanged.connect(callback)`**: Fired whenever the selected activity changes.
 
+## Chart Configuration Persistence (The `chart` object)
+
+In addition to the `gc` object, GoldenCheetah exposes a `chart` object on the `channel.objects` property which can be used to interact with the chart's configuration state and GoldenCheetah's native "Perspectives" system.
+
+This is especially useful for persisting user preferences (e.g., dropdown selections, customized thresholds, layout modes) across GoldenCheetah restarts.
+
+* **`chart.getChartConfig(callback)`**: Asynchronously returns a JSON-serialized string of the saved configuration.
+* **`chart.setChartConfig(jsonString)`**: Asynchronously saves a JSON-serialized string to GoldenCheetah's perspective configuration.
+
+**Example Usage:**
+```javascript
+let chartBridge = null;
+
+new QWebChannel(qt.webChannelTransport, function(channel) {
+    gc = channel.objects.gc;
+    chartBridge = channel.objects.chart; // Access the chart object
+
+    // Load saved configuration
+    if (chartBridge && typeof chartBridge.getChartConfig === 'function') {
+        chartBridge.getChartConfig(function(configStr) {
+            let config = JSON.parse(configStr || "{}");
+            console.log("Loaded saved state:", config);
+        });
+    }
+});
+
+function saveState(stateObj) {
+    if (chartBridge && typeof chartBridge.setChartConfig === 'function') {
+        chartBridge.setChartConfig(JSON.stringify(stateObj));
+    }
+}
+```
+
 ## Basic HTML Example
 
 To use the API, you must include `qwebchannel.js` (injected automatically or loaded locally) and initialize the channel.
