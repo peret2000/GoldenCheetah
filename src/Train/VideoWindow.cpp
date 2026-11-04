@@ -546,6 +546,7 @@ void VideoWindow::telemetryUpdate(const RealtimeData &rtd)
             p_meterWidget->Value = rtd.getBearing();
             p_meterWidget->Text = QString::number((int) p_meterWidget->Value).rightJustified(p_meterWidget->textWidth);
             p_meterWidget->AltText = tr(" °") + p_meterWidget->AltTextSuffix;
+        }
         else if (p_meterWidget->Source() == QString("DistanceRemaining"))
         {
             p_meterWidget->Value = - rtd.getDistanceRemaining() * (metric ? 1.0 : MILES_PER_KM);
