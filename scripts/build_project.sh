@@ -171,6 +171,9 @@ if $FROMSCRATCH; then
 
 	git checkout $BUILDBRANCH || { ERR=$?; echo "ERROR: Not able to switch to $BUILDBRANCH" | tee -a $LOGFILE; salida $ERR; }
 
+	# Fuerza la recompilación de Qwt
+	rm -f qwt/lib/libqwt.a
+
 	# Por si existe ya la rama, primero se elimina y luego se crea
 	git branch -D "$TARGETBRANCH" > /dev/null 2>&1 || true
 
