@@ -176,7 +176,8 @@ if $FROMSCRATCH; then
 
 	# Por si existe ya la rama, primero se elimina y luego se crea
 	git branch -D "$TARGETBRANCH" > /dev/null 2>&1 || true
-
+else
+	git checkout -- src/Resources/translations/
 fi	# if $FROMSCRATCH; then
 
 if $BUILD_BRANCH_PARAM_USED; then
